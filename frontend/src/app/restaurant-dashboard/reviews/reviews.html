@@ -1,0 +1,170 @@
+<div class="reviews-container">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>مراجعات العملاء</h1>
+      <p>إدارة والرد على مراجعات العملاء</p>
+    </div>
+    <div class="header-stats">
+      <div class="stat-item">
+        <span class="stat-number">{{ reviews.length }}</span>
+        <span class="stat-label">إجمالي المراجعات</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">{{ getAverageRating() | number:
+            '1.1-1' }}</span>
+        <span class="stat-label">متوسط التقييم</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="reviews-filters" *ngIf="!isLoading">
+    <div class="filter-tabs">
+      <button class="filter-tab" [class.active]="activeFilter === 'all'" (click)="setFilter('all')">
+        جميع المراجعات
+        <span class="count">{{ reviews.length }}</span>
+      </button>
+      <button class="filter-tab" [class.active]="activeFilter === 'replied'" (click)="setFilter('replied')">
+        تم الرد عليها
+        <span class="count">{{ getReviewsByReplyStatus(true).length }}</span>
+      </button>
+      <button class="filter-tab" [class.active]="activeFilter === 'unreplied'" (click)="setFilter('unreplied')">
+        لم يتم الرد عليها
+        <span class="count">{{ getReviewsByReplyStatus(false).length }}</span>
+      </button>
+    </div>
+
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" placeholder="البحث باسم العميل أو محتوى المراجعة..." [(ngModel)]="searchTerm"
+        (input)="filterReviews()" />
+    </div>
+  </div>
+
+  <div class="reviews-content" *ngIf="!isLoading">
+    <div class="reviews-list" *ngIf="filteredReviews.length > 0">
+      <div class="review-card" *ngFor="let review of filteredReviews">
+        <div class="review-header">
+          <div class="customer-info">
+            <div class="customer-avatar">
+              <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="customer-details">
+              <div class="customer-name">{{ review.customer?.name || 'عميل غير معروف' }}</div>
+              <div class="review-date">{{ formatDate(review.createdAt) }}</div>
+            </div>
+          </div>
+          <div class="review-rating">
+            <div class="stars">
+              <i class="fas fa-star" *ngFor="let star of getStars(review.rating)"></i>
+              <i class="far fa-star" *ngFor="let star of getEmptyStars(review.rating)"></i>
+            </div>
+            <span class="rating-value">{{ review.rating | number:'1.1-1' }}</span>
+          </div>
+        </div>
+
+        <div class="review-body">
+          <p>{{ review.comment }}</p>
+        </div>
+
+        <div class="review-reply" *ngIf="review.reply">
+          <div class="reply-header">
+            <i class="fas fa-reply"></i>
+            <span>ردك:</span>
+          </div>
+          <p>{{ review.reply }}</p>
+        </div>
+
+        <div class="review-actions">
+          <button class="btn btn-primary" *ngIf="!review.reply" (click)="openReplyModal(review)">
+            <i class="fas fa-reply"></i>
+            الرد على المراجعة
+          </button>
+          <button class="btn btn-outline" *ngIf="review.reply" (click)="openReplyModal(review)">
+            <i class="fas fa-edit"></i>
+            تعديل الرد
+          </button>
+          <button class="btn btn-danger" (click)="deleteReview(review._id)">
+            <i class="fas fa-trash"></i>
+            حذف المراجعة
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="filteredReviews.length === 0 && reviews.length === 0">
+      <div class="empty-icon">
+        <i class="fas fa-comment-alt"></i>
+      </div>
+      <h3>لا توجد مراجعات</h3>
+      <p>لم يتم استلام أي مراجعات بعد</p>
+    </div>
+
+    <div class="empty-state" *ngIf="filteredReviews.length === 0 && reviews.length > 0">
+      <div class="empty-icon">
+        <i class="fas fa-search"></i>
+      </div>
+      <h3>لا توجد نتائج</h3>
+      <p>لم يتم العثور على مراجعات تطابق الفلتر أو البحث المحدد</p>
+      <button class="btn btn-outline" (click)="clearFilters()">
+        <i class="fas fa-times"></i>
+        مسح الفلاتر
+      </button>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+    </div>
+    <p>جاري تحميل المراجعات...</p>
+  </div>
+</div>
+
+<!-- Modal الرد على المراجعة -->
+<div class="modal-overlay" *ngIf="showReplyModal" (click)="closeReplyModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ isEditingReply ? 'تعديل الرد' : 'الرد على المراجعة' }}</h3>
+      <button class="close-btn" (click)="closeReplyModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <form [formGroup]="replyForm" (ngSubmit)="onSubmitReply()" class="reply-form">
+      <div class="modal-body">
+        <div class="review-to-reply">
+          <h4>مراجعة العميل:</h4>
+          <div class="review-body-modal">
+            <p>{{ selectedReview?.comment }}</p>
+            <div class="review-rating-modal">
+              <i class="fas fa-star" *ngFor="let star of getStars(selectedReview?.rating)"></i>
+              <i class="far fa-star" *ngFor="let star of getEmptyStars(selectedReview?.rating)"></i>
+              <span class="rating-value">{{ selectedReview?.rating | number:'1.1-1' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="replyText">ردك على المراجعة</label>
+          <textarea id="replyText" formControlName="replyText" class="form-control" rows="5"
+            placeholder="اكتب ردك هنا..."></textarea>
+          <div class="error-message"
+            *ngIf="replyForm.get('replyText')?.invalid && replyForm.get('replyText')?.touched">
+            الرد على المراجعة مطلوب.
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeReplyModal()">
+          إلغاء
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="replyForm.invalid || isSubmittingReply">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmittingReply"></i>
+          {{ isSubmittingReply ? 'جاري الإرسال...' : 'إرسال الرد' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+

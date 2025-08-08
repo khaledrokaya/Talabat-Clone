@@ -1,0 +1,308 @@
+<div class="orders-management">
+  <!-- Header -->
+  <div class="header">
+    <h2>Orders Management</h2>
+    <div class="header-actions">
+      <button class="btn btn-refresh" (click)="refreshOrders()" [disabled]="loading">
+        <i class="fa fa-refresh" [class.fa-spin]="loading"></i>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>Order Status</label>
+          <select formControlName="status" class="form-control">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="preparing">Preparing</option>
+            <option value="ready">Ready</option>
+            <option value="out_for_delivery">Out for Delivery</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>From Date</label>
+          <input type="date" formControlName="dateFrom" class="form-control">
+        </div>
+
+        <div class="filter-group">
+          <label>To Date</label>
+          <input type="date" formControlName="dateTo" class="form-control">
+        </div>
+
+        <div class="filter-group">
+          <label>Sort By</label>
+          <select formControlName="sortBy" class="form-control">
+            <option value="createdAt">Created Date</option>
+            <option value="total">Total Amount</option>
+            <option value="status">Status</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Sort Order</label>
+          <select formControlName="sortOrder" class="form-control">
+            <option value="desc">Descending</option>
+            <option value="asc">Ascending</option>
+          </select>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Order Statistics -->
+  <div class="stats-cards">
+    <div class="stat-card">
+      <div class="stat-value">{{ orderStats.pending }}</div>
+      <div class="stat-label">Pending Orders</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ orderStats.preparing }}</div>
+      <div class="stat-label">Preparing</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ orderStats.ready }}</div>
+      <div class="stat-label">Ready for Delivery</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ orderStats.total }}</div>
+      <div class="stat-label">Total Today</div>
+    </div>
+  </div>
+
+  <!-- Orders List -->
+  <div class="orders-section">
+    <div class="section-header">
+      <h3>Orders List</h3>
+      @if (pagination) {
+      <div class="pagination-info">
+        Showing {{ ((pagination.page - 1) * pagination.limit) + 1 }} -
+        {{ min(pagination.page * pagination.limit, pagination.total) }}
+        of {{ pagination.total }} orders
+      </div>
+      }
+    </div>
+
+    <!-- Loading State -->
+    @if (loading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading orders...</p>
+    </div>
+    }
+
+    <!-- Empty State -->
+    @if (!loading && orders.length === 0) {
+    <div class="empty-state">
+      <i class="fa fa-shopping-bag"></i>
+      <h3>No Orders Found</h3>
+      <p>No orders found matching the specified criteria</p>
+    </div>
+    }
+
+    <!-- Orders Table -->
+    @if (!loading && orders.length > 0) {
+    <div class="orders-table">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Time</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (order of orders; track order.id) {
+            <tr class="order-row">
+              <td>
+                <strong>#{{ order.id?.substring(0, 8) }}</strong>
+              </td>
+              <td>
+                <div class="customer-info">
+                  <div class="customer-name">{{ order.customer?.name || 'Not specified' }}</div>
+                  <div class="customer-phone">{{ order.customer?.phone || '' }}</div>
+                </div>
+              </td>
+              <td>
+                <div class="time-info">
+                  <div class="order-time">{{ formatTime(order.createdAt || '') }}</div>
+                  <div class="order-date">{{ formatDate(order.createdAt || '') }}</div>
+                </div>
+              </td>
+              <td>
+                <div class="items-summary">
+                  <span class="items-count">{{ order.items.length || 0 }} items</span>
+                  <div class="items-preview">
+                    @for (item of order.items.slice(0, 2); track item.id) {
+                    <span class="item-name">
+                      {{ item.productName || 'Item' }}
+                    </span>
+                    }
+                    @if (order.items && order.items.length > 2) {
+                    <span class="more-items">
+                      +{{ order.items.length - 2 }} more
+                    </span>
+                    }
+                  </div>
+                </div>
+              </td>
+              <td>
+                <strong class="order-total">{{ order.total }} EGP</strong>
+              </td>
+              <td>
+                <span class="status-badge" [style.background-color]="getStatusColor(order.status)">
+                  {{ getStatusText(order.status) }}
+                </span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn btn-sm btn-primary" (click)="viewOrderDetails(order)">
+                    <i class="fa fa-eye"></i>
+                    View
+                  </button>
+                  @if (canUpdateStatus(order.status)) {
+                  <button class="btn btn-sm btn-success" (click)="updateOrderStatus(order)">
+                    <i class="fa fa-arrow-up"></i>
+                    Update Status
+                  </button>
+                  }
+                  @if (canCancelOrder(order.status)) {
+                  <button class="btn btn-sm btn-danger" (click)="cancelOrder(order)">
+                    <i class="fa fa-times"></i>
+                    Cancel
+                  </button>
+                  }
+                </div>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+    }
+
+    <!-- Pagination -->
+    @if (pagination && pagination.pages > 1) {
+    <div class="pagination-section">
+      <nav aria-label="Orders pagination">
+        <ul class="pagination">
+          <li class="page-item" [class.disabled]="!pagination.hasPrev">
+            <button class="page-link" (click)="changePage(pagination.page - 1)" [disabled]="!pagination.hasPrev">
+              Previous
+            </button>
+          </li>
+
+          @for (page of getPageNumbers(); track page) {
+          <li class="page-item" [class.active]="page === pagination.page">
+            <button class="page-link" (click)="changePage(page)">
+              {{ page }}
+            </button>
+          </li>
+          }
+
+          <li class="page-item" [class.disabled]="!pagination.hasNext">
+            <button class="page-link" (click)="changePage(pagination.page + 1)" [disabled]="!pagination.hasNext">
+              Next
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+    }
+  </div>
+</div>
+
+<!-- Order Details Modal -->
+@if (selectedOrder) {
+<div class="modal" [class.show]="showOrderModal">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Order Details #{{ selectedOrder.id?.substring(0, 8) }}</h5>
+        <button type="button" class="close" (click)="closeOrderModal()">
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="order-details-content">
+          <!-- Customer Information -->
+          <div class="customer-section">
+            <h6>Customer Information</h6>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Name:</label>
+                <span>{{ selectedOrder.customer?.name || 'Not specified' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Phone:</label>
+                <span>{{ selectedOrder.customer?.phone || 'Not specified' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Address:</label>
+                <span>{{ selectedOrder.deliveryAddress || 'Not specified' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Items -->
+          <div class="items-section">
+            <h6>Order Items</h6>
+            <div class="items-list">
+              @for (item of selectedOrder.items; track item.id) {
+              <div class="item-row">
+                <div class="item-details">
+                  <span class="item-name">{{ item.productName || 'Item' }}</span>
+                  <span class="item-quantity">Qty: {{ item.quantity || 1 }}</span>
+                </div>
+                <div class="item-price">
+                  {{ item?.unitPrice || 0 }} EGP
+                </div>
+              </div>
+              }
+            </div>
+            <div class="total-section">
+              <strong>Total: {{ selectedOrder.total }} EGP</strong>
+            </div>
+          </div>
+
+          <!-- Order Status -->
+          <div class="status-section">
+            <h6>Order Status</h6>
+            <span class="status-badge large" [style.background-color]="getStatusColor(selectedOrder.status)">
+              {{ getStatusText(selectedOrder.status) }}
+            </span>
+          </div>
+
+          <!-- Actions -->
+          <div class="modal-actions">
+            @if (canUpdateStatus(selectedOrder.status)) {
+            <button class="btn btn-success" (click)="updateOrderStatus(selectedOrder)">
+              Update Status
+            </button>
+            }
+            @if (canCancelOrder(selectedOrder.status)) {
+            <button class="btn btn-danger" (click)="cancelOrder(selectedOrder)">
+              Cancel Order
+            </button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+}

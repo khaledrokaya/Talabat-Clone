@@ -1,0 +1,379 @@
+<div class="menu-management-container">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>إدارة القائمة</h1>
+      <p>إدارة الأصناف والفئات في قائمة مطعمك</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" (click)="openCategoryModal()">
+        <i class="fas fa-plus"></i>
+        إضافة فئة
+      </button>
+      <button class="btn btn-primary" (click)="openProductModal()">
+        <i class="fas fa-plus"></i>
+        إضافة صنف جديد
+      </button>
+    </div>
+  </div>
+
+  <div class="menu-stats" *ngIf="!isLoading">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-list"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ categories.length }}</h3>
+        <p>الفئات</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-utensils"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ getTotalProducts() }}</h3>
+        <p>الأصناف</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-eye"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ getActiveProducts() }}</h3>
+        <p>الأصناف المتاحة</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-eye-slash"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ getInactiveProducts() }}</h3>
+        <p>الأصناف غير المتاحة</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="menu-content" *ngIf="!isLoading">
+    <div class="filters-section">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          placeholder="البحث في الأصناف..."
+          [(ngModel)]="searchTerm"
+          (input)="filterProducts()"
+        />
+      </div>
+      <div class="filter-tabs">
+        <button
+          class="filter-tab"
+          [class.active]="activeFilter === 'all'"
+          (click)="setFilter('all')"
+        >
+          جميع الأصناف
+        </button>
+        <button
+          class="filter-tab"
+          [class.active]="activeFilter === 'available'"
+          (click)="setFilter('available')"
+        >
+          المتاحة
+        </button>
+        <button
+          class="filter-tab"
+          [class.active]="activeFilter === 'unavailable'"
+          (click)="setFilter('unavailable')"
+        >
+          غير المتاحة
+        </button>
+      </div>
+    </div>
+
+    <div class="categories-section" *ngIf="filteredCategories.length > 0">
+      <div class="category-group" *ngFor="let category of filteredCategories">
+        <div class="category-header">
+          <div class="category-info">
+            <h2>{{ category.name }}</h2>
+            <span class="products-count">{{ getCategoryProductsCount(category._id) }} صنف</span>
+          </div>
+          <div class="category-actions">
+            <button class="action-btn" (click)="editCategory(category)">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="action-btn delete" (click)="deleteCategory(category._id)">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="products-grid">
+          <div
+            class="product-card"
+            *ngFor="let product of getCategoryProducts(category._id)"
+            [class.unavailable]="!product.available"
+          >
+            <div class="product-image">
+              <img
+                [src]="product.image || '/assets/images/food-placeholder.jpg'"
+                [alt]="product.name"
+                (error)="onImageError($event)"
+              />
+              <div class="product-status">
+                <span class="status-badge" [class.available]="product.available">
+                  {{ product.available ? 'متاح' : 'غير متاح' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="product-content">
+              <div class="product-info">
+                <h3>{{ product.name }}</h3>
+                <p class="product-description">{{ product.description }}</p>
+                <div class="product-price">
+                  <span class="price">{{ product.price }} ريال</span>
+                  <span class="original-price" *ngIf="product.originalPrice && product.originalPrice > product.price">
+                    {{ product.originalPrice }} ريال
+                  </span>
+                </div>
+              </div>
+
+              <div class="product-actions">
+                <button class="action-btn" (click)="toggleProductAvailability(product)">
+                  <i [class]="product.available ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+                <button class="action-btn" (click)="editProduct(product)">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="action-btn delete" (click)="deleteProduct(product._id)">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="add-product-card" (click)="openProductModal(category._id)">
+            <div class="add-icon">
+              <i class="fas fa-plus"></i>
+            </div>
+            <p>إضافة صنف جديد</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="filteredCategories.length === 0 && categories.length === 0">
+      <div class="empty-icon">
+        <i class="fas fa-utensils"></i>
+      </div>
+      <h3>لا توجد فئات في القائمة</h3>
+      <p>ابدأ بإضافة فئة أولى لتنظيم أصناف مطعمك</p>
+      <button class="btn btn-primary" (click)="openCategoryModal()">
+        <i class="fas fa-plus"></i>
+        إضافة فئة جديدة
+      </button>
+    </div>
+
+    <div class="empty-state" *ngIf="filteredCategories.length === 0 && categories.length > 0">
+      <div class="empty-icon">
+        <i class="fas fa-search"></i>
+      </div>
+      <h3>لا توجد نتائج</h3>
+      <p>لم يتم العثور على أصناف تطابق البحث أو الفلتر المحدد</p>
+      <button class="btn btn-outline" (click)="clearFilters()">
+        <i class="fas fa-times"></i>
+        مسح الفلاتر
+      </button>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+    </div>
+    <p>جاري تحميل القائمة...</p>
+  </div>
+</div>
+
+<!-- Modal إضافة/تعديل الفئة -->
+<div class="modal-overlay" *ngIf="showCategoryModal" (click)="closeCategoryModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ isEditingCategory ? 'تعديل الفئة' : 'إضافة فئة جديدة' }}</h3>
+      <button class="close-btn" (click)="closeCategoryModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <form [formGroup]="categoryForm" (ngSubmit)="onSubmitCategory()" class="category-form">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="categoryName">اسم الفئة</label>
+          <input
+            id="categoryName"
+            formControlName="name"
+            type="text"
+            class="form-control"
+            placeholder="مثل: المقبلات، الأطباق الرئيسية، الحلويات"
+          />
+          <div class="error-message" *ngIf="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched">
+            اسم الفئة مطلوب
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="categoryDescription">وصف الفئة (اختياري)</label>
+          <textarea
+            id="categoryDescription"
+            formControlName="description"
+            class="form-control"
+            rows="3"
+            placeholder="وصف مختصر للفئة"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeCategoryModal()">
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="categoryForm.invalid || isSubmittingCategory"
+        >
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmittingCategory"></i>
+          {{ isSubmittingCategory ? 'جاري الحفظ...' : (isEditingCategory ? 'تحديث' : 'حفظ') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal إضافة/تعديل الصنف -->
+<div class="modal-overlay" *ngIf="showProductModal" (click)="closeProductModal()">
+  <div class="modal-content large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ isEditingProduct ? 'تعديل الصنف' : 'إضافة صنف جديد' }}</h3>
+      <button class="close-btn" (click)="closeProductModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <form [formGroup]="productForm" (ngSubmit)="onSubmitProduct()" class="product-form">
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="productName">اسم الصنف</label>
+            <input
+              id="productName"
+              formControlName="name"
+              type="text"
+              class="form-control"
+              placeholder="اسم الصنف"
+            />
+            <div class="error-message" *ngIf="productForm.get('name')?.invalid && productForm.get('name')?.touched">
+              اسم الصنف مطلوب
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="productCategory">الفئة</label>
+            <select id="productCategory" formControlName="category" class="form-control">
+              <option value="">اختر الفئة</option>
+              <option *ngFor="let category of categories" [value]="category._id">
+                {{ category.name }}
+              </option>
+            </select>
+            <div class="error-message" *ngIf="productForm.get('category')?.invalid && productForm.get('category')?.touched">
+              الفئة مطلوبة
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="productDescription">وصف الصنف</label>
+          <textarea
+            id="productDescription"
+            formControlName="description"
+            class="form-control"
+            rows="3"
+            placeholder="وصف مفصل للصنف"
+          ></textarea>
+          <div class="error-message" *ngIf="productForm.get('description')?.invalid && productForm.get('description')?.touched">
+            وصف الصنف مطلوب
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="productPrice">السعر (ريال)</label>
+            <input
+              id="productPrice"
+              formControlName="price"
+              type="number"
+              min="0"
+              step="0.01"
+              class="form-control"
+              placeholder="0.00"
+            />
+            <div class="error-message" *ngIf="productForm.get('price')?.invalid && productForm.get('price')?.touched">
+              السعر مطلوب ويجب أن يكون أكبر من صفر
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="productOriginalPrice">السعر الأصلي (اختياري)</label>
+            <input
+              id="productOriginalPrice"
+              formControlName="originalPrice"
+              type="number"
+              min="0"
+              step="0.01"
+              class="form-control"
+              placeholder="للعروض والخصومات"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="productImage">رابط الصورة (اختياري)</label>
+          <input
+            id="productImage"
+            formControlName="image"
+            type="url"
+            class="form-control"
+            placeholder="https://example.com/image.jpg"
+          />
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              formControlName="available"
+            />
+            <span class="checkmark"></span>
+            متاح للطلب
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeProductModal()">
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="productForm.invalid || isSubmittingProduct"
+        >
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmittingProduct"></i>
+          {{ isSubmittingProduct ? 'جاري الحفظ...' : (isEditingProduct ? 'تحديث' : 'حفظ') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+

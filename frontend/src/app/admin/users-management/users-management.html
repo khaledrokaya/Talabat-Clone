@@ -1,0 +1,164 @@
+<div class="users-management">
+  <div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="page-title">
+          <i class="fas fa-users"></i>
+          User Management
+        </h2>
+        <p class="page-subtitle">Manage and monitor all platform users</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline-secondary" (click)="exportUsers()">
+          <i class="fas fa-download"></i>
+          Export
+        </button>
+        <button class="btn btn-primary" (click)="loadUsers()" [disabled]="loading">
+          <i class="fas fa-sync" [class.fa-spin]="loading"></i>
+          Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="card">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input type="text" class="form-control" placeholder="Search by name or email..." [(ngModel)]="searchTerm"
+                (input)="onSearchChange()" />
+            </div>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" [(ngModel)]="selectedRole" (change)="onRoleChange()">
+              <option value="">All User Types</option>
+              <option value="customer">Customers</option>
+              <option value="restaurant">Restaurant Owners</option>
+              <option value="delivery">Delivery Personnel</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" [(ngModel)]="selectedStatus" (change)="onStatusChange()">
+              <option value="">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div class="results-count mt-2">
+          <small class="text-muted">
+            Showing {{ filteredUsers.length }} of {{ users.length }} users
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading users...</span>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="alert alert-danger" role="alert">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    {{ error }}
+  </div>
+
+  <!-- Users Table -->
+  <div *ngIf="!loading && filteredUsers.length > 0" class="users-table-section">
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Verification</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Joined</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of filteredUsers">
+              <td>
+                <div class="user-info">
+                  <div class="user-avatar">
+                    <i class="fas fa-user-circle"></i>
+                  </div>
+                  <div class="user-details">
+                    <div class="user-name">{{ user.firstName }} {{ user.lastName }}</div>
+                    <div class="user-id">#{{ user.id.slice(-6) }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="email-text">{{ user.email }}</span>
+              </td>
+              <td>
+                <span class="verification-badge" [ngClass]="getStatusClass(user.verificationStatus)">
+                  {{ user.isEmailVerified ? 'Verified' : 'Unverified' }}
+                </span>
+              </td>
+              <td>
+                <span class="role-badge" [ngClass]="getRoleClass(user.role)">
+                  {{ user.role | titlecase }}
+                </span>
+              </td>
+              <td>
+                <span class="status-badge" [ngClass]="getStatusClass(user.isActive ? 'active' : 'inactive')">
+                  {{ user.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>
+                <span class="join-date">{{ formatDate(user.createdAt) }}</span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn btn-outline-warning btn-sm"
+                    [title]="user.isActive ? 'Deactivate User' : 'Activate User'"
+                    (click)="updateUserStatus(user.id, user.isActive ? 'inactive' : 'active')">
+                    <i [class]="user.isActive ? 'fas fa-user-slash' : 'fas fa-user-check'"></i>
+                  </button>
+                  <button class="btn btn-outline-danger btn-sm" title="Delete User" (click)="deleteUser(user.id)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty States -->
+  <!-- Empty State -->
+  <div *ngIf="!loading && filteredUsers.length === 0 && users.length === 0" class="empty-state">
+    <div class="empty-state-content">
+      <i class="fas fa-users empty-icon"></i>
+      <h4>No Users Found</h4>
+      <p>There are no users in the system yet.</p>
+    </div>
+  </div>
+
+  <!-- No Search Results -->
+  <div *ngIf="!loading && filteredUsers.length === 0 && users.length > 0" class="empty-state">
+    <div class="empty-state-content">
+      <i class="fas fa-search empty-icon"></i>
+      <h4>No Results Found</h4>
+      <p>Try adjusting your search criteria.</p>
+      <button class="btn btn-primary" (click)="searchTerm = ''; selectedRole = ''; selectedStatus = ''; loadUsers()">
+        Clear Filters
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,74 @@
+<div class="admin-login-container">
+  <div class="admin-login-card">
+    <div class="admin-header">
+      <div class="admin-logo">
+        <i class="fas fa-shield-alt"></i>
+      </div>
+      <h2>Admin Login</h2>
+      <p class="admin-subtitle">Secure area for administrators only</p>
+    </div>
+
+    <!-- Login Form -->
+    <form [formGroup]="adminLoginForm" (ngSubmit)="onSubmit()" class="admin-login-form">
+
+      <!-- Email Field -->
+      <div class="form-group">
+        <label for="email">
+          <i class="fas fa-envelope"></i>
+          Email Address
+        </label>
+        <input type="email" id="email" formControlName="email" class="form-control"
+          [class.error]="adminLoginForm.get('email')?.invalid && adminLoginForm.get('email')?.touched"
+          placeholder="admin@fooddelivery.com">
+        <div *ngIf="adminLoginForm.get('email')?.invalid && adminLoginForm.get('email')?.touched" class="error-text">
+          <span *ngIf="adminLoginForm.get('email')?.errors?.['required']">Email is required</span>
+          <span *ngIf="adminLoginForm.get('email')?.errors?.['email']">Invalid email format</span>
+        </div>
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <label for="password">
+          <i class="fas fa-lock"></i>
+          Password
+        </label>
+        <input type="password" id="password" formControlName="password" class="form-control"
+          [class.error]="adminLoginForm.get('password')?.invalid && adminLoginForm.get('password')?.touched"
+          placeholder="••••••••">
+        <div *ngIf="adminLoginForm.get('password')?.invalid && adminLoginForm.get('password')?.touched"
+          class="error-text">
+          <span *ngIf="adminLoginForm.get('password')?.errors?.['required']">Password is required</span>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="error-alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="admin-login-btn" [disabled]="adminLoginForm.invalid || isLoading"
+        [class.loading]="isLoading">
+
+        <span *ngIf="!isLoading">
+          <i class="fas fa-sign-in-alt"></i>
+          Login
+        </span>
+
+        <span *ngIf="isLoading" class="loading-content">
+          <i class="fas fa-spinner fa-spin"></i>
+          Logging in...
+        </span>
+      </button>
+
+    </form>
+
+    <!-- Back Button -->
+    <button type="button" class="back-btn" (click)="goBack()">
+      <i class="fas fa-arrow-left"></i>
+      Back to Home
+    </button>
+
+  </div>
+</div>

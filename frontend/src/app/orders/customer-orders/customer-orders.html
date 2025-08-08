@@ -1,0 +1,60 @@
+<div class="orders-container">
+  <div class="container">
+    <h1>My Orders</h1>
+
+    <!-- Loading State -->
+    <div class="loading" *ngIf="loading">
+      <p>Loading orders...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-message" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Orders List -->
+    <div class="orders-list" *ngIf="!loading && !errorMessage">
+      <div class="order-card" *ngFor="let order of orders">
+        <div class="order-header">
+          <div class="order-info">
+            <h3>Order #{{ order.id.slice(-6) }}</h3>
+            <div class="restaurant-name">{{ order.restaurant.name || 'Restaurant not specified' }}</div>
+            <p class="order-date">{{ order.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+          <div class="order-status">
+            <span class="status-badge" [ngClass]="getStatusClass(order.status)">
+              {{ getStatusText(order.status) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="order-items">
+          <div class="order-item" *ngFor="let item of order.items">
+            <div class="item-name">{{ item.mealName }}</div>
+            <span class="item-quantity">x{{ item.quantity }}</span>
+            <span class="item-price">{{ item.price * item.quantity }} SAR</span>
+          </div>
+        </div>
+
+        <div class="order-footer">
+          <div class="order-total">
+            <span>Total: {{ order.totalAmount }} SAR</span>
+          </div>
+          <div class="order-actions">
+            <button class="btn btn-secondary btn-sm" [routerLink]="['/orders', order.id]">
+              View Details
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- No Orders -->
+      <div class="no-orders" *ngIf="orders.length === 0">
+        <div class="no-orders-icon">📦</div>
+        <h3>No Orders</h3>
+        <p>You haven't placed any orders yet. Start browsing restaurants and order your favorite meal!</p>
+        <a routerLink="/restaurants" class="btn btn-primary">Browse Restaurants</a>
+      </div>
+    </div>
+  </div>
+</div>

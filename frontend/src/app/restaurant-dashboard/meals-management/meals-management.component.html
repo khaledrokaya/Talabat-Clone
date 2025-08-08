@@ -1,0 +1,408 @@
+<div class="meals-management">
+  <!-- Header -->
+  <div class="header">
+    <h2>Meals Management</h2>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="openAddMealModal()">
+        <i class="fa fa-plus"></i>
+        Add New Meal
+      </button>
+      <button class="btn btn-refresh" (click)="refreshData()" [disabled]="loading">
+        <i class="fa fa-refresh" [class.fa-spin]="loading"></i>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>Category</label>
+          <select formControlName="category" class="form-control">
+            <option value="">All Categories</option>
+            @for (category of categories; track category.name) {
+            <option [value]="category.name">
+              {{ category.name }}
+            </option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Availability</label>
+          <select formControlName="isAvailable" class="form-control">
+            <option value="">All Meals</option>
+            <option value="true">Available Only</option>
+            <option value="false">Unavailable Only</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Search</label>
+          <input type="text" formControlName="search" placeholder="Search meals..." class="form-control">
+        </div>
+
+        <div class="filter-group">
+          <label>Min Price</label>
+          <input type="number" formControlName="priceMin" placeholder="0" class="form-control">
+        </div>
+
+        <div class="filter-group">
+          <label>Max Price</label>
+          <input type="number" formControlName="priceMax" placeholder="1000" class="form-control">
+        </div>
+
+        <div class="filter-group">
+          <label>Sort By</label>
+          <select formControlName="sortBy" class="form-control">
+            <option value="createdAt">Created Date</option>
+            <option value="name">Name</option>
+            <option value="price">Price</option>
+            <option value="category">Category</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Sort Order</label>
+          <select formControlName="sortOrder" class="form-control">
+            <option value="desc">Descending</option>
+            <option value="asc">Ascending</option>
+          </select>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Meal Statistics -->
+  <div class="stats-cards">
+    <div class="stat-card">
+      <div class="stat-value">{{ mealStats.totalMeals }}</div>
+      <div class="stat-label">Total Meals</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ mealStats.availableMeals }}</div>
+      <div class="stat-label">Available</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ mealStats.unavailableMeals }}</div>
+      <div class="stat-label">Unavailable</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ formatPrice(mealStats.averagePrice) }}</div>
+      <div class="stat-label">Average Price</div>
+    </div>
+  </div>
+
+  <!-- Meals Section -->
+  <div class="meals-section">
+    <div class="section-header">
+      <h3>Meals List</h3>
+      @if (pagination) {
+      <div class="pagination-info">
+        Showing {{ ((pagination.page - 1) * pagination.limit) + 1 }} -
+        {{ min(pagination.page * pagination.limit, pagination.total) }}
+        of {{ pagination.total }} meals
+      </div>
+      }
+    </div>
+
+    <!-- Loading State -->
+    @if (loading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading meals...</p>
+    </div>
+    }
+
+    <!-- Empty State -->
+    @if (!loading && meals.length === 0) {
+    <div class="empty-state">
+      <i class="fa fa-cutlery"></i>
+      <h3>No Meals Found</h3>
+      <p>No meals found matching the specified criteria</p>
+      <button class="btn btn-primary" (click)="openAddMealModal()">
+        Add Your First Meal
+      </button>
+    </div>
+    }
+
+    <!-- Meals Grid -->
+    @if (!loading && meals.length > 0) {
+    <div class="meals-grid">
+      @for (meal of meals; track meal.id) {
+      <div class="meal-card">
+        <div class="meal-image">
+          <img [src]="meal.image || '/assets/images/default-meal.jpg'" [alt]="meal.name"
+            (error)="$event.target.src='/assets/images/default-meal.jpg'">
+          <div class="meal-status" [style.background-color]="getAvailabilityColor(meal.isAvailable)">
+            {{ getAvailabilityText(meal.isAvailable) }}
+          </div>
+        </div>
+
+        <div class="meal-content">
+          <div class="meal-header">
+            <h4 class="meal-name">{{ meal.name }}</h4>
+            <span class="meal-price">{{ formatPrice(meal.price) }}</span>
+          </div>
+
+          <div class="meal-meta">
+            <span class="meal-category" [style.background-color]="getCategoryColor(meal.category)">
+              {{ meal.category }}
+            </span>
+            <span class="prep-time">
+              <i class="fa fa-clock-o"></i>
+              {{ meal.preparationTime }} min
+            </span>
+          </div>
+
+          <p class="meal-description">
+            {{ meal.description.length > 100 ? (meal.description.substring(0, 100) + '...') : meal.description }}
+          </p>
+
+          @if (meal.ingredients && meal.ingredients.length > 0) {
+          <div class="meal-ingredients">
+            <small>
+              <strong>Ingredients:</strong>
+              {{ meal.ingredients.slice(0, 3).join(', ') }}
+              @if (meal.ingredients.length > 3) {
+              <span>...</span>
+              }
+            </small>
+          </div>
+          }
+
+          <div class="meal-actions">
+            <button class="btn btn-sm btn-primary" (click)="openEditMealModal(meal)">
+              <i class="fa fa-edit"></i>
+              Edit
+            </button>
+            <button class="btn btn-sm" [class.btn-success]="!meal.isAvailable" [class.btn-warning]="meal.isAvailable"
+              (click)="toggleMealAvailability(meal)">
+              <i class="fa" [class.fa-eye]="!meal.isAvailable" [class.fa-eye-slash]="meal.isAvailable"></i>
+              {{ meal.isAvailable ? 'Hide' : 'Show' }}
+            </button>
+            <button class="btn btn-sm btn-info" (click)="duplicateMeal(meal)">
+              <i class="fa fa-copy"></i>
+              Duplicate
+            </button>
+            <button class="btn btn-sm btn-danger" (click)="deleteMeal(meal)">
+              <i class="fa fa-trash"></i>
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+    }
+
+    <!-- Pagination -->
+    @if (pagination && pagination.pages > 1) {
+    <div class="pagination-section">
+      <nav aria-label="Meals pagination">
+        <ul class="pagination">
+          <li class="page-item" [class.disabled]="!pagination.hasPrev">
+            <button class="page-link" (click)="changePage(pagination.page - 1)" [disabled]="!pagination.hasPrev">
+              Previous
+            </button>
+          </li>
+
+          @for (page of getPageNumbers(); track page) {
+          <li class="page-item" [class.active]="page === pagination.page">
+            <button class="page-link" (click)="changePage(page)">
+              {{ page }}
+            </button>
+          </li>
+          }
+
+          <li class="page-item" [class.disabled]="!pagination.hasNext">
+            <button class="page-link" (click)="changePage(pagination.page + 1)" [disabled]="!pagination.hasNext">
+              Next
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+    }
+  </div>
+</div>
+
+<!-- Meal Modal -->
+<div class="modal" [class.show]="showMealModal">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          {{ isEditMode ? 'Edit Meal' : 'Add New Meal' }}
+        </h5>
+        <button type="button" class="close" (click)="closeMealModal()">
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="mealForm" (ngSubmit)="saveMeal()" #mealFormRef="ngForm">
+          <div class="form-row">
+            <div class="col-md-8">
+              <div class="form-group">
+                <label for="mealName">Meal Name *</label>
+                <input type="text" id="mealName" formControlName="name" class="form-control"
+                  [class.is-invalid]="mealForm.get('name')?.touched && mealForm.get('name')?.invalid">
+                @if (mealForm.get('name')?.touched && mealForm.get('name')?.invalid) {
+                <div class="invalid-feedback">
+                  Meal name is required (minimum 2 characters)
+                </div>
+                }
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label for="mealPrice">Price (EGP) *</label>
+                <input type="number" id="mealPrice" formControlName="price" step="0.01" min="0" class="form-control"
+                  [class.is-invalid]="mealForm.get('price')?.touched && mealForm.get('price')?.invalid">
+                @if (mealForm.get('price')?.touched && mealForm.get('price')?.invalid) {
+                <div class="invalid-feedback">
+                  Valid price is required
+                </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="mealDescription">Description *</label>
+            <textarea id="mealDescription" formControlName="description" rows="3" class="form-control"
+              [class.is-invalid]="mealForm.get('description')?.touched && mealForm.get('description')?.invalid">
+            </textarea>
+            @if (mealForm.get('description')?.touched && mealForm.get('description')?.invalid) {
+            <div class="invalid-feedback">
+              Description is required (minimum 10 characters)
+            </div>
+            }
+          </div>
+
+          <div class="form-row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="mealCategory">Category *</label>
+                <select id="mealCategory" formControlName="category" class="form-control"
+                  [class.is-invalid]="mealForm.get('category')?.touched && mealForm.get('category')?.invalid">
+                  <option value="">Select Category</option>
+                  @for (category of categories; track category.name) {
+                  <option [value]="category.name">
+                    {{ category.name }}
+                  </option>
+                  }
+                </select>
+                @if (mealForm.get('category')?.touched && mealForm.get('category')?.invalid) {
+                <div class="invalid-feedback">
+                  Category is required
+                </div>
+                }
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="prepTime">Preparation Time (minutes) *</label>
+                <input type="number" id="prepTime" formControlName="preparationTime" min="1" class="form-control"
+                  [class.is-invalid]="mealForm.get('preparationTime')?.touched && mealForm.get('preparationTime')?.invalid">
+                @if (mealForm.get('preparationTime')?.touched && mealForm.get('preparationTime')?.invalid) {
+                <div class="invalid-feedback">
+                  Preparation time is required
+                </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="mealImage">Meal Image</label>
+            <input type="file" id="mealImage" accept="image/*" (change)="onImageSelected($event)" class="form-control">
+            <small class="form-text text-muted">
+              Upload an image for your meal (JPG, PNG, etc.)
+            </small>
+            @if (imagePreview) {
+            <div class="image-preview">
+              <img [src]="imagePreview" alt="Preview" class="img-thumbnail mt-2">
+            </div>
+            }
+          </div>
+
+          <div class="form-row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="ingredients">Ingredients</label>
+                <textarea id="ingredients" formControlName="ingredients" rows="2"
+                  placeholder="Comma-separated list of ingredients" class="form-control">
+                </textarea>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="allergens">Allergens</label>
+                <textarea id="allergens" formControlName="allergens" rows="2"
+                  placeholder="Comma-separated list of allergens" class="form-control">
+                </textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nutritional Information -->
+          <div class="nutritional-info">
+            <h6>Nutritional Information (Optional)</h6>
+            <div class="form-row">
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="calories">Calories</label>
+                  <input type="number" id="calories" formControlName="calories" min="0" class="form-control">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="protein">Protein (g)</label>
+                  <input type="number" id="protein" formControlName="protein" step="0.1" min="0" class="form-control">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="carbs">Carbs (g)</label>
+                  <input type="number" id="carbs" formControlName="carbs" step="0.1" min="0" class="form-control">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label for="fat">Fat (g)</label>
+                  <input type="number" id="fat" formControlName="fat" step="0.1" min="0" class="form-control">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="form-check">
+              <input type="checkbox" id="isAvailable" formControlName="isAvailable" class="form-check-input">
+              <label for="isAvailable" class="form-check-label">
+                Available for ordering
+              </label>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeMealModal()" [disabled]="submittingMeal">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="mealForm.invalid || submittingMeal">
+              @if (submittingMeal) {
+              <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              {{ isEditMode ? 'Updating...' : 'Creating...' }}
+              } @else {
+              {{ isEditMode ? 'Update Meal' : 'Create Meal' }}
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

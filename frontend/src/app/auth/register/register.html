@@ -1,0 +1,511 @@
+<div class="register-container">
+  <!-- Professional Background Icons -->
+  <div class="professional-icons">
+    <div class="pro-icon"><i class="fas fa-utensils"></i></div>
+    <div class="pro-icon"><i class="fas fa-shipping-fast"></i></div>
+    <div class="pro-icon"><i class="fas fa-store"></i></div>
+    <div class="pro-icon"><i class="fas fa-clock"></i></div>
+    <div class="pro-icon"><i class="fas fa-star"></i></div>
+    <div class="pro-icon"><i class="fas fa-heart"></i></div>
+    <div class="pro-icon"><i class="fas fa-credit-card"></i></div>
+    <div class="pro-icon"><i class="fas fa-mobile-alt"></i></div>
+    <div class="pro-icon"><i class="fas fa-map-marker-alt"></i></div>
+    <div class="pro-icon"><i class="fas fa-shield-alt"></i></div>
+    <div class="pro-icon"><i class="fas fa-trophy"></i></div>
+    <div class="pro-icon"><i class="fas fa-thumbs-up"></i></div>
+  </div>
+
+  <div class="register-card">
+    <h2>Create New Account</h2>
+
+    <!-- Step 1: Role Selection -->
+    <div *ngIf="currentStep === 1" class="step-content">
+      <h3>Choose Account Type</h3>
+      <div class="role-selection">
+        <div class="role-card" (click)="selectRole('customer')" [class.selected]="selectedRole === 'customer'">
+          <i class="fas fa-user"></i>
+          <h4>Customer</h4>
+          <p>Order your favorite food from restaurants</p>
+        </div>
+
+        <div class="role-card" (click)="selectRole('restaurant')" [class.selected]="selectedRole === 'restaurant'">
+          <i class="fas fa-store"></i>
+          <h4>Restaurant Owner</h4>
+          <p>Display and sell your products to customers</p>
+        </div>
+
+        <div class="role-card" (click)="selectRole('delivery')" [class.selected]="selectedRole === 'delivery'">
+          <i class="fas fa-motorcycle"></i>
+          <h4>Delivery Driver</h4>
+          <p>Join our delivery team and earn money</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Basic Information -->
+    <div *ngIf="currentStep === 2" class="step-content">
+      <h3>Basic Information</h3>
+      <form [formGroup]="basicForm" class="register-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input type="text" id="firstName" formControlName="firstName" class="form-control"
+              placeholder="Enter your first name">
+            <div *ngIf="basicForm.get('firstName')?.invalid && basicForm.get('firstName')?.touched" class="error-text">
+              First name is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input type="text" id="lastName" formControlName="lastName" class="form-control"
+              placeholder="Enter your last name">
+            <div *ngIf="basicForm.get('lastName')?.invalid && basicForm.get('lastName')?.touched" class="error-text">
+              Last name is required
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" formControlName="email" class="form-control"
+            placeholder="Enter your email address">
+          <div *ngIf="basicForm.get('email')?.invalid && basicForm.get('email')?.touched" class="error-text">
+            Valid email is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Phone Number</label>
+          <input type="tel" id="phone" formControlName="phone" class="form-control"
+            placeholder="Enter your phone number">
+          <div *ngIf="basicForm.get('phone')?.invalid && basicForm.get('phone')?.touched" class="error-text">
+            Phone number is required
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" formControlName="password" class="form-control"
+              placeholder="Enter password">
+            <div *ngIf="basicForm.get('password')?.invalid && basicForm.get('password')?.touched" class="error-text">
+              Password must be at least 6 characters
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword" formControlName="confirmPassword" class="form-control"
+              placeholder="Re-enter password">
+            <div
+              *ngIf="basicForm.get('confirmPassword')?.errors?.['mismatch'] && basicForm.get('confirmPassword')?.touched"
+              class="error-text">
+              Passwords do not match
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" (click)="previousStep()">
+            Previous
+          </button>
+          <button type="button" class="btn btn-primary" (click)="nextStep()" [disabled]="!basicForm.valid">
+            Next
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Step 3: Role-specific Information -->
+    <div *ngIf="currentStep === 3" class="step-content">
+      <!-- Customer Form -->
+      <div *ngIf="selectedRole === 'customer'">
+        <h3>Delivery Address</h3>
+        <form [formGroup]="customerForm" class="register-form">
+          <div class="form-group">
+            <label for="street">Street Address</label>
+            <input type="text" id="street" formControlName="street" class="form-control"
+              placeholder="Building number and street name">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="city">City</label>
+              <select id="city" formControlName="city" class="form-control">
+                <option value="">Select city</option>
+                <option *ngFor="let city of cityOptions" [value]="city.value">
+                  {{ city.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="state">Governorate</label>
+              <select id="state" formControlName="state" class="form-control">
+                <option value="">Select governorate</option>
+                <option *ngFor="let state of stateOptions" [value]="state.value">
+                  {{ state.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="zipCode">Postal Code</label>
+            <input type="text" id="zipCode" formControlName="zipCode" class="form-control"
+              placeholder="Enter postal code">
+          </div>
+        </form>
+      </div>
+
+      <!-- Restaurant Form -->
+      <div *ngIf="selectedRole === 'restaurant'">
+        <h3>Restaurant Information</h3>
+        <form [formGroup]="restaurantForm" class="register-form">
+          <div class="form-group">
+            <label for="restaurantName">Restaurant Name</label>
+            <input type="text" id="restaurantName" formControlName="restaurantName" class="form-control"
+              placeholder="Enter restaurant name">
+          </div>
+
+          <div class="form-group">
+            <label for="description">Restaurant Description</label>
+            <textarea id="description" formControlName="description" class="form-control"
+              placeholder="Describe your restaurant and the type of food you serve" rows="3"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="restaurantType">Restaurant Type</label>
+              <select id="restaurantType" formControlName="restaurantType" class="form-control">
+                <option value="">Select restaurant type</option>
+                <option *ngFor="let type of restaurantTypeOptions" [value]="type.value">
+                  {{ type.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="cuisineType">Cuisine Type</label>
+              <select id="cuisineType" formControlName="cuisineType" class="form-control">
+                <option value="">Select cuisine type</option>
+                <option *ngFor="let cuisine of cuisineOptions" [value]="cuisine.value">
+                  {{ cuisine.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="serviceType">Service Type</label>
+              <select id="serviceType" formControlName="serviceType" class="form-control">
+                <option *ngFor="let service of serviceTypeOptions" [value]="service.value">
+                  {{ service.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="averageDeliveryTime">Average Delivery Time</label>
+              <select id="averageDeliveryTime" formControlName="averageDeliveryTime" class="form-control">
+                <option *ngFor="let time of deliveryTimeOptions" [value]="time.value">
+                  {{ time.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="minimumOrderAmount">Minimum Order Amount ($)</label>
+              <input type="number" id="minimumOrderAmount" formControlName="minimumOrderAmount" class="form-control"
+                step="0.50" min="5" max="50">
+            </div>
+
+            <div class="form-group">
+              <label for="deliveryFee">Delivery Fee ($)</label>
+              <input type="number" id="deliveryFee" formControlName="deliveryFee" class="form-control" step="0.25"
+                min="0" max="10">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="serviceRadius">Service Radius (km)</label>
+            <input type="number" id="serviceRadius" formControlName="serviceRadius" class="form-control" min="1"
+              max="50">
+          </div>
+
+          <h4>Business Information</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="licenseNumber">Business License Number</label>
+              <input type="text" id="licenseNumber" formControlName="licenseNumber" class="form-control"
+                placeholder="Enter business license number">
+            </div>
+
+            <div class="form-group">
+              <label for="taxId">Tax ID</label>
+              <input type="text" id="taxId" formControlName="taxId" class="form-control"
+                placeholder="Enter tax identification number">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bankName">Bank Name</label>
+              <select id="bankName" formControlName="bankName" class="form-control">
+                <option value="">Select your bank</option>
+                <option *ngFor="let bank of bankOptions" [value]="bank.value">
+                  {{ bank.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="bankAccountNumber">Bank Account Number</label>
+              <input type="text" id="bankAccountNumber" formControlName="bankAccountNumber" class="form-control"
+                placeholder="Enter bank account number">
+            </div>
+          </div>
+
+          <h4>Operating Hours</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="openingTime">Opening Time</label>
+              <input type="time" id="openingTime" formControlName="openingTime" class="form-control">
+            </div>
+
+            <div class="form-group">
+              <label for="closingTime">Closing Time</label>
+              <input type="time" id="closingTime" formControlName="closingTime" class="form-control">
+            </div>
+          </div>
+
+          <h4>Online Presence (Optional)</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="website">Website URL</label>
+              <input type="url" id="website" formControlName="website" class="form-control"
+                placeholder="https://yourrestaurant.com">
+            </div>
+
+            <div class="form-group">
+              <label for="logoUrl">Logo URL</label>
+              <input type="url" id="logoUrl" formControlName="logoUrl" class="form-control"
+                placeholder="https://example.com/logo.jpg">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="facebook">Facebook Page</label>
+              <input type="url" id="facebook" formControlName="facebook" class="form-control"
+                placeholder="https://facebook.com/yourrestaurant">
+            </div>
+
+            <div class="form-group">
+              <label for="instagram">Instagram</label>
+              <input type="url" id="instagram" formControlName="instagram" class="form-control"
+                placeholder="https://instagram.com/yourrestaurant">
+            </div>
+          </div>
+
+          <h4>Restaurant Address</h4>
+          <div class="form-group">
+            <label for="street">Street Address</label>
+            <input type="text" id="street" formControlName="street" class="form-control"
+              placeholder="Building number and street name">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="city">City</label>
+              <select id="city" formControlName="city" class="form-control">
+                <option value="">Select city</option>
+                <option *ngFor="let city of cityOptions" [value]="city.value">
+                  {{ city.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="state">Governorate</label>
+              <select id="state" formControlName="state" class="form-control">
+                <option value="">Select governorate</option>
+                <option *ngFor="let state of stateOptions" [value]="state.value">
+                  {{ state.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="zipCode">Postal Code</label>
+            <input type="text" id="zipCode" formControlName="zipCode" class="form-control"
+              placeholder="Enter postal code">
+          </div>
+
+          <h4>Service Options</h4>
+          <div class="form-row">
+            <div class="form-group checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="acceptsOnlinePayment">
+                <span class="checkmark"></span>
+                Accept Online Payments
+              </label>
+            </div>
+
+            <div class="form-group checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="acceptsCashOnDelivery">
+                <span class="checkmark"></span>
+                Accept Cash on Delivery
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="specialOffers">Special Offers (Optional)</label>
+            <textarea id="specialOffers" formControlName="specialOffers" class="form-control"
+              placeholder="Describe any special offers or promotions" rows="2"></textarea>
+          </div>
+        </form>
+      </div>
+
+      <!-- Delivery Form -->
+      <div *ngIf="selectedRole === 'delivery'">
+        <h3>Delivery Driver Information</h3>
+        <form [formGroup]="deliveryForm" class="register-form">
+          <h4>Vehicle Information</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="vehicleType">Vehicle Type</label>
+              <select id="vehicleType" formControlName="vehicleType" class="form-control">
+                <option value="">Select vehicle type</option>
+                <option *ngFor="let vehicle of vehicleTypeOptions" [value]="vehicle.value">
+                  {{ vehicle.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="licensePlate">License Plate Number</label>
+              <input type="text" id="licensePlate" formControlName="licensePlate" class="form-control"
+                placeholder="Enter license plate number">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="vehicleColor">Vehicle Color</label>
+              <input type="text" id="vehicleColor" formControlName="vehicleColor" class="form-control"
+                placeholder="Enter vehicle color">
+            </div>
+
+            <div class="form-group">
+              <label for="vehicleModel">Vehicle Model</label>
+              <input type="text" id="vehicleModel" formControlName="vehicleModel" class="form-control"
+                placeholder="Enter vehicle model">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="deliveryZones">Delivery Areas (comma separated)</label>
+            <input type="text" id="deliveryZones" formControlName="deliveryZones" class="form-control"
+              placeholder="Downtown, Zamalek, New Cairo">
+          </div>
+
+          <h4>Required Documents</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="licenseNumber">Driver's License Number</label>
+              <input type="text" id="licenseNumber" formControlName="licenseNumber" class="form-control"
+                placeholder="Enter driver's license number">
+            </div>
+
+            <div class="form-group">
+              <label for="licenseImage">Driver's License Image (URL)</label>
+              <input type="url" id="licenseImage" formControlName="licenseImage" class="form-control"
+                placeholder="https://example.com/license.jpg">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="vehicleRegistration">Vehicle Registration (URL)</label>
+              <input type="url" id="vehicleRegistration" formControlName="vehicleRegistration" class="form-control"
+                placeholder="https://example.com/registration.jpg">
+            </div>
+
+            <div class="form-group">
+              <label for="identityProof">Identity Proof (URL)</label>
+              <input type="url" id="identityProof" formControlName="identityProof" class="form-control"
+                placeholder="https://example.com/id.jpg">
+            </div>
+          </div>
+
+          <h4>Address</h4>
+          <div class="form-group">
+            <label for="street">Street Address</label>
+            <input type="text" id="street" formControlName="street" class="form-control"
+              placeholder="Building number and street name">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="city">City</label>
+              <select id="city" formControlName="city" class="form-control">
+                <option value="">Select city</option>
+                <option *ngFor="let city of cityOptions" [value]="city.value">
+                  {{ city.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="state">Governorate</label>
+              <select id="state" formControlName="state" class="form-control">
+                <option value="">Select governorate</option>
+                <option *ngFor="let state of stateOptions" [value]="state.value">
+                  {{ state.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="zipCode">Postal Code</label>
+            <input type="text" id="zipCode" formControlName="zipCode" class="form-control"
+              placeholder="Enter postal code">
+          </div>
+        </form>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="previousStep()">
+          السابق
+        </button>
+        <button type="button" class="btn btn-primary" (click)="onRegister()" [disabled]="!isFormValid() || isLoading">
+          <span *ngIf="isLoading" class="spinner"></span>
+          {{ isLoading ? 'جار التسجيل...' : 'إنشاء الحساب' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Error and Success Messages -->
+    <div *ngIf="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div>
+
+    <div *ngIf="successMessage" class="success-message">
+      {{ successMessage }}
+    </div>
+
+    <!-- Login Link -->
+    <div class="register-links">
+      <a routerLink="/auth/login">لديك حساب بالفعل؟ سجل الدخول</a>
+    </div>
+  </div>
+</div>

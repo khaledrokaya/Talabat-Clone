@@ -1,0 +1,249 @@
+<div class="wallet-container">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>المحفظة والأرباح</h1>
+      <p>متابعة الأرباح والمعاملات المالية</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" (click)="exportStatement()">
+        <i class="fas fa-download"></i>
+        تصدير كشف حساب
+      </button>
+      <button class="btn btn-primary" (click)="openWithdrawalModal()">
+        <i class="fas fa-money-bill-wave"></i>
+        طلب سحب
+      </button>
+    </div>
+  </div>
+
+  <div class="wallet-stats" *ngIf="!isLoading">
+    <div class="stat-card main-balance">
+      <div class="stat-icon">
+        <i class="fas fa-wallet"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ walletData.currentBalance || 0 }} ريال</h3>
+        <p>الرصيد الحالي</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ walletData.totalEarnings || 0 }} ريال</h3>
+        <p>إجمالي الأرباح</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-calendar-month"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ walletData.monthlyEarnings || 0 }} ريال</h3>
+        <p>أرباح هذا الشهر</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-hand-holding-dollar"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ walletData.pendingWithdrawals || 0 }} ريال</h3>
+        <p>طلبات السحب المعلقة</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="wallet-content" *ngIf="!isLoading">
+    <div class="earnings-chart">
+      <div class="chart-header">
+        <h3>الأرباح الشهرية</h3>
+        <div class="chart-filters">
+          <select [(ngModel)]="selectedPeriod" (change)="loadEarningsChart()">
+            <option value="6months">آخر 6 أشهر</option>
+            <option value="year">آخر سنة</option>
+            <option value="all">جميع الفترات</option>
+          </select>
+        </div>
+      </div>
+      <div class="chart-container">
+        <!-- هنا يمكن إضافة مكتبة رسوم بيانية مثل Chart.js -->
+        <div class="chart-placeholder">
+          <i class="fas fa-chart-bar"></i>
+          <p>الرسم البياني للأرباح</p>
+          <small>سيتم تطبيق مكتبة رسوم بيانية لاحقاً</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="transactions-section">
+      <div class="section-header">
+        <h3>المعاملات الأخيرة</h3>
+        <div class="section-filters">
+          <select [(ngModel)]="transactionFilter" (change)="filterTransactions()">
+            <option value="all">جميع المعاملات</option>
+            <option value="earnings">الأرباح</option>
+            <option value="withdrawals">السحوبات</option>
+            <option value="fees">الرسوم</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="transactions-list" *ngIf="filteredTransactions.length > 0">
+        <div class="transaction-card" *ngFor="let transaction of filteredTransactions" [class]="'type-' + transaction.type">
+          <div class="transaction-icon">
+            <i [class]="getTransactionIcon(transaction.type)"></i>
+          </div>
+          <div class="transaction-details">
+            <div class="transaction-info">
+              <h4>{{ getTransactionTitle(transaction.type) }}</h4>
+              <p class="transaction-description">{{ transaction.description }}</p>
+              <span class="transaction-date">{{ formatDate(transaction.createdAt) }}</span>
+            </div>
+            <div class="transaction-amount" [class]="transaction.type">
+              <span class="amount">
+                {{ transaction.type === 'withdrawal' || transaction.type === 'fee' ? '-' : '+' }}{{ transaction.amount }} ريال
+              </span>
+              <span class="status-badge" [class]="'status-' + transaction.status">
+                {{ getTransactionStatus(transaction.status) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="filteredTransactions.length === 0">
+        <div class="empty-icon">
+          <i class="fas fa-receipt"></i>
+        </div>
+        <h4>لا توجد معاملات</h4>
+        <p>لم يتم تسجيل أي معاملات مالية بعد</p>
+      </div>
+    </div>
+
+    <div class="withdrawal-requests" *ngIf="withdrawalRequests.length > 0">
+      <h3>طلبات السحب</h3>
+      <div class="requests-list">
+        <div class="request-card" *ngFor="let request of withdrawalRequests" [class]="'status-' + request.status">
+          <div class="request-info">
+            <div class="request-details">
+              <h4>طلب سحب #{{ request.requestNumber }}</h4>
+              <p>المبلغ: {{ request.amount }} ريال</p>
+              <span class="request-date">{{ formatDate(request.createdAt) }}</span>
+            </div>
+            <div class="request-status">
+              <span class="status-badge" [class]="'status-' + request.status">
+                {{ getWithdrawalStatus(request.status) }}
+              </span>
+            </div>
+          </div>
+          <div class="request-actions" *ngIf="request.status === 'pending'">
+            <button class="btn btn-sm btn-danger" (click)="cancelWithdrawal(request._id)">
+              <i class="fas fa-times"></i>
+              إلغاء
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+    </div>
+    <p>جاري تحميل بيانات المحفظة...</p>
+  </div>
+</div>
+
+<!-- Modal طلب السحب -->
+<div class="modal-overlay" *ngIf="showWithdrawalModal" (click)="closeWithdrawalModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>طلب سحب جديد</h3>
+      <button class="close-btn" (click)="closeWithdrawalModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <form [formGroup]="withdrawalForm" (ngSubmit)="onSubmitWithdrawal()" class="withdrawal-form">
+      <div class="modal-body">
+        <div class="balance-info">
+          <div class="available-balance">
+            <i class="fas fa-wallet"></i>
+            <span>الرصيد المتاح: {{ walletData.currentBalance || 0 }} ريال</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="amount">مبلغ السحب</label>
+          <input
+            id="amount"
+            formControlName="amount"
+            type="number"
+            min="50"
+            [max]="walletData.currentBalance"
+            step="0.01"
+            class="form-control"
+            placeholder="أدخل المبلغ المراد سحبه"
+          />
+          <div class="error-message" *ngIf="withdrawalForm.get('amount')?.invalid && withdrawalForm.get('amount')?.touched">
+            <div *ngIf="withdrawalForm.get('amount')?.errors?.['required']">مبلغ السحب مطلوب</div>
+            <div *ngIf="withdrawalForm.get('amount')?.errors?.['min']">الحد الأدنى للسحب 50 ريال</div>
+            <div *ngIf="withdrawalForm.get('amount')?.errors?.['max']">المبلغ يتجاوز الرصيد المتاح</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="bankAccount">الحساب البنكي</label>
+          <select id="bankAccount" formControlName="bankAccount" class="form-control">
+            <option value="">اختر الحساب البنكي</option>
+            <option value="account1">الراجحي - ****1234</option>
+            <option value="account2">الأهلي - ****5678</option>
+          </select>
+          <div class="error-message" *ngIf="withdrawalForm.get('bankAccount')?.invalid && withdrawalForm.get('bankAccount')?.touched">
+            يجب اختيار حساب بنكي
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="notes">ملاحظات (اختياري)</label>
+          <textarea
+            id="notes"
+            formControlName="notes"
+            class="form-control"
+            rows="3"
+            placeholder="أي ملاحظات إضافية"
+          ></textarea>
+        </div>
+
+        <div class="withdrawal-fees">
+          <div class="fee-info">
+            <span>رسوم السحب:</span>
+            <span>{{ calculateWithdrawalFee() }} ريال</span>
+          </div>
+          <div class="net-amount">
+            <span>المبلغ الصافي:</span>
+            <span>{{ calculateNetAmount() }} ريال</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeWithdrawalModal()">
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="withdrawalForm.invalid || isSubmittingWithdrawal"
+        >
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmittingWithdrawal"></i>
+          {{ isSubmittingWithdrawal ? 'جاري الإرسال...' : 'إرسال الطلب' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+

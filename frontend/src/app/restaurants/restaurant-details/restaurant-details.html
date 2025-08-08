@@ -1,0 +1,99 @@
+<div class="restaurant-details-container">
+  <!-- Loading State -->
+  <div class="loading" *ngIf="loading">
+    <p>جاري تحميل تفاصيل المطعم...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error" *ngIf="errorMessage">
+    <p>{{ errorMessage }}</p>
+    <a routerLink="/restaurants" class="btn btn-primary">العودة للمطاعم</a>
+  </div>
+
+  <!-- Restaurant Details -->
+  <div *ngIf="restaurant && !loading">
+    <!-- Restaurant Header -->
+    <div class="restaurant-header">
+      <div class="restaurant-image">
+        <img *ngIf="restaurant.image" [src]="restaurant.image" [alt]="restaurant.name">
+        <div class="restaurant-status" [class.closed]="!restaurant.isOpen">
+          {{ restaurant.isOpen ? 'مفتوح' : 'مغلق' }}
+        </div>
+      </div>
+      <div class="restaurant-info">
+        <h1>{{ restaurant.name }}</h1>
+        <p class="cuisine">{{ restaurant.cuisine }}</p>
+        <p class="description">{{ restaurant.description }}</p>
+        <div class="restaurant-meta">
+          <div class="meta-item">
+            <span class="icon">
+              <i class="fas fa-star"></i>
+            </span>
+            <span>{{ restaurant.rating || 'جديد' }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="icon">
+              <i class="fas fa-clock"></i>
+            </span>
+            <span>{{ restaurant.deliveryTime }} دقيقة</span>
+          </div>
+          <div class="meta-item">
+            <span class="icon">
+              <i class="fas fa-truck"></i>
+            </span>
+            <span>{{ restaurant.deliveryFee }} ريال</span>
+          </div>
+          <div class="meta-item">
+            <span class="icon">
+              <i class="fas fa-money-bill-wave"></i>
+            </span>
+            <span>الحد الأدنى: {{ restaurant.minimumOrder }} ريال</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menu Categories -->
+    <div class="menu-section">
+      <div class="container">
+        <h2>القائمة</h2>
+
+        <div class="menu-categories" *ngIf="menuCategories.length > 0">
+          <div class="category" *ngFor="let category of menuCategories">
+            <h3>{{ category.name }}</h3>
+            <p class="category-description" *ngIf="category.description">
+              {{ category.description }}
+            </p>
+
+            <div class="products-grid">
+              <div class="product-card" *ngFor="let product of category.products">
+                <div class="product-image" *ngIf="product.imageUrl">
+                  <img [src]="product.imageUrl" [alt]="product.name">
+                </div>
+                <div class="product-info">
+                  <h4>{{ product.name }}</h4>
+                  <p class="product-description" *ngIf="product.description">
+                    {{ product.description }}
+                  </p>
+                  <div class="product-footer">
+                    <span class="price">{{ product.price }} ريال</span>
+                    <button (click)="addToCart(product, restaurant)" class="btn btn-primary btn-sm"
+                      [disabled]="!product.isAvailable || !restaurant.isOpen">
+                      {{ product.isAvailable ? 'إضافة للسلة' : 'غير متوفر' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- No Menu Items -->
+        <div class="no-menu" *ngIf="menuCategories.length === 0">
+          <h3>لا توجد عناصر في القائمة حالياً</h3>
+          <p>يرجى المحاولة مرة أخرى لاحقاً</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,72 @@
+<div class="cart-container">
+  <div class="container">
+    <h1>سلة التسوق</h1>
+
+    <div class="cart-content" *ngIf="cart$ | async as cart">
+      <!-- Empty Cart -->
+      <div class="empty-cart" *ngIf="cart.items.length === 0">
+        <div class="empty-cart-icon">
+          <i class="fas fa-shopping-cart"></i>
+        </div>
+        <h3>سلة التسوق فارغة</h3>
+        <p>أضف بعض الأطباق اللذيذة من المطاعم المفضلة لديك</p>
+        <a routerLink="/restaurants" class="btn btn-primary">
+          <i class="fas fa-utensils"></i>
+          تصفح المطاعم
+        </a>
+      </div>
+
+      <!-- Cart Items -->
+      <div class="cart-items" *ngIf="cart.items.length > 0">
+        <div class="cart-header">
+          <h3>{{ cart.restaurantName || 'طلبك' }}</h3>
+          <button (click)="clearCart()" class="btn btn-danger btn-sm">مسح السلة</button>
+        </div>
+
+        <div class="cart-item" *ngFor="let item of cart.items">
+          <div class="item-info">
+            <h4>{{ item.productName }}</h4>
+            <div class="item-options" *ngIf="item.selectedOptions && item.selectedOptions.length > 0">
+              <span *ngFor="let option of item.selectedOptions" class="option-tag">
+                {{ option.choiceName }}
+              </span>
+            </div>
+            <div class="item-price">{{ item.unitPrice }} ريال</div>
+          </div>
+
+          <div class="item-controls">
+            <div class="quantity-controls">
+              <button (click)="updateQuantity(item.id, item.quantity - 1)" class="quantity-btn"
+                [disabled]="item.quantity <= 1">-</button>
+              <span class="quantity">{{ item.quantity }}</span>
+              <button (click)="updateQuantity(item.id, item.quantity + 1)" class="quantity-btn">+</button>
+            </div>
+            <div class="item-total">{{ item.totalPrice }} ريال</div>
+            <button (click)="removeItem(item.id)" class="remove-btn">🗑️</button>
+          </div>
+        </div>
+
+        <!-- Cart Summary -->
+        <div class="cart-summary">
+          <div class="summary-row">
+            <span>المجموع الفرعي:</span>
+            <span>{{ cart.totalAmount }} ريال</span>
+          </div>
+          <div class="summary-row">
+            <span>رسوم التوصيل:</span>
+            <span>سيتم حسابها في الخطوة التالية</span>
+          </div>
+          <div class="summary-row total">
+            <span>المجموع:</span>
+            <span>{{ cart.totalAmount }} ريال</span>
+          </div>
+
+          <div class="checkout-actions">
+            <a routerLink="/restaurants" class="btn btn-secondary">إضافة المزيد</a>
+            <a routerLink="/checkout" class="btn btn-primary">متابعة الطلب</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,328 @@
+<div class="personal-data-container">
+  <div class="container">
+    <!-- Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <h1>
+          <i class="fas fa-user-edit"></i>
+          Personal Information
+        </h1>
+        <p>Update your personal information, address and delivery preferences</p>
+      </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    @if (successMessage) {
+    <div class="alert alert-success alert-dismissible fade show">
+      <i class="fas fa-check-circle"></i>
+      {{ successMessage }}
+    </div>
+    }
+    @if (errorMessage) {
+    <div class="alert alert-danger alert-dismissible fade show">
+      <i class="fas fa-exclamation-circle"></i>
+      {{ errorMessage }}
+    </div>
+    }
+
+    <!-- Loading State -->
+    @if (loading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading data...</p>
+    </div>
+    } @else {
+    <!-- Tab Navigation -->
+    <div class="profile-tabs">
+      <nav class="nav nav-tabs">
+        <button type="button" class="nav-link" [class.active]="activeTab === 'personal'"
+          (click)="setActiveTab('personal')">
+          <i class="fas fa-user"></i>
+          Personal Info
+        </button>
+        <button type="button" class="nav-link" [class.active]="activeTab === 'address'"
+          (click)="setActiveTab('address')">
+          <i class="fas fa-map-marker-alt"></i>
+          Address
+        </button>
+        <button type="button" class="nav-link" [class.active]="activeTab === 'delivery'"
+          (click)="setActiveTab('delivery')">
+          <i class="fas fa-shipping-fast"></i>
+          Delivery Preferences
+        </button>
+      </nav>
+    </div>
+
+    <!-- Personal Data Tab -->
+    @if (activeTab === 'personal') {
+    <div class="tab-content">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-info-circle"></i>
+                Basic Information
+              </h3>
+            </div>
+            <div class="card-body">
+              <form [formGroup]="profileForm" (ngSubmit)="onSubmitPersonalData()" class="profile-form">
+                <div class="row">
+                  <!-- First Name -->
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="firstName" class="form-label">
+                        <i class="fas fa-user"></i>
+                        First Name *
+                      </label>
+                      <input type="text" id="firstName" formControlName="firstName" class="form-control"
+                        placeholder="Enter your first name"
+                        [class.is-invalid]="isFieldInvalid(profileForm, 'firstName')">
+                      @if (isFieldInvalid(profileForm, 'firstName')) {
+                      <div class="invalid-feedback">
+                        {{ getFieldError(profileForm, 'firstName') }}
+                      </div>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Last Name -->
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="lastName" class="form-label">
+                        <i class="fas fa-user"></i>
+                        Last Name *
+                      </label>
+                      <input type="text" id="lastName" formControlName="lastName" class="form-control"
+                        placeholder="Enter your last name" [class.is-invalid]="isFieldInvalid(profileForm, 'lastName')">
+                      @if (isFieldInvalid(profileForm, 'lastName')) {
+                      <div class="invalid-feedback">
+                        {{ getFieldError(profileForm, 'lastName') }}
+                      </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Email -->
+                <div class="form-group">
+                  <label for="email" class="form-label">
+                    <i class="fas fa-envelope"></i>
+                    Email Address
+                  </label>
+                  <input type="email" id="email" formControlName="email" class="form-control"
+                    placeholder="Email address" readonly [class.is-invalid]="isFieldInvalid(profileForm, 'email')">
+                  <small class="form-text text-muted">Email address cannot be changed</small>
+                  @if (isFieldInvalid(profileForm, 'email')) {
+                  <div class="invalid-feedback">
+                    {{ getFieldError(profileForm, 'email') }}
+                  </div>
+                  }
+                </div>
+
+                <!-- Phone -->
+                <div class="form-group">
+                  <label for="phone" class="form-label">
+                    <i class="fas fa-phone"></i>
+                    Phone Number *
+                  </label>
+                  <input type="tel" id="phone" formControlName="phone" class="form-control"
+                    placeholder="Enter your phone number" [class.is-invalid]="isFieldInvalid(profileForm, 'phone')">
+                  @if (isFieldInvalid(profileForm, 'phone')) {
+                  <div class="invalid-feedback">
+                    {{ getFieldError(profileForm, 'phone') }}
+                  </div>
+                  }
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary" [disabled]="profileForm.invalid || submitting">
+                    @if (submitting) {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                  </button>
+                  <button type="button" class="btn btn-secondary" (click)="resetForm('personal')">
+                    <i class="fas fa-undo"></i>
+                    Reset
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Address Tab -->
+    @if (activeTab === 'address') {
+    <div class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h3>
+            <i class="fas fa-map-marker-alt"></i>
+            Delivery Address
+          </h3>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="addressForm" class="address-form">
+            <div class="form-group">
+              <label for="street" class="form-label">
+                <i class="fas fa-road"></i>
+                Street *
+              </label>
+              <input type="text" id="street" formControlName="street" class="form-control"
+                placeholder="Enter street name and number" [class.is-invalid]="isFieldInvalid(addressForm, 'street')">
+              @if (isFieldInvalid(addressForm, 'street')) {
+              <div class="invalid-feedback">
+                {{ getFieldError(addressForm, 'street') }}
+              </div>
+              }
+            </div>
+
+            <div class="row-cols-1">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="city" class="form-label">
+                    <i class="fas fa-city"></i>
+                    City *
+                  </label>
+                  <input type="text" id="city" formControlName="city" class="form-control" placeholder="Enter city name"
+                    [class.is-invalid]="isFieldInvalid(addressForm, 'city')">
+                  @if (isFieldInvalid(addressForm, 'city')) {
+                  <div class="invalid-feedback">
+                    {{ getFieldError(addressForm, 'city') }}
+                  </div>
+                  }
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="state" class="form-label">
+                    <i class="fas fa-map"></i>
+                    State
+                  </label>
+                  <input type="text" id="state" formControlName="state" class="form-control"
+                    placeholder="Enter state name" [class.is-invalid]="isFieldInvalid(addressForm, 'state')">
+                  @if (isFieldInvalid(addressForm, 'state')) {
+                  <div class="invalid-feedback">
+                    {{ getFieldError(addressForm, 'state') }}
+                  </div>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="zipCode" class="form-label">
+                <i class="fas fa-mail-bulk"></i>
+                ZIP Code
+              </label>
+              <input type="text" id="zipCode" formControlName="zipCode" class="form-control"
+                placeholder="Enter ZIP code" [class.is-invalid]="isFieldInvalid(addressForm, 'zipCode')">
+              @if (isFieldInvalid(addressForm, 'zipCode')) {
+              <div class="invalid-feedback">
+                {{ getFieldError(addressForm, 'zipCode') }}
+              </div>
+              }
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i>
+                Save Address
+              </button>
+              <button type="button" class="btn btn-secondary" (click)="resetForm('address')">
+                <i class="fas fa-undo"></i>
+                Reset
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Delivery Preferences Tab -->
+    @if (activeTab === 'delivery') {
+    <div class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h3>
+            <i class="fas fa-shipping-fast"></i>
+            Delivery Preferences
+          </h3>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="deliveryPreferencesForm" class="delivery-form">
+            <div class="form-group">
+              <label for="preferredTime" class="form-label">
+                <i class="fas fa-clock"></i>
+                Preferred Delivery Time
+              </label>
+              <select id="preferredTime" formControlName="preferredDeliveryTime" class="form-control">
+                <option value="">Select preferred time</option>
+                <option value="08:00-12:00">Morning (8:00 AM - 12:00 PM)</option>
+                <option value="12:00-18:00">Afternoon (12:00 PM - 6:00 PM)</option>
+                <option value="18:00-20:00">Evening (6:00 PM - 8:00 PM)</option>
+                <option value="20:00-22:00">Night (8:00 PM - 10:00 PM)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="instructions" class="form-label">
+                <i class="fas fa-comment"></i>
+                Special Instructions
+              </label>
+              <textarea id="instructions" formControlName="specialInstructions" class="form-control" rows="4"
+                placeholder="Any special instructions for the delivery person (max 200 characters)"
+                [class.is-invalid]="isFieldInvalid(deliveryPreferencesForm, 'specialInstructions')"></textarea>
+              @if (isFieldInvalid(deliveryPreferencesForm, 'specialInstructions')) {
+              <div class="invalid-feedback">
+                {{ getFieldError(deliveryPreferencesForm, 'specialInstructions') }}
+              </div>
+              }
+              <small class="form-text text-muted">
+                {{ deliveryPreferencesForm.get('specialInstructions')?.value?.length || 0 }}/200 characters
+              </small>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i>
+                Save Preferences
+              </button>
+              <button type="button" class="btn btn-secondary" (click)="resetForm('delivery')">
+                <i class="fas fa-undo"></i>
+                Reset
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Unified Save Button -->
+    <div class="unified-actions mt-4">
+      <div class="text-center">
+        <button type="button" class="btn btn-primary btn-lg" (click)="onSubmitPersonalData()"
+          [disabled]="profileForm.invalid || addressForm.invalid || deliveryPreferencesForm.invalid || submitting">
+          @if (submitting) {
+          <span class="spinner-border spinner-border-sm me-2"></span>
+          }
+          <i class="fas fa-save"></i>
+          Save All Changes
+        </button>
+        <button type="button" class="btn btn-secondary btn-lg ms-3" (click)="resetAllForms()">
+          <i class="fas fa-undo"></i>
+          Reset All
+        </button>
+      </div>
+    </div>
+    }
+  </div>
+</div>

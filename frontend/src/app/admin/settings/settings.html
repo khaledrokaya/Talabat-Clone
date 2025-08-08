@@ -1,0 +1,521 @@
+<div class="settings-page">
+  <div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="page-title">
+          <i class="fas fa-cog"></i>
+          System Settings
+        </h2>
+        <p class="page-subtitle">Configure platform settings and preferences</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline-secondary" (click)="resetToDefaults()" [disabled]="isLoading">
+          <i class="fas fa-undo"></i>
+          Reset to Defaults
+        </button>
+        <button class="btn btn-primary" (click)="saveAllSettings()" [disabled]="isLoading || !hasUnsavedChanges">
+          <i class="fas fa-save"></i>
+          Save All Changes
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success/Error Messages -->
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible">
+    <i class="fas fa-check-circle"></i>
+    {{ successMessage }}
+    <button type="button" class="btn-close" (click)="clearMessages()"></button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible">
+    <i class="fas fa-exclamation-triangle"></i>
+    {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="clearMessages()"></button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="text-center">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-3">Loading settings...</p>
+    </div>
+  </div>
+
+  <!-- Settings Content -->
+  <div *ngIf="!isLoading" class="settings-content">
+    <!-- Settings Navigation -->
+    <div class="settings-nav">
+      <div class="nav nav-pills flex-column">
+        <button class="nav-link" [class.active]="activeSection === 'general'" (click)="setActiveSection('general')">
+          <i class="fas fa-sliders-h"></i>
+          General Settings
+        </button>
+        <button class="nav-link" [class.active]="activeSection === 'payment'" (click)="setActiveSection('payment')">
+          <i class="fas fa-credit-card"></i>
+          Payment Configuration
+        </button>
+        <button class="nav-link" [class.active]="activeSection === 'delivery'" (click)="setActiveSection('delivery')">
+          <i class="fas fa-shipping-fast"></i>
+          Delivery Settings
+        </button>
+        <button class="nav-link" [class.active]="activeSection === 'notifications'"
+          (click)="setActiveSection('notifications')">
+          <i class="fas fa-bell"></i>
+          Notifications
+        </button>
+        <button class="nav-link" [class.active]="activeSection === 'security'" (click)="setActiveSection('security')">
+          <i class="fas fa-shield-alt"></i>
+          Security & Privacy
+        </button>
+        <button class="nav-link" [class.active]="activeSection === 'maintenance'"
+          (click)="setActiveSection('maintenance')">
+          <i class="fas fa-tools"></i>
+          Maintenance
+        </button>
+      </div>
+    </div>
+
+    <!-- Settings Content Area -->
+    <div class="settings-main">
+      <!-- General Settings -->
+      <div *ngIf="activeSection === 'general'" class="settings-section">
+        <div class="section-card">
+          <div class="section-header">
+            <h4>General Platform Settings</h4>
+            <p>Configure basic platform settings and preferences</p>
+          </div>
+
+          <form [formGroup]="generalForm" class="settings-form">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label">Platform Name</label>
+                  <input type="text" class="form-control" formControlName="platformName">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label">Platform URL</label>
+                  <input type="url" class="form-control" formControlName="platformUrl">
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label">Support Email</label>
+                  <input type="email" class="form-control" formControlName="supportEmail">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label">Support Phone</label>
+                  <input type="tel" class="form-control" formControlName="supportPhone">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Default Currency</label>
+              <select class="form-select" formControlName="defaultCurrency">
+                <option value="USD">USD - US Dollar</option>
+                <option value="EUR">EUR - Euro</option>
+                <option value="GBP">GBP - British Pound</option>
+                <option value="EGP">EGP - Egyptian Pound</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Time Zone</label>
+              <select class="form-select" formControlName="timeZone">
+                <option value="UTC">UTC</option>
+                <option value="America/New_York">Eastern Time (ET)</option>
+                <option value="America/Chicago">Central Time (CT)</option>
+                <option value="America/Denver">Mountain Time (MT)</option>
+                <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                <option value="Europe/London">London Time</option>
+                <option value="Africa/Cairo">Cairo Time</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" formControlName="maintenanceMode">
+                <label class="form-check-label">Maintenance Mode</label>
+              </div>
+              <small class="form-text">Enable to put the platform in maintenance mode</small>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Payment Configuration -->
+      <div *ngIf="activeSection === 'payment'" class="settings-section">
+        <div class="section-card">
+          <div class="section-header">
+            <h4>Payment Configuration</h4>
+            <p>Configure payment gateways and methods</p>
+          </div>
+
+          <form [formGroup]="paymentForm" class="settings-form">
+            <div class="payment-methods">
+              <h5>Enabled Payment Methods</h5>
+              <div class="payment-method-grid">
+                <div class="payment-method-card" *ngFor="let method of paymentMethods">
+                  <div class="method-header">
+                    <div class="method-info">
+                      <i [class]="method.icon"></i>
+                      <span>{{ method.name }}</span>
+                    </div>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" [checked]="method.enabled"
+                        (change)="togglePaymentMethod(method)">
+                    </div>
+                  </div>
+                  <div *ngIf="method.enabled" class="method-config">
+                    <div class="form-group" *ngFor="let config of method.config">
+                      <label class="form-label">{{ config.label }}</label>
+                      <input [type]="config.type" class="form-control form-control-sm" [(ngModel)]="config.value"
+                        [placeholder]="config.placeholder" [ngModelOptions]="{standalone: true}">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row mt-4">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label">Platform Commission (%)</label>
+                  <input type="number" class="form-control" formControlName="platformCommission" min="0" max="50"
+                    step="0.1">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label">Delivery Fee</label>
+                  <input type="number" class="form-control" formControlName="deliveryFee" min="0" step="0.01">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" formControlName="autoRefunds">
+                <label class="form-check-label">Enable Automatic Refunds</label>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Delivery Settings -->
+      <div *ngIf="activeSection === 'delivery'" class="settings-section">
+        <div class="section-card">
+          <div class="section-header">
+            <h4>Delivery Configuration</h4>
+            <p>Configure delivery zones, times, and fees</p>
+          </div>
+
+          <form [formGroup]="deliveryForm" class="settings-form">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label">Default Delivery Time (minutes)</label>
+                  <input type="number" class="form-control" formControlName="defaultDeliveryTime" min="15" max="120">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label">Maximum Delivery Distance (km)</label>
+                  <input type="number" class="form-control" formControlName="maxDeliveryDistance" min="1" max="50">
+                </div>
+              </div>
+            </div>
+
+            <div class="delivery-zones">
+              <h5>Delivery Zones</h5>
+              <div class="zones-list">
+                <div class="zone-item" *ngFor="let zone of deliveryZones; let i = index">
+                  <div class="zone-info">
+                    <input type="text" class="form-control" [(ngModel)]="zone.name" placeholder="Zone name"
+                      [ngModelOptions]="{standalone: true}">
+                    <input type="number" class="form-control" [(ngModel)]="zone.fee" placeholder="Delivery fee"
+                      [ngModelOptions]="{standalone: true}">
+                    <input type="number" class="form-control" [(ngModel)]="zone.radius" placeholder="Radius (km)"
+                      [ngModelOptions]="{standalone: true}">
+                  </div>
+                  <button type="button" class="btn btn-outline-danger btn-sm" (click)="removeDeliveryZone(i)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+              <button type="button" class="btn btn-outline-primary" (click)="addDeliveryZone()">
+                <i class="fas fa-plus"></i>
+                Add Zone
+              </button>
+            </div>
+
+            <div class="form-group mt-4">
+              <label class="form-label">Operating Hours</label>
+              <div class="operating-hours">
+                <div class="day-schedule" *ngFor="let day of operatingHours">
+                  <div class="day-name">{{ day.name }}</div>
+                  <div class="day-controls">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" [(ngModel)]="day.enabled"
+                        [ngModelOptions]="{standalone: true}">
+                      <label class="form-check-label">Open</label>
+                    </div>
+                    <input type="time" class="form-control form-control-sm" [(ngModel)]="day.openTime"
+                      [disabled]="!day.enabled" [ngModelOptions]="{standalone: true}">
+                    <span>to</span>
+                    <input type="time" class="form-control form-control-sm" [(ngModel)]="day.closeTime"
+                      [disabled]="!day.enabled" [ngModelOptions]="{standalone: true}">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div *ngIf="activeSection === 'notifications'" class="settings-section">
+        <div class="section-card">
+          <div class="section-header">
+            <h4>Notification Settings</h4>
+            <p>Configure email and push notification preferences</p>
+          </div>
+
+          <form [formGroup]="notificationForm" class="settings-form">
+            <div class="notification-types">
+              <h5>Email Notifications</h5>
+              <div class="notification-grid">
+                <div class="notification-item" *ngFor="let notification of emailNotifications">
+                  <div class="notification-info">
+                    <i [class]="notification.icon"></i>
+                    <div>
+                      <div class="notification-title">{{ notification.title }}</div>
+                      <div class="notification-desc">{{ notification.description }}</div>
+                    </div>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" [(ngModel)]="notification.enabled"
+                      [ngModelOptions]="{standalone: true}">
+                  </div>
+                </div>
+              </div>
+
+              <h5 class="mt-4">Push Notifications</h5>
+              <div class="notification-grid">
+                <div class="notification-item" *ngFor="let notification of pushNotifications">
+                  <div class="notification-info">
+                    <i [class]="notification.icon"></i>
+                    <div>
+                      <div class="notification-title">{{ notification.title }}</div>
+                      <div class="notification-desc">{{ notification.description }}</div>
+                    </div>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" [(ngModel)]="notification.enabled"
+                      [ngModelOptions]="{standalone: true}">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row mt-4">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label">SMTP Server</label>
+                  <input type="text" class="form-control" formControlName="smtpServer">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label">SMTP Port</label>
+                  <input type="number" class="form-control" formControlName="smtpPort">
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label">SMTP Username</label>
+                  <input type="text" class="form-control" formControlName="smtpUsername">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label">SMTP Password</label>
+                  <input type="password" class="form-control" formControlName="smtpPassword">
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Security & Privacy -->
+      <div *ngIf="activeSection === 'security'" class="settings-section">
+        <div class="section-card">
+          <div class="section-header">
+            <h4>Security & Privacy Settings</h4>
+            <p>Configure security policies and privacy settings</p>
+          </div>
+
+          <form [formGroup]="securityForm" class="settings-form">
+            <div class="security-options">
+              <div class="form-group">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" formControlName="twoFactorAuth">
+                  <label class="form-check-label">Require Two-Factor Authentication</label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" formControlName="passwordComplexity">
+                  <label class="form-check-label">Enforce Strong Password Policy</label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" formControlName="sessionTimeout">
+                  <label class="form-check-label">Enable Session Timeout</label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" formControlName="loginAttemptLimit">
+                  <label class="form-check-label">Limit Login Attempts</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label">Session Timeout (minutes)</label>
+                  <input type="number" class="form-control" formControlName="sessionTimeoutDuration" min="5" max="480">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label">Max Login Attempts</label>
+                  <input type="number" class="form-control" formControlName="maxLoginAttempts" min="3" max="10">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Data Retention Period (days)</label>
+              <input type="number" class="form-control" formControlName="dataRetentionPeriod" min="30" max="2555">
+              <small class="form-text">How long to keep user data before deletion</small>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Maintenance -->
+      <div *ngIf="activeSection === 'maintenance'" class="settings-section">
+        <div class="section-card">
+          <div class="section-header">
+            <h4>System Maintenance</h4>
+            <p>Perform system maintenance tasks and view system health</p>
+          </div>
+
+          <div class="maintenance-actions">
+            <div class="action-grid">
+              <div class="action-card">
+                <div class="action-info">
+                  <i class="fas fa-database"></i>
+                  <div>
+                    <h6>Clear Cache</h6>
+                    <p>Clear application cache to improve performance</p>
+                  </div>
+                </div>
+                <button class="btn btn-outline-primary" (click)="clearCache()">
+                  <i class="fas fa-trash"></i>
+                  Clear
+                </button>
+              </div>
+
+              <div class="action-card">
+                <div class="action-info">
+                  <i class="fas fa-download"></i>
+                  <div>
+                    <h6>Backup Database</h6>
+                    <p>Create a backup of the current database</p>
+                  </div>
+                </div>
+                <button class="btn btn-outline-success" (click)="backupDatabase()">
+                  <i class="fas fa-download"></i>
+                  Backup
+                </button>
+              </div>
+
+              <div class="action-card">
+                <div class="action-info">
+                  <i class="fas fa-chart-bar"></i>
+                  <div>
+                    <h6>System Health</h6>
+                    <p>View current system performance metrics</p>
+                  </div>
+                </div>
+                <button class="btn btn-outline-info" (click)="viewSystemHealth()">
+                  <i class="fas fa-eye"></i>
+                  View
+                </button>
+              </div>
+
+              <div class="action-card">
+                <div class="action-info">
+                  <i class="fas fa-file-alt"></i>
+                  <div>
+                    <h6>System Logs</h6>
+                    <p>Download system logs for debugging</p>
+                  </div>
+                </div>
+                <button class="btn btn-outline-warning" (click)="downloadLogs()">
+                  <i class="fas fa-download"></i>
+                  Download
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="system-info mt-4">
+            <h5>System Information</h5>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">Platform Version:</span>
+                <span class="info-value">{{ systemInfo.version }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Database Version:</span>
+                <span class="info-value">{{ systemInfo.databaseVersion }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Last Backup:</span>
+                <span class="info-value">{{ formatDate(systemInfo.lastBackup) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Uptime:</span>
+                <span class="info-value">{{ systemInfo.uptime }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

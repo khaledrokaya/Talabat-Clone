@@ -1,0 +1,119 @@
+<div class="restaurant-card" [class.card-small]="cardSize === 'small'" [class.card-large]="cardSize === 'large'"
+  [routerLink]="['/restaurants', restaurantId]">
+
+  <!-- Restaurant Image -->
+  <div class="restaurant-image">
+    <img *ngIf="restaurantImageUrl" [src]="restaurantImageUrl" [alt]="restaurantName" (error)="onImageError($event)">
+
+    <!-- Image Placeholder -->
+    <div *ngIf="!restaurantImageUrl" class="image-placeholder">
+      <i class="fas fa-utensils"></i>
+      <span>{{ cuisineTypes }}</span>
+    </div>
+
+    <!-- Status Badge -->
+    <div class="restaurant-status" [class.closed]="!isOpen">
+      <i class="fas" [class.fa-clock]="isOpen" [class.fa-times-circle]="!isOpen"></i>
+      {{ isOpen ? 'Open' : 'Closed' }}
+    </div>
+
+    <!-- Verification Badge -->
+    <div *ngIf="restaurant.verificationStatus === 'verified' || restaurant.isVerified === true" class="verified-badge">
+      <i class="fas fa-check-circle"></i>
+      <span>Verified</span>
+    </div>
+
+    <!-- Overlay with Quick Actions -->
+    <div *ngIf="showQuickActions" class="restaurant-overlay">
+      <button class="quick-action-btn favorite-btn" [class.active]="isFavorite" (click)="onFavoriteClick($event)"
+        title="Add to Favorites">
+        <i class="fas fa-heart" [style.color]="isFavorite ? 'white' : '#FF6B35'"></i>
+      </button>
+      <button class="quick-action-btn quick-view-btn" (click)="onQuickViewClick($event)" title="Quick View">
+        <i class="fas fa-eye"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Restaurant Info -->
+  <div class="restaurant-info">
+    <div class="restaurant-header">
+      <h3 class="restaurant-name">{{ restaurantName }}</h3>
+      <div class="rating-badge"
+        *ngIf="(restaurant.ratings && restaurant.ratings.averageRating > 0) || restaurant.rating > 0 || restaurant.averageRating > 0">
+        <i class="fas fa-star"></i>
+        <span>{{ ratingText }}</span>
+      </div>
+      <div class="rating-badge new"
+        *ngIf="(!restaurant.ratings || restaurant.ratings.averageRating === 0) && (!restaurant.rating || restaurant.rating === 0) && (!restaurant.averageRating || restaurant.averageRating === 0)">
+        <i class="fas fa-star-o"></i>
+        <span>New</span>
+      </div>
+    </div>
+
+    <p class="cuisine" *ngIf="cuisineTypes">
+      <i class="fas fa-utensils"></i>
+      {{ cuisineTypes }}
+    </p>
+
+    <p *ngIf="showDescription && restaurant.restaurantDetails?.description" class="description">
+      {{ restaurant.restaurantDetails.description }}
+    </p>
+
+    <p class="address">
+      <i class="fas fa-map-marker-alt"></i>
+      {{ fullAddress }}
+    </p>
+
+    <!-- Restaurant Meta -->
+    <div class="restaurant-meta">
+      <div class="meta-row">
+        <div class="meta-item">
+          <i class="fas fa-star rating-icon"></i>
+          <span class="rating-text">{{ ratingText }}</span>
+          <span class="reviews-text">{{ reviewsText }}</span>
+        </div>
+
+        <div class="meta-item">
+          <i class="fas fa-clock"></i>
+          <span>{{ deliveryTimeText }}</span>
+        </div>
+      </div>
+
+      <div class="meta-row">
+        <div class="meta-item">
+          <i class="fas fa-truck"></i>
+          <span>{{ deliveryFeeText }}</span>
+        </div>
+
+        <div *ngIf="showMinimumOrder && restaurant.restaurantDetails?.minimumOrderAmount" class="meta-item minimum">
+          <i class="fas fa-shopping-bag"></i>
+          <span>Min {{ minimumOrderText }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Footer -->
+    <div class="card-footer">
+      <div class="delivery-info">
+        <span class="delivery-time">
+          <i class="fas fa-motorcycle"></i>
+          {{ deliveryTimeText }}
+        </span>
+        <span class="delivery-fee"
+          [class.free]="(restaurant.restaurantDetails?.deliveryFee ?? restaurant.deliveryFee) === 0">
+          {{ deliveryFeeText }} delivery
+        </span>
+      </div>
+
+      <button class="order-btn" *ngIf="isOpen">
+        <i class="fas fa-plus"></i>
+        Order Now
+      </button>
+      <button class="order-btn closed" *ngIf="!isOpen" disabled>
+        <i class="fas fa-clock"></i>
+        Closed
+      </button>
+    </div>
+  </div>
+</div>

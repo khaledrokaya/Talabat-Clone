@@ -1,0 +1,252 @@
+<div class="restaurant-reviews">
+  <!-- Reviews Header -->
+  <div class="reviews-header">
+    <div class="header-content">
+      <h3>
+        <i class="fas fa-star"></i>
+        التقييمات والمراجعات
+      </h3>
+      
+      @if (currentUser) {
+        <button 
+          class="btn btn-primary btn-sm"
+          (click)="toggleReviewForm()"
+          [disabled]="submitting"
+        >
+          @if (userReview) {
+            <i class="fas fa-edit"></i>
+            <span>تعديل تقييمي</span>
+          } @else {
+            <i class="fas fa-plus"></i>
+            <span>إضافة تقييم</span>
+          }
+        </button>
+      }
+    </div>
+
+    <!-- Rating Summary -->
+    <div class="rating-summary">
+      <div class="average-rating">
+        <div class="rating-number">{{ averageRating | number:'1.1-1' }}</div>
+        <div class="rating-stars">
+          @for (star of getStarArray(Math.round(averageRating)); track $index) {
+            <i class="fas fa-star" [class.filled]="star"></i>
+          }
+        </div>
+        <div class="total-reviews">{{ totalReviews }} تقييم</div>
+      </div>
+
+      <div class="rating-breakdown">
+        @for (count of ratingDistribution; track $index; let i = $index) {
+          <div class="rating-row">
+            <span class="star-label">{{ 5 - i }}</span>
+            <i class="fas fa-star"></i>
+            <div class="rating-bar">
+              <div 
+                class="rating-fill" 
+                [style.width.%]="getRatingPercentage(4 - i)"
+              ></div>
+            </div>
+            <span class="rating-count">{{ count }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Form -->
+  @if (showReviewForm && currentUser) {
+    <div class="review-form-section">
+      <div class="card">
+        <div class="card-header">
+          <h4>
+            @if (userReview) {
+              <i class="fas fa-edit"></i>
+              تعديل تقييمك
+            } @else {
+              <i class="fas fa-star"></i>
+              إضافة تقييم جديد
+            }
+          </h4>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="reviewForm" (ngSubmit)="onSubmitReview()">
+            <!-- Rating Selection -->
+            <div class="form-group">
+              <label class="form-label">التقييم</label>
+              <div class="rating-input">
+                @for (star of [1,2,3,4,5]; track star) {
+                  <button
+                    type="button"
+                    class="star-btn"
+                    [class.active]="star <= reviewForm.get('rating')?.value"
+                    (click)="setRating(star)"
+                  >
+                    <i class="fas fa-star"></i>
+                  </button>
+                }
+                <span class="rating-text">
+                  {{ reviewForm.get('rating')?.value }} من 5 نجوم
+                </span>
+              </div>
+            </div>
+
+            <!-- Comment -->
+            <div class="form-group">
+              <label for="comment" class="form-label">التعليق</label>
+              <textarea
+                id="comment"
+                formControlName="comment"
+                class="form-control"
+                rows="4"
+                placeholder="شاركنا تجربتك مع هذا المطعم..."
+                [class.is-invalid]="reviewForm.get('comment')?.invalid && reviewForm.get('comment')?.touched"
+              ></textarea>
+              @if (reviewForm.get('comment')?.invalid && reviewForm.get('comment')?.touched) {
+                <div class="invalid-feedback">
+                  @if (reviewForm.get('comment')?.errors?.['required']) {
+                    التعليق مطلوب
+                  }
+                  @if (reviewForm.get('comment')?.errors?.['minlength']) {
+                    التعليق يجب أن يكون على الأقل 10 أحرف
+                  }
+                  @if (reviewForm.get('comment')?.errors?.['maxlength']) {
+                    التعليق يجب أن يكون أقل من 500 حرف
+                  }
+                </div>
+              }
+              <div class="character-count">
+                {{ reviewForm.get('comment')?.value?.length || 0 }} / 500
+              </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="reviewForm.invalid || submitting"
+              >
+                @if (submitting) {
+                  <div class="spinner"></div>
+                  <span>جاري الحفظ...</span>
+                } @else {
+                  <i class="fas fa-save"></i>
+                  <span>{{ userReview ? 'تحديث التقييم' : 'إضافة التقييم' }}</span>
+                }
+              </button>
+              
+              <button
+                type="button"
+                class="btn btn-outline"
+                (click)="toggleReviewForm()"
+                [disabled]="submitting"
+              >
+                <i class="fas fa-times"></i>
+                <span>إلغاء</span>
+              </button>
+
+              @if (userReview) {
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  (click)="deleteReview()"
+                  [disabled]="submitting"
+                >
+                  <i class="fas fa-trash"></i>
+                  <span>حذف التقييم</span>
+                </button>
+              }
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Reviews List -->
+  <div class="reviews-list">
+    @if (loading) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>جاري تحميل التقييمات...</p>
+      </div>
+    } @else if (reviews.length === 0) {
+      <div class="empty-state">
+        <i class="fas fa-star-half-alt"></i>
+        <h4>لا توجد تقييمات بعد</h4>
+        <p>كن أول من يقيم هذا المطعم</p>
+        @if (currentUser && !showReviewForm) {
+          <button class="btn btn-primary" (click)="toggleReviewForm()">
+            <i class="fas fa-plus"></i>
+            <span>إضافة تقييم</span>
+          </button>
+        }
+      </div>
+    } @else {
+      @for (review of reviews; track review.id) {
+        <div class="review-item">
+          <div class="review-header">
+            <div class="reviewer-info">
+              <div class="reviewer-avatar">
+                @if (review.user?.profilePicture) {
+                  <img [src]="review.user?.profilePicture" [alt]="review.user?.name || 'مستخدم'">
+                } @else {
+                  <i class="fas fa-user"></i>
+                }
+              </div>
+              <div class="reviewer-details">
+                <h5>{{ review.user?.name || 'مستخدم' }}</h5>
+                <div class="review-meta">
+                  <div class="review-rating">
+                    @for (star of getStarArray(review.rating); track $index) {
+                      <i class="fas fa-star" [class.filled]="star"></i>
+                    }
+                  </div>
+                  <span class="review-date">{{ formatDate(review.createdAt) }}</span>
+                </div>
+              </div>
+            </div>
+            
+            @if (currentUser?.id === review.user?.id) {
+              <div class="review-actions">
+                <button 
+                  class="btn-icon"
+                  (click)="toggleReviewForm()"
+                  title="تعديل"
+                >
+                  <i class="fas fa-edit"></i>
+                </button>
+              </div>
+            }
+          </div>
+
+          <div class="review-content">
+            <p>{{ review.comment }}</p>
+          </div>
+
+          @if (review.reply) {
+            <div class="restaurant-reply">
+              <div class="reply-header">
+                <i class="fas fa-reply"></i>
+                <span>رد من المطعم</span>
+              </div>
+              <p>{{ review.reply }}</p>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Load More Button -->
+  @if (reviews.length > 0 && reviews.length % 10 === 0) {
+    <div class="load-more-section">
+      <button class="btn btn-outline">
+        <i class="fas fa-chevron-down"></i>
+        <span>عرض المزيد</span>
+      </button>
+    </div>
+  }
+</div>
+

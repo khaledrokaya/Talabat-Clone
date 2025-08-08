@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authentication Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .test-section {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .test-section h3 {
+      margin-top: 0;
+      color: #333;
+    }
+
+    .form-group {
+      margin: 10px 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #ff6b35;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+
+    button:hover {
+      background-color: #e55a2e;
+    }
+
+    .response {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #f5f5f5;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      overflow-x: auto;
+    }
+
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Talabat Authentication Test Page</h1>
+
+  <!-- Customer Registration Test -->
+  <div class="test-section">
+    <h3>Customer Registration</h3>
+    <div class="form-group">
+      <label>Email:</label>
+      <input type="email" id="customerEmail" value="john.customer@example.com">
+    </div>
+    <div class="form-group">
+      <label>Password:</label>
+      <input type="password" id="customerPassword" value="SecurePass123">
+    </div>
+    <div class="form-group">
+      <label>First Name:</label>
+      <input type="text" id="customerFirstName" value="John">
+    </div>
+    <div class="form-group">
+      <label>Last Name:</label>
+      <input type="text" id="customerLastName" value="Customer">
+    </div>
+    <div class="form-group">
+      <label>Phone:</label>
+      <input type="text" id="customerPhone" value="+1234567890">
+    </div>
+    <div class="form-group">
+      <label>Street:</label>
+      <input type="text" id="customerStreet" value="123 Main St">
+    </div>
+    <div class="form-group">
+      <label>City:</label>
+      <input type="text" id="customerCity" value="New York">
+    </div>
+    <div class="form-group">
+      <label>State:</label>
+      <input type="text" id="customerState" value="NY">
+    </div>
+    <div class="form-group">
+      <label>Zip Code:</label>
+      <input type="text" id="customerZip" value="10001">
+    </div>
+    <button onclick="registerCustomer()">Register Customer</button>
+    <div id="customerRegResponse" class="response"></div>
+  </div>
+
+  <!-- Restaurant Registration Test -->
+  <div class="test-section">
+    <h3>Restaurant Registration</h3>
+    <div class="form-group">
+      <label>Email:</label>
+      <input type="email" id="restaurantEmail" value="owner@pizzaplace.com">
+    </div>
+    <div class="form-group">
+      <label>Password:</label>
+      <input type="password" id="restaurantPassword" value="SecurePass123">
+    </div>
+    <div class="form-group">
+      <label>First Name:</label>
+      <input type="text" id="restaurantFirstName" value="Mario">
+    </div>
+    <div class="form-group">
+      <label>Last Name:</label>
+      <input type="text" id="restaurantLastName" value="Rossi">
+    </div>
+    <div class="form-group">
+      <label>Phone:</label>
+      <input type="text" id="restaurantPhone" value="+1234567890">
+    </div>
+    <div class="form-group">
+      <label>Restaurant Name:</label>
+      <input type="text" id="restaurantName" value="Mario's Pizza Place">
+    </div>
+    <button onclick="registerRestaurant()">Register Restaurant</button>
+    <div id="restaurantRegResponse" class="response"></div>
+  </div>
+
+  <!-- Login Test -->
+  <div class="test-section">
+    <h3>Login</h3>
+    <div class="form-group">
+      <label>Email:</label>
+      <input type="email" id="loginEmail" value="john.customer@example.com">
+    </div>
+    <div class="form-group">
+      <label>Password:</label>
+      <input type="password" id="loginPassword" value="SecurePass123">
+    </div>
+    <button onclick="login()">Login</button>
+    <div id="loginResponse" class="response"></div>
+  </div>
+
+  <!-- Logout Test -->
+  <div class="test-section">
+    <h3>Logout</h3>
+    <button onclick="logout()">Logout</button>
+    <div id="logoutResponse" class="response"></div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:5000/api';
+
+    async function makeRequest(url, method = 'GET', data = null) {
+      try {
+        const options = {
+          method,
+          credentials: 'include', // Include cookies
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        };
+
+        if (data) {
+          options.body = JSON.stringify(data);
+        }
+
+        const response = await fetch(url, options);
+        const result = await response.json();
+
+        return {
+          status: response.status,
+          data: result
+        };
+      } catch (error) {
+        return {
+          status: 'error',
+          data: { message: error.message }
+        };
+      }
+    }
+
+    function displayResponse(elementId, response) {
+      const element = document.getElementById(elementId);
+      element.textContent = JSON.stringify(response, null, 2);
+
+      if (response.status === 200 || response.status === 201) {
+        element.className = 'response success';
+      } else {
+        element.className = 'response error';
+      }
+    }
+
+    async function registerCustomer() {
+      const data = {
+        email: document.getElementById('customerEmail').value,
+        password: document.getElementById('customerPassword').value,
+        firstName: document.getElementById('customerFirstName').value,
+        lastName: document.getElementById('customerLastName').value,
+        phone: document.getElementById('customerPhone').value,
+        address: {
+          street: document.getElementById('customerStreet').value,
+          city: document.getElementById('customerCity').value,
+          state: document.getElementById('customerState').value,
+          zipCode: document.getElementById('customerZip').value
+        }
+      };
+
+      const response = await makeRequest(`${API_BASE}/auth/register/customer`, 'POST', data);
+      displayResponse('customerRegResponse', response);
+    }
+
+    async function registerRestaurant() {
+      const data = {
+        email: document.getElementById('restaurantEmail').value,
+        password: document.getElementById('restaurantPassword').value,
+        firstName: document.getElementById('restaurantFirstName').value,
+        lastName: document.getElementById('restaurantLastName').value,
+        phone: document.getElementById('restaurantPhone').value,
+        restaurantDetails: {
+          name: document.getElementById('restaurantName').value,
+          description: "Authentic Italian pizza and pasta",
+          cuisineType: ["Italian", "Pizza"],
+          averageDeliveryTime: 30,
+          minimumOrderAmount: 15,
+          deliveryFee: 3.99,
+          serviceRadius: 10
+        },
+        businessInfo: {
+          licenseNumber: "BL123456789",
+          taxId: "TAX987654321"
+        },
+        address: {
+          street: "456 Restaurant Ave",
+          city: "New York",
+          state: "NY",
+          zipCode: "10002"
+        }
+      };
+
+      const response = await makeRequest(`${API_BASE}/auth/register/restaurant`, 'POST', data);
+      displayResponse('restaurantRegResponse', response);
+    }
+
+    async function login() {
+      const data = {
+        email: document.getElementById('loginEmail').value,
+        password: document.getElementById('loginPassword').value
+      };
+
+      const response = await makeRequest(`${API_BASE}/auth/login`, 'POST', data);
+      displayResponse('loginResponse', response);
+    }
+
+    async function logout() {
+      const response = await makeRequest(`${API_BASE}/auth/logout`, 'POST');
+      displayResponse('logoutResponse', response);
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,115 @@
+<div class="checkout-container">
+  <div class="container">
+    <h1>إتمام الطلب</h1>
+    
+    <div class="checkout-content" *ngIf="cart$ | async as cart">
+      <!-- Order Summary -->
+      <div class="order-summary">
+        <h3>ملخص الطلب</h3>
+        <div class="restaurant-info" *ngIf="cart.restaurantName">
+          <h4>{{ cart.restaurantName }}</h4>
+        </div>
+        
+        <div class="order-items">
+          <div class="order-item" *ngFor="let item of cart.items">
+            <span class="item-name">{{ item.productName }}</span>
+            <span class="item-quantity">x{{ item.quantity }}</span>
+            <span class="item-price">{{ item.totalPrice }} ريال</span>
+          </div>
+        </div>
+        
+        <div class="order-total">
+          <div class="total-row">
+            <span>المجموع الفرعي:</span>
+            <span>{{ cart.totalAmount }} ريال</span>
+          </div>
+          <div class="total-row">
+            <span>رسوم التوصيل:</span>
+            <span>10 ريال</span>
+          </div>
+          <div class="total-row final-total">
+            <span>المجموع النهائي:</span>
+            <span>{{ cart.totalAmount + 10 }} ريال</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delivery Address -->
+      <div class="delivery-section">
+        <h3>عنوان التوصيل</h3>
+        
+        <div class="loading" *ngIf="loading">
+          <p>جاري تحميل العناوين...</p>
+        </div>
+        
+        <div class="addresses" *ngIf="!loading && addresses.length > 0">
+          <div class="address-option" *ngFor="let address of addresses" 
+               [class.selected]="selectedAddress === address"
+               (click)="selectedAddress = address">
+            <div class="address-details">
+              <h4>{{ address.label }}</h4>
+              <p>{{ address.street }}, {{ address.city }}</p>
+              <p>{{ address.building }} - {{ address.floor }}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="no-addresses" *ngIf="!loading && addresses.length === 0">
+          <p>لا توجد عناوين محفوظة. يرجى إضافة عنوان من الملف الشخصي.</p>
+          <a routerLink="/profile/addresses" class="btn btn-secondary">إضافة عنوان</a>
+        </div>
+      </div>
+
+      <!-- Payment Method -->
+      <div class="payment-section">
+        <h3>طريقة الدفع</h3>
+        
+        <div class="payment-options">
+          <label class="payment-option">
+            <input type="radio" name="payment" value="cash_on_delivery" 
+                   [(ngModel)]="paymentMethod">
+            <span>الدفع عند الاستلام</span>
+          </label>
+          
+          <label class="payment-option">
+            <input type="radio" name="payment" value="credit_card" 
+                   [(ngModel)]="paymentMethod">
+            <span>بطاقة ائتمان</span>
+          </label>
+          
+          <label class="payment-option">
+            <input type="radio" name="payment" value="wallet" 
+                   [(ngModel)]="paymentMethod">
+            <span>المحفظة الإلكترونية</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Order Notes -->
+      <div class="notes-section">
+        <h3>ملاحظات الطلب (اختياري)</h3>
+        <textarea 
+          [(ngModel)]="notes" 
+          placeholder="أضف أي ملاحظات خاصة للطلب..."
+          class="notes-input">
+        </textarea>
+      </div>
+
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Place Order Button -->
+      <div class="place-order-section">
+        <button 
+          (click)="placeOrder()" 
+          class="btn btn-primary btn-large"
+          [disabled]="!selectedAddress || cart.items.length === 0">
+          تأكيد الطلب - {{ cart.totalAmount + 10 }} ريال
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

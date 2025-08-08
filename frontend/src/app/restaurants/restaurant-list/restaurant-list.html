@@ -1,0 +1,168 @@
+<!-- Restaurant List - Enhanced Talabat Style -->
+<div class="restaurant-list-container" [@fadeInUp]>
+  <div class="container">
+    <!-- Header Section -->
+    <div class="page-header">
+      <h1>Discover Great Food</h1>
+      <p>Find your favorite restaurants and cuisines near you</p>
+    </div>
+
+    <!-- Enhanced Search and Filter Section -->
+    <div class="filters-section">
+      <!-- Main Search Bar -->
+      <div class="search-container">
+        <div class="search-bar">
+          <i class="fas fa-search search-icon"></i>
+          <input type="text" [(ngModel)]="searchQuery" placeholder="Search restaurants, cuisines, or dishes..."
+            class="search-input" (keyup.enter)="applySearch()">
+          <button (click)="applySearch()" class="search-btn">
+            Search
+          </button>
+        </div>
+
+        <!-- Filter Toggles -->
+        <div class="filter-toggles">
+          <button (click)="toggleAdvancedFilters()" class="toggle-filters-btn" [class.active]="showAdvancedFilters">
+            <i class="fas fa-sliders-h filter-icon"></i>
+            Filters
+          </button>
+          <button (click)="clearFilters()" class="clear-btn"
+            *ngIf="searchQuery || filter.cuisine || filter.minRating || filter.isOpen !== undefined">
+            <i class="fas fa-times clear-icon"></i>
+            Clear All
+          </button>
+        </div>
+      </div>
+
+      <!-- Advanced Filters Panel -->
+      <div class="advanced-filters" *ngIf="showAdvancedFilters" [@fadeInUp]>
+        <div class="filters-grid">
+          <!-- Sort Dropdown -->
+          <div class="filter-group">
+            <label>Sort by</label>
+            <div class="dropdown">
+              <button class="dropdown-btn">
+                {{ getCurrentSortLabel() }}
+                <i class="fas fa-chevron-down dropdown-icon"></i>
+              </button>
+              <div class="dropdown-menu">
+                <button *ngFor="let option of sortOptions" (click)="applySorting(option)" class="dropdown-item"
+                  [class.active]="filter.sortBy === option.value && filter.sortOrder === option.order">
+                  {{ option.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rating Filter -->
+          <div class="filter-group">
+            <label>Rating</label>
+            <div class="dropdown">
+              <button class="dropdown-btn">
+                {{ getCurrentRatingLabel() }}
+                <i class="fas fa-chevron-down dropdown-icon"></i>
+              </button>
+              <div class="dropdown-menu">
+                <button *ngFor="let option of ratingOptions" (click)="applyRatingFilter(option.value)"
+                  class="dropdown-item" [class.active]="filter.minRating === option.value">
+                  {{ option.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Open Now Toggle -->
+          <div class="filter-group">
+            <label class="toggle-label">
+              <input type="checkbox" [checked]="filter.isOpen === true" (change)="toggleOpenStatus()"
+                class="toggle-input">
+              <span class="toggle-slider"></span>
+              Open Now
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category Filter -->
+      <div class="category-filters">
+        <h3>Cuisines</h3>
+        <div class="category-scroll">
+          <div class="category-buttons">
+            <button *ngFor="let category of categories" (click)="selectCategory(category)" class="category-btn"
+              [class.active]="isCategorySelected(category)">
+              <span class="category-icon">{{ category.icon }}</span>
+              <span class="category-name">{{ category.name }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Info -->
+    <div class="results-info" *ngIf="!loading">
+      <div class="results-summary">
+        <h4>{{ totalRestaurants }} restaurant{{ totalRestaurants !== 1 ? 's' : '' }} found</h4>
+        <div class="active-filters" *ngIf="filter.cuisine || filter.minRating || filter.isOpen !== undefined">
+          <span class="filter-tag" *ngIf="filter.cuisine">
+            Cuisine: {{ filter.cuisine }}
+            <button (click)="filter.cuisine = undefined; updateQueryParams(); loadRestaurants()">
+              <i class="fas fa-times"></i>
+            </button>
+          </span>
+          <span class="filter-tag" *ngIf="filter.minRating">
+            {{ filter.minRating }}+ stars
+            <button (click)="filter.minRating = undefined; updateQueryParams(); loadRestaurants()">
+              <i class="fas fa-times"></i>
+            </button>
+          </span>
+          <span class="filter-tag" *ngIf="filter.isOpen === true">
+            Open now
+            <button (click)="filter.isOpen = undefined; updateQueryParams(); loadRestaurants()">
+              <i class="fas fa-times"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Loading delicious restaurants...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-container" *ngIf="error && !loading">
+      <div class="error-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <h3>Oops! Something went wrong</h3>
+      <p>{{ error }}</p>
+      <button (click)="retryLoadRestaurants()" class="retry-btn">
+        <i class="fas fa-redo"></i>
+        Try Again
+      </button>
+    </div>
+
+    <!-- Restaurants Grid -->
+    <div class="restaurants-grid" *ngIf="!loading && !error && restaurants.length > 0">
+      <app-restaurant-card *ngFor="let restaurant of restaurants; let i = index; trackBy: trackByRestaurant"
+        [restaurant]="restaurant" [showQuickActions]="true" [showDescription]="true" [showMinimumOrder]="true"
+        cardSize="medium" [style.animation-delay.ms]="i * 100" (favoriteToggle)="onFavoriteToggle($event)"
+        (quickView)="onQuickView($event)">
+      </app-restaurant-card>
+    </div>
+
+    <!-- No Results -->
+    <div class="no-results" *ngIf="!loading && !error && restaurants.length === 0">
+      <div class="no-results-icon">
+        <i class="fas fa-search"></i>
+      </div>
+      <h3>No restaurants found</h3>
+      <p>Try adjusting your search or browse our categories</p>
+      <button (click)="clearFilters()" class="browse-btn">
+        <i class="fas fa-utensils"></i>
+        Browse All Restaurants
+      </button>
+    </div>
+  </div>

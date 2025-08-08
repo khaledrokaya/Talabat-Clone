@@ -1,0 +1,351 @@
+<div class="restaurant-orders-container">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>إدارة الطلبات</h1>
+      <p>متابعة وإدارة طلبات العملاء</p>
+    </div>
+    <div class="header-stats">
+      <div class="stat-item">
+        <span class="stat-number">{{ getTotalOrders() }}</span>
+        <span class="stat-label">إجمالي الطلبات</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">{{ getPendingOrders() }}</span>
+        <span class="stat-label">في الانتظار</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="orders-filters" *ngIf="!isLoading">
+    <div class="filter-tabs">
+      <button
+        class="filter-tab"
+        [class.active]="activeFilter === 'all'"
+        (click)="setFilter('all')"
+      >
+        جميع الطلبات
+        <span class="count">{{ orders.length }}</span>
+      </button>
+      <button
+        class="filter-tab pending"
+        [class.active]="activeFilter === 'pending'"
+        (click)="setFilter('pending')"
+      >
+        في الانتظار
+        <span class="count">{{ getOrdersByStatus('pending').length }}</span>
+      </button>
+      <button
+        class="filter-tab confirmed"
+        [class.active]="activeFilter === 'confirmed'"
+        (click)="setFilter('confirmed')"
+      >
+        مؤكدة
+        <span class="count">{{ getOrdersByStatus('confirmed').length }}</span>
+      </button>
+      <button
+        class="filter-tab preparing"
+        [class.active]="activeFilter === 'preparing'"
+        (click)="setFilter('preparing')"
+      >
+        قيد التحضير
+        <span class="count">{{ getOrdersByStatus('preparing').length }}</span>
+      </button>
+      <button
+        class="filter-tab ready"
+        [class.active]="activeFilter === 'ready'"
+        (click)="setFilter('ready')"
+      >
+        جاهزة للتوصيل
+        <span class="count">{{ getOrdersByStatus('ready').length }}</span>
+      </button>
+      <button
+        class="filter-tab delivered"
+        [class.active]="activeFilter === 'delivered'"
+        (click)="setFilter('delivered')"
+      >
+        تم التوصيل
+        <span class="count">{{ getOrdersByStatus('delivered').length }}</span>
+      </button>
+    </div>
+
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input
+        type="text"
+        placeholder="البحث برقم الطلب أو اسم العميل..."
+        [(ngModel)]="searchTerm"
+        (input)="filterOrders()"
+      />
+    </div>
+  </div>
+
+  <div class="orders-content" *ngIf="!isLoading">
+    <div class="orders-list" *ngIf="filteredOrders.length > 0">
+      <div class="order-card" *ngFor="let order of filteredOrders" [class]="'status-' + order.status">
+        <div class="order-header">
+          <div class="order-info">
+            <div class="order-number">
+              <i class="fas fa-receipt"></i>
+              <span>طلب #{{ order.orderNumber }}</span>
+            </div>
+            <div class="order-time">
+              <i class="fas fa-clock"></i>
+              <span>{{ formatDate(order.createdAt) }}</span>
+            </div>
+          </div>
+          <div class="order-status">
+            <span class="status-badge" [class]="'status-' + order.status">
+              {{ getStatusText(order.status) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="order-customer">
+          <div class="customer-info">
+            <div class="customer-name">
+              <i class="fas fa-user"></i>
+              <span>{{ order.customer?.name || 'غير محدد' }}</span>
+            </div>
+            <div class="customer-phone" *ngIf="order.customer?.phone">
+              <i class="fas fa-phone"></i>
+              <span>{{ order.customer.phone }}</span>
+            </div>
+          </div>
+          <div class="delivery-address" *ngIf="order.deliveryAddress">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>{{ order.deliveryAddress.street }}, {{ order.deliveryAddress.area }}</span>
+          </div>
+        </div>
+
+        <div class="order-items">
+          <h4>تفاصيل الطلب:</h4>
+          <div class="items-list">
+            <div class="item" *ngFor="let item of order.items">
+              <div class="item-info">
+                <span class="item-name">{{ item.product?.name || 'منتج محذوف' }}</span>
+                <span class="item-quantity">× {{ item.quantity }}</span>
+              </div>
+              <div class="item-price">{{ item.price * item.quantity }} ريال</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="order-summary">
+          <div class="summary-row">
+            <span>المجموع الفرعي:</span>
+            <span>{{ order.subtotal }} ريال</span>
+          </div>
+          <div class="summary-row" *ngIf="order.deliveryFee">
+            <span>رسوم التوصيل:</span>
+            <span>{{ order.deliveryFee }} ريال</span>
+          </div>
+          <div class="summary-row total">
+            <span>المجموع الكلي:</span>
+            <span>{{ order.total }} ريال</span>
+          </div>
+        </div>
+
+        <div class="order-actions">
+          <div class="status-actions" *ngIf="order.status !== 'delivered' && order.status !== 'cancelled'">
+            <button
+              class="btn btn-success"
+              *ngIf="order.status === 'pending'"
+              (click)="updateOrderStatus(order._id, 'confirmed')"
+            >
+              <i class="fas fa-check"></i>
+              تأكيد الطلب
+            </button>
+            <button
+              class="btn btn-warning"
+              *ngIf="order.status === 'confirmed'"
+              (click)="updateOrderStatus(order._id, 'preparing')"
+            >
+              <i class="fas fa-utensils"></i>
+              بدء التحضير
+            </button>
+            <button
+              class="btn btn-info"
+              *ngIf="order.status === 'preparing'"
+              (click)="updateOrderStatus(order._id, 'ready')"
+            >
+              <i class="fas fa-check-circle"></i>
+              جاهز للتوصيل
+            </button>
+            <button
+              class="btn btn-primary"
+              *ngIf="order.status === 'ready'"
+              (click)="updateOrderStatus(order._id, 'delivered')"
+            >
+              <i class="fas fa-truck"></i>
+              تم التوصيل
+            </button>
+          </div>
+
+          <div class="additional-actions">
+            <button class="btn btn-outline" (click)="viewOrderDetails(order)">
+              <i class="fas fa-eye"></i>
+              عرض التفاصيل
+            </button>
+            <button
+              class="btn btn-danger"
+              *ngIf="order.status === 'pending'"
+              (click)="cancelOrder(order._id)"
+            >
+              <i class="fas fa-times"></i>
+              إلغاء الطلب
+            </button>
+          </div>
+        </div>
+
+        <div class="order-notes" *ngIf="order.notes">
+          <h5>ملاحظات العميل:</h5>
+          <p>{{ order.notes }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="filteredOrders.length === 0 && orders.length === 0">
+      <div class="empty-icon">
+        <i class="fas fa-clipboard-list"></i>
+      </div>
+      <h3>لا توجد طلبات</h3>
+      <p>لم يتم استلام أي طلبات بعد</p>
+    </div>
+
+    <div class="empty-state" *ngIf="filteredOrders.length === 0 && orders.length > 0">
+      <div class="empty-icon">
+        <i class="fas fa-search"></i>
+      </div>
+      <h3>لا توجد نتائج</h3>
+      <p>لم يتم العثور على طلبات تطابق الفلتر أو البحث المحدد</p>
+      <button class="btn btn-outline" (click)="clearFilters()">
+        <i class="fas fa-times"></i>
+        مسح الفلاتر
+      </button>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+    </div>
+    <p>جاري تحميل الطلبات...</p>
+  </div>
+</div>
+
+<!-- Modal تفاصيل الطلب -->
+<div class="modal-overlay" *ngIf="showOrderModal" (click)="closeOrderModal()">
+  <div class="modal-content large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>تفاصيل الطلب #{{ selectedOrder?.orderNumber }}</h3>
+      <button class="close-btn" (click)="closeOrderModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body" *ngIf="selectedOrder">
+      <div class="order-details-grid">
+        <div class="detail-section">
+          <h4>معلومات الطلب</h4>
+          <div class="detail-item">
+            <span class="label">رقم الطلب:</span>
+            <span class="value">#{{ selectedOrder.orderNumber }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">تاريخ الطلب:</span>
+            <span class="value">{{ formatDate(selectedOrder.createdAt) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">الحالة:</span>
+            <span class="value status-badge" [class]="'status-' + selectedOrder.status">
+              {{ getStatusText(selectedOrder.status) }}
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="label">طريقة الدفع:</span>
+            <span class="value">{{ selectedOrder.paymentMethod === 'cash' ? 'نقداً' : 'بطاقة ائتمان' }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h4>معلومات العميل</h4>
+          <div class="detail-item">
+            <span class="label">الاسم:</span>
+            <span class="value">{{ selectedOrder.customer?.name || 'غير محدد' }}</span>
+          </div>
+          <div class="detail-item" *ngIf="selectedOrder.customer?.phone">
+            <span class="label">الهاتف:</span>
+            <span class="value">{{ selectedOrder.customer.phone }}</span>
+          </div>
+          <div class="detail-item" *ngIf="selectedOrder.customer?.email">
+            <span class="label">البريد الإلكتروني:</span>
+            <span class="value">{{ selectedOrder.customer.email }}</span>
+          </div>
+        </div>
+
+        <div class="detail-section full-width" *ngIf="selectedOrder.deliveryAddress">
+          <h4>عنوان التوصيل</h4>
+          <div class="address-details">
+            <p>{{ selectedOrder.deliveryAddress.street }}, {{ selectedOrder.deliveryAddress.building }}</p>
+            <p *ngIf="selectedOrder.deliveryAddress.floor || selectedOrder.deliveryAddress.apartment">
+              <span *ngIf="selectedOrder.deliveryAddress.floor">الطابق {{ selectedOrder.deliveryAddress.floor }}</span>
+              <span *ngIf="selectedOrder.deliveryAddress.apartment">, شقة {{ selectedOrder.deliveryAddress.apartment }}</span>
+            </p>
+            <p>{{ selectedOrder.deliveryAddress.area }}, {{ selectedOrder.deliveryAddress.city }}</p>
+            <p *ngIf="selectedOrder.deliveryAddress.notes">
+              <strong>ملاحظات:</strong> {{ selectedOrder.deliveryAddress.notes }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="order-items-detailed">
+        <h4>تفاصيل الأصناف</h4>
+        <div class="items-table">
+          <div class="table-header">
+            <span>الصنف</span>
+            <span>الكمية</span>
+            <span>السعر</span>
+            <span>المجموع</span>
+          </div>
+          <div class="table-row" *ngFor="let item of selectedOrder.items">
+            <span class="item-name">{{ item.product?.name || 'منتج محذوف' }}</span>
+            <span class="item-quantity">{{ item.quantity }}</span>
+            <span class="item-price">{{ item.price }} ريال</span>
+            <span class="item-total">{{ item.price * item.quantity }} ريال</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="order-summary-detailed">
+        <div class="summary-row">
+          <span>المجموع الفرعي:</span>
+          <span>{{ selectedOrder.subtotal }} ريال</span>
+        </div>
+        <div class="summary-row" *ngIf="selectedOrder.deliveryFee">
+          <span>رسوم التوصيل:</span>
+          <span>{{ selectedOrder.deliveryFee }} ريال</span>
+        </div>
+        <div class="summary-row total">
+          <span>المجموع الكلي:</span>
+          <span>{{ selectedOrder.total }} ريال</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" (click)="closeOrderModal()">
+        إغلاق
+      </button>
+      <button
+        class="btn btn-primary"
+        *ngIf="selectedOrder?.status !== 'delivered' && selectedOrder?.status !== 'cancelled'"
+        (click)="getNextStatusAction(selectedOrder)"
+      >
+        <i [class]="getNextStatusIcon(selectedOrder?.status)"></i>
+        {{ getNextStatusText(selectedOrder?.status) }}
+      </button>
+    </div>
+  </div>
+</div>
+

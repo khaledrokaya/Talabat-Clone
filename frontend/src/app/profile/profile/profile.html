@@ -1,0 +1,46 @@
+<div class="profile-container">
+  <div class="container">
+    <h1>Profile</h1>
+
+    <div class="profile-content" *ngIf="currentUser$ | async as user">
+      <!-- User Info Card -->
+      <div class="user-info-card">
+        <div class="user-avatar">
+          <div class="avatar-placeholder">
+            {{ (user.firstName || user.name || user.email).charAt(0).toUpperCase() }}
+          </div>
+        </div>
+        <div class="user-details">
+          <h2>{{ user.firstName && user.lastName ? user.firstName + ' ' + user.lastName : user.name || user.email }}
+          </h2>
+          <p class="user-email">{{ user.email }}</p>
+          <p class="user-role">{{ getRoleText(user.role) }}</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs for Profile Sections -->
+      <div class="profile-navigation">
+        <nav class="nav nav-tabs">
+          <a routerLink="/profile/personal-data" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-info-circle-fill"></i> Personal Data
+          </a>
+          <a routerLink="/profile/password" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-lock-fill"></i> Password
+          </a>
+          <a routerLink="/profile/favorites" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-heart-fill"></i> Favorites
+          </a>
+          <a routerLink="/profile/orders" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-archive-fill"></i> My Orders
+          </a>
+        </nav>
+      </div>
+
+      <!-- Content Area -->
+      <div class="profile-main">
+        <router-outlet></router-outlet>
+      </div>
+
+    </div>
+  </div>
+</div>

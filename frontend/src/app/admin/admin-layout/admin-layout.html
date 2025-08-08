@@ -1,0 +1,91 @@
+<div class="admin-layout">
+  <!-- Top Navigation Bar -->
+  <nav class="admin-navbar">
+    <div class="navbar-content">
+      <div class="navbar-left">
+        <button class="sidebar-toggle" (click)="toggleSidebar()">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="logo-section">
+          <h4 class="mb-0">
+            <i class="fas fa-shield-alt text-primary"></i>
+            Admin Panel
+          </h4>
+        </div>
+      </div>
+
+      <div class="navbar-right">
+        <div class="admin-info">
+          <div class="admin-details">
+            <span class="admin-name">{{ currentAdmin?.firstName }} {{ currentAdmin?.lastName }}</span>
+            <small class="admin-role">Administrator</small>
+          </div>
+          <div class="admin-avatar">
+            <i class="fas fa-user-shield"></i>
+          </div>
+        </div>
+
+        <div class="navbar-actions">
+          <button class="btn btn-outline-light btn-sm me-2" (click)="goToMainSite()" title="Go to Main Site">
+            <i class="fas fa-home"></i>
+          </button>
+          <button class="btn btn-outline-danger btn-sm" (click)="logout()" title="Logout">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="admin-body">
+    <!-- Sidebar Navigation -->
+    <aside class="admin-sidebar" [class.collapsed]="isSidebarCollapsed">
+      <div class="sidebar-content">
+        <nav class="sidebar-nav">
+          <div class="nav-section">
+            <h6 class="nav-section-title">Main</h6>
+            <div *ngFor="let item of adminNavItems.slice(0, 3)" class="nav-item" [class.active]="activeTab === item.id"
+              (click)="setActiveTab(item.id)">
+              <div class="nav-link">
+                <i [class]="item.icon"></i>
+                <span class="nav-text">{{ item.label }}</span>
+                <small class="nav-description" *ngIf="!isSidebarCollapsed">{{ item.description }}</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="nav-section">
+            <h6 class="nav-section-title">Management</h6>
+            <div *ngFor="let item of adminNavItems.slice(3, 6)" class="nav-item" [class.active]="activeTab === item.id"
+              (click)="setActiveTab(item.id)">
+              <div class="nav-link">
+                <i [class]="item.icon"></i>
+                <span class="nav-text">{{ item.label }}</span>
+                <small class="nav-description" *ngIf="!isSidebarCollapsed">{{ item.description }}</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="nav-section">
+            <h6 class="nav-section-title">System</h6>
+            <div *ngFor="let item of adminNavItems.slice(6)" class="nav-item" [class.active]="activeTab === item.id"
+              (click)="setActiveTab(item.id)">
+              <div class="nav-link">
+                <i [class]="item.icon"></i>
+                <span class="nav-text">{{ item.label }}</span>
+                <small class="nav-description" *ngIf="!isSidebarCollapsed">{{ item.description }}</small>
+              </div>
+            </div>
+          </div>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="admin-main">
+      <div class="main-content">
+        <router-outlet></router-outlet>
+      </div>
+    </main>
+  </div>
+</div>

@@ -1,0 +1,49 @@
+<div class="login-container">
+  <!-- Professional Background Icons -->
+  <div class="professional-icons">
+    <div class="pro-icon"><i class="fas fa-utensils"></i></div>
+    <div class="pro-icon"><i class="fas fa-shipping-fast"></i></div>
+    <div class="pro-icon"><i class="fas fa-store"></i></div>
+    <div class="pro-icon"><i class="fas fa-clock"></i></div>
+    <div class="pro-icon"><i class="fas fa-star"></i></div>
+    <div class="pro-icon"><i class="fas fa-heart"></i></div>
+    <div class="pro-icon"><i class="fas fa-credit-card"></i></div>
+    <div class="pro-icon"><i class="fas fa-mobile-alt"></i></div>
+    <div class="pro-icon"><i class="fas fa-map-marker-alt"></i></div>
+    <div class="pro-icon"><i class="fas fa-shield-alt"></i></div>
+    <div class="pro-icon"><i class="fas fa-trophy"></i></div>
+    <div class="pro-icon"><i class="fas fa-thumbs-up"></i></div>
+  </div>
+
+  <div class="login-card">
+    <h2>Login</h2>
+
+    <form (ngSubmit)="onLogin()" #loginForm="ngForm">
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" [(ngModel)]="email" required email class="form-control"
+          placeholder="Enter your email" [disabled]="isLoading">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" [(ngModel)]="password" required minlength="6"
+          class="form-control" placeholder="Enter your password" [disabled]="isLoading">
+      </div>
+
+      <div class="error-message" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <button type="submit" class="btn btn-primary" [disabled]="!loginForm.form.valid || isLoading">
+        <span *ngIf="isLoading" class="spinner"></span>
+        {{ isLoading ? 'Logging in...' : 'Login' }}
+      </button>
+    </form>
+
+    <div class="login-links">
+      <a routerLink="/auth/register">Don't have an account? Register now</a>
+      <a routerLink="/auth/forgot-password">Forgot your password?</a>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,67 @@
+<div class="favorites-container">
+  <div class="favorites-header">
+    <h2>Favorite Restaurants</h2>
+    <p>List of restaurants you've added to your favorites</p>
+  </div>
+
+  <!-- Success/Error Messages -->
+  <div class="message success" *ngIf="successMessage">
+    <i class="fas fa-check-circle"></i>
+    {{ successMessage }}
+  </div>
+
+  <div class="message error" *ngIf="errorMessage">
+    <i class="fas fa-exclamation-circle"></i>
+    {{ errorMessage }}
+  </div>
+
+  <div class="favorites-content" *ngIf="!isLoading">
+    <div class="empty-state" *ngIf="favorites.length === 0">
+      <div class="empty-icon">
+        <i class="fas fa-heart"></i>
+      </div>
+      <h3>No Favorite Restaurants</h3>
+      <p>You haven't added any restaurants to your favorites yet</p>
+      <button class="btn btn-primary" (click)="browseRestaurants()">
+        <i class="fas fa-search"></i>
+        Browse Restaurants
+      </button>
+    </div>
+
+    <div class="favorites-grid" *ngIf="favorites.length > 0">
+      <app-restaurant-card *ngFor="let restaurant of favorites; trackBy: trackByRestaurant" [restaurant]="restaurant"
+        [showDescription]="true" [showMinimumOrder]="true" [cardSize]="'medium'" [showPromotedBadge]="false"
+        [showQuickActions]="true" (favoriteToggle)="onFavoriteToggle($event)" (quickView)="onQuickView($event)">
+      </app-restaurant-card>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+    </div>
+    <p>Loading favorite restaurants...</p>
+  </div>
+</div>
+
+<!-- Remove confirmation modal -->
+<div class="modal-overlay" *ngIf="showRemoveModal" (click)="cancelRemove()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Remove from Favorites</h3>
+      <button class="close-btn" (click)="cancelRemove()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to remove this restaurant from your favorites?</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" (click)="cancelRemove()">Cancel</button>
+      <button class="btn btn-danger" (click)="confirmRemove()">
+        <i class="fas fa-trash"></i>
+        Remove
+      </button>
+    </div>
+  </div>
+</div>

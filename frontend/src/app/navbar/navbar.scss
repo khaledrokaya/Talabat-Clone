@@ -1,0 +1,212 @@
+/* Talabat Navbar Styles */
+.navbar {
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+  box-shadow: 0 2px 16px rgba(255, 107, 53, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  .navbar-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+    height: 72px;
+  }
+
+  .navbar-brand {
+    .brand-link {
+      color: white;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      h2 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 28px;
+        letter-spacing: -0.5px;
+      }
+    }
+  }
+
+  .navbar-menu {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+
+  .navbar-start {
+    display: flex;
+    gap: 24px;
+  }
+
+  .navbar-item {
+    color: white;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+  }
+
+  .navbar-end {
+    .buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      font-size: 14px;
+
+      &.is-primary {
+        background-color: white;
+        color: #FF6B35;
+
+        &:hover {
+          background-color: #f8f9fa;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+      }
+
+      &.is-light {
+        background-color: transparent;
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+
+        &:hover {
+          background-color: white;
+          color: #FF6B35;
+          border-color: white;
+          transform: translateY(-1px);
+        }
+      }
+    }
+  }
+
+  .has-dropdown {
+    position: relative;
+
+    .navbar-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .user-role {
+        font-size: 12px;
+        opacity: 0.8;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-weight: 500;
+      }
+    }
+
+    .navbar-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: white;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      border-radius: 12px;
+      min-width: 220px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.2s ease;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      z-index: 10000;
+      /* Ensure dropdown appears above all other content */
+
+      .navbar-item {
+        color: #2E3440;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        white-space: nowrap;
+        margin: 8px;
+        border-radius: 8px;
+
+        &:hover {
+          background-color: #f8f9fa;
+          color: #FF6B35;
+        }
+
+        i {
+          width: 16px;
+          font-size: 16px;
+        }
+      }
+
+      .navbar-divider {
+        margin: 8px 16px;
+        border: none;
+        border-top: 1px solid #f0f0f0;
+      }
+    }
+
+    &:hover .navbar-dropdown,
+    &.is-active .navbar-dropdown {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    /* Force show on click for mobile/touch devices */
+    &.show-dropdown .navbar-dropdown {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .navbar {
+    .navbar-container {
+      padding: 0 16px;
+      height: 64px;
+    }
+
+    .navbar-menu {
+      gap: 16px;
+    }
+
+    .navbar-start {
+      display: none; // Hide navigation links on mobile
+    }
+
+    .navbar-brand {
+      .brand-link h2 {
+        font-size: 24px;
+      }
+    }
+
+    .has-dropdown {
+      .navbar-dropdown {
+        right: -20px;
+        min-width: 200px;
+      }
+    }
+  }
+}

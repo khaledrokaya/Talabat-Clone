@@ -1,0 +1,30 @@
+# Build output
+dist/
+build/
+out/
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.*
+
+# Coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Lock files
+package-lock.json
+yarn.lock
+
+# OS generated files
+.DS_Store
+Thumbs.db

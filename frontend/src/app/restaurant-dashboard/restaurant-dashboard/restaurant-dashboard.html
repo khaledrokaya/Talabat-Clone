@@ -1,0 +1,298 @@
+<div class="restaurant-dashboard">
+  <div class="container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+      <div class="header-content">
+        <div class="welcome-section">
+          <h1>
+            <i class="fas fa-chart-line"></i>
+            Restaurant Dashboard
+          </h1>
+          <p>Welcome {{ currentUser?.name }}, here's an overview of your restaurant performance</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" routerLink="/restaurant-dashboard/meals-management">
+            <i class="fas fa-utensils"></i>
+            <span>Manage Meals</span>
+          </button>
+          <button class="btn btn-secondary" routerLink="/restaurant-dashboard/orders-management">
+            <i class="fas fa-shopping-bag"></i>
+            <span>Manage Orders</span>
+          </button>
+          <button class="btn btn-outline" (click)="refreshDashboard()">
+            <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
+            <span>Refresh Data</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    @if (loading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading data...</p>
+    </div>
+    } @else {
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <div class="stat-card revenue">
+        <div class="stat-icon">
+          <i class="fas fa-dollar-sign"></i>
+        </div>
+        <div class="stat-content">
+          <h3>{{ (dashboardData.totalRevenue || 0) | currency:'EGP':'symbol':'1.0-0' }}</h3>
+          <p>Total Revenue</p>
+          <div class="stat-change neutral">
+            <i class="fas fa-info-circle"></i>
+            <span>{{ (dashboardData.totalRevenue || 0) > 0 ? 'This Month' : 'No Revenue' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card orders">
+        <div class="stat-icon">
+          <i class="fas fa-shopping-bag"></i>
+        </div>
+        <div class="stat-content">
+          <h3>{{ dashboardData.totalOrders || 0 }}</h3>
+          <p>Total Orders</p>
+          <div class="stat-change neutral">
+            <i class="fas fa-info-circle"></i>
+            <span>{{ (dashboardData.totalOrders || 0) > 0 ? 'Total Processed' : 'No Orders' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card rating">
+        <div class="stat-icon">
+          <i class="fas fa-star"></i>
+        </div>
+        <div class="stat-content">
+          <h3>{{ (dashboardData.averageRating || 0) | number:'1.1-1' }}</h3>
+          <p>Average Rating</p>
+          <div class="stat-change neutral">
+            <i class="fas fa-info-circle"></i>
+            <span>{{ (dashboardData.averageRating || 0) > 0 ? 'Customer Rating' : 'No Ratings' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card customers">
+        <div class="stat-icon">
+          <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-content">
+          <h3>{{ dashboardData.totalCustomers || 0 }}</h3>
+          <p>Unique Customers</p>
+          <div class="stat-change neutral">
+            <i class="fas fa-info-circle"></i>
+            <span>{{ (dashboardData.totalCustomers || 0) > 0 ? 'Customer Base' : 'No Customers' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="dashboard-grid">
+      <!-- Recent Orders -->
+      <div class="dashboard-card recent-orders">
+        <div class="card-header">
+          <h3>
+            <i class="fas fa-clock"></i>
+            Recent Orders
+          </h3>
+          <a routerLink="/restaurant-dashboard/orders-management" class="view-all-link">
+            View All
+            <i class="fas fa-arrow-right"></i>
+          </a>
+        </div>
+        <div class="card-body">
+          @if (!recentOrders || recentOrders.length === 0) {
+          <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <p>No recent orders</p>
+            <small>New orders will appear here when customers place them</small>
+          </div>
+          } @else {
+          <div class="orders-list">
+            @for (order of recentOrders; track order.id) {
+            <div class="order-item">
+              <div class="order-info">
+                <div class="order-id">#{{ order.orderNumber }}</div>
+                <div class="customer-name">{{ order.customer?.name }}</div>
+                <div class="order-time">{{ formatDate(order.createdAt) }}</div>
+              </div>
+              <div class="order-details">
+                <div class="order-total">{{ order.total | currency:'EGP':'symbol':'1.0-0' }}</div>
+                <div class="order-status">
+                  <span class="status-badge" [class]="'status-' + order.status">
+                    {{ getStatusText(order.status) }}
+                  </span>
+                </div>
+              </div>
+              <div class="order-actions">
+                <button class="btn-icon" (click)="updateOrderStatus(order.id || '', getNextStatus(order.status))">
+                  <i class="fas fa-check"></i>
+                </button>
+                <button class="btn-icon" (click)="viewOrderDetails(order.id || '')">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            }
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- Revenue Chart -->
+      <div class="dashboard-card revenue-chart">
+        <div class="card-header">
+          <h3>
+            <i class="fas fa-chart-area"></i>
+            Revenue & Analytics
+          </h3>
+          <div class="chart-controls">
+            <select class="form-select" [(ngModel)]="selectedPeriod" (change)="updateChart()">
+              <option value="7days">Last 7 Days</option>
+              <option value="30days">Last 30 Days</option>
+              <option value="3months">Last 3 Months</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="analytics-summary">
+            <div class="analytics-period">
+              <i class="fas fa-calendar-alt"></i>
+              <span>Period: {{ getAnalyticsPeriod() || 'N/A' }}</span>
+            </div>
+
+            <div class="analytics-grid">
+              <div class="analytics-item">
+                <div class="analytics-icon">
+                  <i class="fas fa-utensils"></i>
+                </div>
+                <div class="analytics-content">
+                  <h4>{{ getTotalMeals() || 0 }}</h4>
+                  <p>Total Meals</p>
+                  <small>Active: {{ getActiveMeals() || 0 }} | Inactive: {{ getInactiveMeals() || 0 }}</small>
+                </div>
+              </div>
+
+              <div class="analytics-item">
+                <div class="analytics-icon">
+                  <i class="fas fa-star"></i>
+                </div>
+                <div class="analytics-content">
+                  <h4>
+                    {{ (analyticsData?.restaurant?.rating || 0) | number:'1.1-1' }}
+                  </h4>
+                  <p>Current Rating</p>
+                  <small>{{ analyticsData?.restaurant?.totalReviews || 0 }} reviews</small>
+                </div>
+              </div>
+
+              <div class="analytics-item">
+                <div class="analytics-icon">
+                  <i class="fas fa-shopping-bag"></i>
+                </div>
+                <div class="analytics-content">
+                  <h4>{{ analyticsData?.orders?.total || 0 }}</h4>
+                  <p>Orders in Period</p>
+                  <small>Completed: {{ analyticsData?.orders?.completed || 0 }} | Cancelled: {{
+                    analyticsData?.orders?.cancelled || 0 }}</small>
+                </div>
+              </div>
+
+              <div class="analytics-item">
+                <div class="analytics-icon">
+                  <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="analytics-content">
+                  <h4>{{ (analyticsData?.revenue?.total || 0) | currency:'EGP':'symbol':'1.0-0' }}</h4>
+                  <p>Period Revenue</p>
+                  <small>
+                    Daily Average: {{ ((analyticsData?.revenue?.total || 0) / (getPeriodDays() || 1)) |
+                    currency:'EGP':'symbol':'1.0-0' }}
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Products -->
+    <div class="dashboard-card top-products">
+      <div class="card-header">
+        <h3>
+          <i class="fas fa-trophy"></i>
+          Best Selling Products
+        </h3>
+      </div>
+      <div class="card-body">
+        @if (!topProducts || topProducts.length === 0) {
+        <div class="empty-state">
+          <i class="fas fa-utensils"></i>
+          <p>No products available</p>
+          <small>Add some meals to see your best selling products here</small>
+        </div>
+        } @else {
+        <div class="products-list">
+          @for (product of topProducts; track product.id; let i = $index) {
+          <div class="product-item">
+            <div class="product-rank">{{ i + 1 }}</div>
+            <div class="product-image">
+              @if (product.image) {
+              <img [src]="product.image" [alt]="product.name">
+              } @else {
+              <i class="fas fa-utensils"></i>
+              }
+            </div>
+            <div class="product-info">
+              <h4>{{ product.name }}</h4>
+              <p>{{ product.soldCount }} sold</p>
+            </div>
+            <div class="product-revenue">
+              {{ product.revenue | currency:'EGP':'symbol':'1.0-0' }}
+            </div>
+          </div>
+          }
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="dashboard-card quick-actions">
+      <div class="card-header">
+        <h3>
+          <i class="fas fa-bolt"></i>
+          Quick Actions
+        </h3>
+      </div>
+      <div class="card-body">
+        <div class="actions-grid">
+          <button class="action-btn" routerLink="/restaurant-dashboard/meals-management">
+            <i class="fas fa-plus"></i>
+            <span>Add Meal</span>
+          </button>
+          <button class="action-btn" routerLink="/restaurant-dashboard/orders-management">
+            <i class="fas fa-list"></i>
+            <span>Manage Orders</span>
+          </button>
+          <button class="action-btn" (click)="toggleRestaurantStatus()">
+            <i class="fas" [class.fa-play]="!restaurantStatus" [class.fa-pause]="restaurantStatus"></i>
+            <span>{{ restaurantStatus ? 'Close' : 'Open' }} Restaurant</span>
+          </button>
+          <button class="action-btn" (click)="downloadReport()">
+            <i class="fas fa-download"></i>
+            <span>Download Report</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+</div>

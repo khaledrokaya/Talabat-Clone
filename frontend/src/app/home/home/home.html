@@ -1,0 +1,327 @@
+<div class="home-container">
+  <!-- Hero Section -->
+  <section class="hero">
+    <!-- Professional Background Icons -->
+    <div class="professional-icons">
+      <div class="pro-icon"><i class="fas fa-utensils"></i></div>
+      <div class="pro-icon"><i class="fas fa-shipping-fast"></i></div>
+      <div class="pro-icon"><i class="fas fa-store"></i></div>
+      <div class="pro-icon"><i class="fas fa-clock"></i></div>
+      <div class="pro-icon"><i class="fas fa-star"></i></div>
+      <div class="pro-icon"><i class="fas fa-heart"></i></div>
+      <div class="pro-icon"><i class="fas fa-credit-card"></i></div>
+      <div class="pro-icon"><i class="fas fa-mobile-alt"></i></div>
+      <div class="pro-icon"><i class="fas fa-map-marker-alt"></i></div>
+      <div class="pro-icon"><i class="fas fa-shield-alt"></i></div>
+      <div class="pro-icon"><i class="fas fa-trophy"></i></div>
+      <div class="pro-icon"><i class="fas fa-thumbs-up"></i></div>
+    </div>
+
+    <div class="hero-content" [@fadeInUp]>
+      <h1>Order Your Favorite Food Now</h1>
+      <p>Fastest food delivery service in the city with over 1000+ restaurants and lightning-fast
+        delivery</p>
+      <div class="search-bar">
+        <input type="text" placeholder="Search for restaurant or meal..." [(ngModel)]="searchQuery"
+          (keyup.enter)="searchRestaurants()" #searchInput>
+        <button class="search-btn" (click)="searchRestaurants()">
+          <i class="fas fa-search"></i>
+          Search
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories -->
+  <section class="categories" [@fadeInUp]>
+    <div class="container">
+      <h2>Browse by Category</h2>
+      <div class="categories-grid">
+        @for (category of categories; track category.value; let i = $index) {
+        <div class="category-card" [@staggeredFadeIn]="i" (click)="onCategoryClick(category)"
+          [class.active]="selectedCategory === category.value">
+          <div class="category-icon">{{ category.icon }}</div>
+          <h3>{{ category.name }}</h3>
+        </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Restaurants -->
+  <section class="featured-restaurants" [@fadeInUp]>
+    <div class="container">
+      <div class="section-header">
+        <h2>Featured Restaurants</h2>
+        <button routerLink="/restaurants" class="btn btn-outline view-all-btn">
+          View All
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Loading State -->
+      @if (loading) {
+      <div class="loading" [@pulse]>
+        <div class="loading-spinner"></div>
+        <p>Loading delicious restaurants...</p>
+      </div>
+      }
+
+      <!-- Error State -->
+      @if (!loading && error) {
+      <div class="error-state" [@fadeInUp]>
+        <h3>Oops! Something went wrong</h3>
+        <p>{{ error }}</p>
+        <button class="btn btn-primary" (click)="loadRestaurants()">Try Again</button>
+      </div>
+      }
+
+      <!-- Restaurants Grid -->
+      @if (!loading && !error && featuredRestaurants.length > 0) {
+      <div class="restaurants-grid mt-3">
+        @for (restaurant of featuredRestaurants; track restaurant._id; let i = $index) {
+        <app-restaurant-card [restaurant]="restaurant" [showDescription]="true" [showMinimumOrder]="true"
+          [cardSize]="'medium'" [showPromotedBadge]="true" [showQuickActions]="true"
+          (favoriteToggle)="onFavoriteToggle($event)" (quickView)="onQuickView($event)" [@staggeredSlideIn]="i">
+        </app-restaurant-card>
+        }
+
+
+
+        <!-- Empty State -->
+        @if (!loading && !error && featuredRestaurants.length === 0) {
+        <div class="empty-state" [@fadeInUp]>
+          <div class="empty-icon">
+            <i class="fas fa-store"></i>
+          </div>
+          <h3>No restaurants available</h3>
+          <p>We're working on bringing more restaurants to your area!</p>
+          <button class="btn btn-primary" (click)="loadRestaurants()">Refresh</button>
+        </div>
+        }
+      </div>
+      }
+    </div>
+  </section>
+
+  <!-- Quick Stats -->
+  <section class="quick-stats enhanced-ui" [@fadeInUp]>
+    <div class="container">
+      <div class="section-header">
+        <h2>
+          Platform Statistics
+        </h2>
+        <p>See why thousands of customers trust Talabat for their food delivery needs</p>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card hover-scale enhanced-card" [@scaleIn]>
+          <div class="stat-icon gradient-bg">
+            <i class="fas fa-store"></i>
+          </div>
+          <div class="stat-content">
+            <h3 class="stat-title">{{ totalRestaurants }}+</h3>
+            <p class="stat-description">Partner Restaurants</p>
+            <small class="stat-subtitle">Across the city and growing</small>
+          </div>
+        </div>
+        <div class="stat-card hover-scale enhanced-card" [@scaleIn]>
+          <div class="stat-icon gradient-bg">
+            <i class="fas fa-shipping-fast"></i>
+          </div>
+          <div class="stat-content">
+            <h3 class="stat-title">{{ getAverageDeliveryTime() }}</h3>
+            <p class="stat-description">Avg Delivery Time</p>
+            <small class="stat-subtitle">Minutes - Fast & reliable service</small>
+          </div>
+        </div>
+        <div class="stat-card hover-scale enhanced-card" [@scaleIn]>
+          <div class="stat-icon gradient-bg">
+            <i class="fas fa-star"></i>
+          </div>
+          <div class="stat-content">
+            <h3 class="stat-title">{{ getOverallAverageRating() }}</h3>
+            <p class="stat-description">Customer Rating</p>
+            <small class="stat-subtitle">Out of 5 - Highly satisfied customers</small>
+          </div>
+        </div>
+        <div class="stat-card hover-scale enhanced-card" [@scaleIn]>
+          <div class="stat-icon gradient-bg">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="stat-content">
+            <h3 class="stat-title">24/7</h3>
+            <p class="stat-description">Service Available</p>
+            <small class="stat-subtitle">Always here when you need us</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Meals Section -->
+  <section class="featured-meals" [@fadeInUp]>
+    <div class="container">
+      <div class="section-header">
+        <h2>Featured Dishes</h2>
+        <p>Discover the most popular and highly-rated dishes from our restaurants</p>
+      </div>
+
+      <!-- Loading State for Meals -->
+      @if (mealsLoading) {
+      <div class="loading" [@pulse]>
+        <div class="spinner"></div>
+        <p>Loading delicious meals...</p>
+      </div>
+      }
+
+      <!-- Meals Grid -->
+      @if (!mealsLoading && featuredMeals.length > 0) {
+      <div class="meals-grid">
+        @for (meal of featuredMeals; track meal.id || meal._id; let i = $index) {
+        <div class="meal-card" [@staggeredFadeIn]="getAnimationDelay(i)">
+          <div class="meal-image">
+            <img *ngIf="meal.imageUrl" [src]="meal.imageUrl" [alt]="meal.name" (error)="onImageError($event)">
+            @if (meal.discount) {
+            <div class="meal-badge">
+              <span>{{ meal.discount.percentage }}% OFF</span>
+            </div>
+            }
+            <div class="meal-overlay">
+              <button class="add-to-cart-btn" [@scaleIn]>
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+          </div>
+          <div class="meal-info">
+            <h4>{{ meal.name }}</h4>
+            <p class="meal-restaurant">
+              <i class="fas fa-store"></i>
+              {{ meal.restaurant?.name }}
+            </p>
+            <div class="meal-meta">
+              @if (meal.rating) {
+              <div class="rating">
+                <i class="fas fa-star"></i>
+                <span>{{ meal.rating | number:'1.1-1' }}</span>
+              </div>
+              }
+              @if (meal.preparationTime) {
+              <div class="preparation-time">
+                <i class="fas fa-clock"></i>
+                <span>{{ meal.preparationTime }} min</span>
+              </div>
+              }
+            </div>
+            <div class="meal-price">
+              <span class="current-price">${{ meal.price | number:'1.2-2' }}</span>
+              @if (meal.discount) {
+              <span class="original-price">${{ (meal.price / (1 - meal.discount.percentage / 100)) | number:'1.2-2'
+                }}</span>
+              }
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+      }
+
+      @if (!mealsLoading && featuredMeals.length > 0) {
+      <div class="view-all">
+        <a routerLink="/restaurants" class="btn-outline">
+          <i class="fas fa-utensils"></i>
+          Explore All Restaurants
+        </a>
+      </div>
+      } @else if (!mealsLoading && featuredMeals.length === 0) {
+      <div class="empty-state" [@fadeInUp]>
+        <h3>No featured meals available</h3>
+        <p>We're working on adding delicious featured dishes for you!</p>
+        <a routerLink="/restaurants" class="btn btn-primary">Browse Restaurants</a>
+      </div>
+      }
+    </div>
+  </section>
+
+  <!-- Top Rated Section -->
+  <section class="top-rated" [@fadeInUp]>
+    <div class="container">
+      <div class="section-header">
+        <h2>Featured Restaurants</h2>
+        <p>Discover amazing restaurants in your area</p>
+      </div>
+
+      @if (topRatedRestaurants.length > 0) {
+      <div class="top-rated-grid">
+        @for (restaurant of topRatedRestaurants; track restaurant._id || restaurant.id; let i = $index) {
+        <div class="top-restaurant-card" [@staggeredSlideIn]="getAnimationDelay(i)">
+          <div class="rank-badge">
+            <span>#{{ i + 1 }}</span>
+          </div>
+          <div class="restaurant-image">
+            <img *ngIf="restaurant.image" [src]="restaurant.image" [alt]="getRestaurantName(restaurant)">
+            <div class="rating-overlay">
+              <div class="rating-score">
+                <i class="fas fa-star"></i>
+                <span>{{ getAverageRating(restaurant) > 0 ? (getAverageRating(restaurant) | number:'1.1-1') : 'New'
+                  }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="restaurant-info">
+            <h3>{{ getRestaurantName(restaurant) }}</h3>
+            <p class="cuisine">{{ getCuisineTypes(restaurant) }}</p>
+            <div class="restaurant-stats">
+              <span class="reviews">
+                <i class="fas fa-users"></i>
+                {{ getReviewsCount(restaurant) > 0 ? getReviewsCount(restaurant) + ' reviews' : 'New restaurant' }}
+              </span>
+              <span class="delivery-time">
+                <i class="fas fa-motorcycle"></i>
+                {{ getDeliveryTime(restaurant) }} min
+              </span>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+      } @else {
+      <div class="empty-state" [@fadeInUp]>
+        <h3>No restaurants available yet</h3>
+        <p>We're working on featuring the best restaurants in your area!</p>
+        <a routerLink="/restaurants" class="btn btn-primary">Browse All Restaurants</a>
+      </div>
+      }
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="how-it-works" [@fadeInUp]>
+    <div class="container">
+      <div class="section-header">
+        <h2>
+          How Talabat Works
+        </h2>
+        <p>Order your favorite food in 3 simple steps</p>
+      </div>
+
+      <div class="steps-grid">
+        @for (step of [
+        { icon: 'fas fa-map-marker-alt', title: 'Choose Location', desc: 'Enter your delivery address to find
+        restaurants near you' },
+        { icon: 'fas fa-utensils', title: 'Select Restaurant', desc: 'Browse menus and pick your favorite dishes' },
+        { icon: 'fas fa-truck', title: 'Fast Delivery', desc: 'Get your food delivered hot and fresh to your door' }
+        ]; track step.title; let i = $index) {
+        <div class="step-card" [@staggeredFadeIn]="getAnimationDelay(i)">
+          <div class="step-icon">
+            <i [class]="step.icon"></i>
+            <div class="step-number">{{ i + 1 }}</div>
+          </div>
+          <h3>{{ step.title }}</h3>
+          <p>{{ step.desc }}</p>
+        </div>
+        }
+      </div>
+    </div>
+  </section>
+
+</div>

@@ -1,0 +1,332 @@
+/* Talabat Login Styles */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+  }
+
+  // Professional background icons
+  .professional-icons {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 1;
+
+    .pro-icon {
+      position: absolute;
+      color: #000000;
+      font-size: 26px;
+      opacity: 0.06;
+      animation: authFloat 16s ease-in-out infinite;
+
+      &:nth-child(1) {
+        top: 12%;
+        left: 10%;
+        animation-delay: 0s;
+        animation-duration: 18s;
+      }
+
+      &:nth-child(2) {
+        top: 25%;
+        right: 15%;
+        animation-delay: -2s;
+        animation-duration: 20s;
+      }
+
+      &:nth-child(3) {
+        bottom: 28%;
+        left: 12%;
+        animation-delay: -4s;
+        animation-duration: 22s;
+      }
+
+      &:nth-child(4) {
+        bottom: 18%;
+        right: 18%;
+        animation-delay: -6s;
+        animation-duration: 19s;
+      }
+
+      &:nth-child(5) {
+        top: 8%;
+        left: 45%;
+        animation-delay: -8s;
+        animation-duration: 24s;
+      }
+
+      &:nth-child(6) {
+        bottom: 32%;
+        right: 10%;
+        animation-delay: -10s;
+        animation-duration: 17s;
+      }
+
+      &:nth-child(7) {
+        top: 35%;
+        left: 22%;
+        animation-delay: -12s;
+        animation-duration: 21s;
+      }
+
+      &:nth-child(8) {
+        bottom: 12%;
+        left: 35%;
+        animation-delay: -14s;
+        animation-duration: 23s;
+      }
+
+      &:nth-child(9) {
+        top: 42%;
+        right: 28%;
+        animation-delay: -16s;
+        animation-duration: 20s;
+      }
+
+      &:nth-child(10) {
+        bottom: 38%;
+        left: 55%;
+        animation-delay: -18s;
+        animation-duration: 22s;
+      }
+
+      &:nth-child(11) {
+        top: 18%;
+        right: 35%;
+        animation-delay: -20s;
+        animation-duration: 18s;
+      }
+
+      &:nth-child(12) {
+        bottom: 22%;
+        right: 45%;
+        animation-delay: -22s;
+        animation-duration: 21s;
+      }
+    }
+  }
+
+  @keyframes authFloat {
+
+    0%,
+    100% {
+      transform: translateY(0px) translateX(0px) rotate(0deg);
+      opacity: 0.04;
+    }
+
+    25% {
+      transform: translateY(-10px) translateX(6px) rotate(2deg);
+      opacity: 0.08;
+    }
+
+    50% {
+      transform: translateY(-5px) translateX(-5px) rotate(-1deg);
+      opacity: 0.06;
+    }
+
+    75% {
+      transform: translateY(-12px) translateX(3px) rotate(1deg);
+      opacity: 0.07;
+    }
+  }
+}
+
+.login-card {
+  background: white;
+  padding: 48px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: cardSlideIn 0.6s ease-out;
+
+  h2 {
+    margin-bottom: 32px;
+    color: #2E3440;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: -0.5px;
+  }
+
+  .form-group {
+    margin-bottom: 24px;
+    text-align: left;
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #2E3440;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid #F5F5F5;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.2s ease;
+      background: #FAFAFA;
+      color: #2E3440;
+
+      &:focus {
+        outline: none;
+        border-color: #FF6B35;
+        box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        background: white;
+      }
+
+      &::placeholder {
+        color: #9E9E9E;
+      }
+    }
+  }
+
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &.btn-primary {
+      background: #FF6B35;
+      color: white;
+
+      &:hover:not(:disabled) {
+        background: #FF5722;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(255, 107, 53, 0.3);
+      }
+    }
+
+    &:disabled {
+      background: #E0E0E0;
+      color: #BDBDBD;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+  }
+
+  .error-message {
+    color: #F44336;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background-color: #FFEBEE;
+    border: 1px solid #FFCDD2;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 8px;
+  }
+
+  .login-links {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    a {
+      color: #FF6B35;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: #FF5722;
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 16px;
+
+    .professional-icons .pro-icon {
+      font-size: 18px;
+      opacity: 0.04;
+    }
+  }
+
+  .login-card {
+    padding: 32px 24px;
+    max-width: none;
+
+    h2 {
+      font-size: 24px;
+      margin-bottom: 28px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+
+      .form-control {
+        padding: 14px;
+      }
+    }
+
+    .btn {
+      padding: 14px;
+    }
+  }
+}
