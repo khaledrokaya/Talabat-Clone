@@ -187,12 +187,12 @@ class App {
       if (req.path === '/health' || req.path === '/' || req.path === '') {
         return next();
       }
-      
+
       // Check if mongoose is connected
       try {
         const readyState = (mongoose.connection as any).readyState;
         console.log('Database connection state:', readyState);
-        
+
         // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
         if (readyState === 0) {
           return res.status(503).json({
@@ -205,7 +205,7 @@ class App {
             }
           });
         }
-        
+
         if (readyState === 2) {
           return res.status(503).json({
             success: false,
@@ -213,7 +213,7 @@ class App {
             status: 'connecting'
           });
         }
-        
+
       } catch (error) {
         console.error('Database check error:', error);
         return res.status(503).json({
@@ -223,9 +223,9 @@ class App {
           error: String(error)
         });
       }
-      
+
       next();
-    });    this.app.use('/api/auth', authRoutes);
+    }); this.app.use('/api/auth', authRoutes);
     this.app.use('/api/admin', adminRoutes);
     this.app.use('/api/delivery', deliveryRoutes);
     this.app.use('/api/customer', customerRoutes);
