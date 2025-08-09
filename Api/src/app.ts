@@ -149,35 +149,83 @@ class App {
       });
     });
 
+    // API documentation endpoint
+    this.app.get('/api', (req, res) => {
+      res.json({
+        name: 'Talabat API',
+        version: '1.0.0',
+        description: 'Food delivery platform API',
+        documentation: '/swagger',
+        endpoints: {
+          auth: {
+            login: 'POST /api/auth/login',
+            register: 'POST /api/auth/register',
+            logout: 'POST /api/auth/logout'
+          },
+          restaurants: {
+            list: 'GET /api/restaurants',
+            details: 'GET /api/restaurants/:id'
+          },
+          meals: {
+            list: 'GET /api/meals',
+            details: 'GET /api/meals/:id'
+          },
+          orders: {
+            create: 'POST /api/orders',
+            list: 'GET /api/orders',
+            details: 'GET /api/orders/:id'
+          }
+        },
+        status: 'healthy',
+        timestamp: new Date().toISOString()
+      });
+    });
+
     // API routes - add database check middleware
     this.app.use('/api', (req, res, next) => {
       // Skip database check for health endpoints
-      if (req.path === '/health' || req.path === '/') {
+      if (req.path === '/health' || req.path === '/' || req.path === '') {
         return next();
       }
-
+      
       // Check if mongoose is connected
       try {
         const readyState = (mongoose.connection as any).readyState;
-        if (readyState !== 1) {
+        console.log('Database connection state:', readyState);
+        
+        // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+        if (readyState === 0) {
           return res.status(503).json({
             success: false,
             message: 'Database connection not available. Please configure MONGO_URI environment variable.',
-            status: 'service_unavailable'
+            status: 'service_unavailable',
+            debug: {
+              connectionState: 'disconnected',
+              mongoUri: process.env.MONGO_URI ? 'configured' : 'not configured'
+            }
           });
         }
+        
+        if (readyState === 2) {
+          return res.status(503).json({
+            success: false,
+            message: 'Database is currently connecting. Please try again in a moment.',
+            status: 'connecting'
+          });
+        }
+        
       } catch (error) {
+        console.error('Database check error:', error);
         return res.status(503).json({
           success: false,
-          message: 'Database connection not available. Please configure MONGO_URI environment variable.',
-          status: 'service_unavailable'
+          message: 'Database connection check failed.',
+          status: 'service_unavailable',
+          error: String(error)
         });
       }
-
+      
       next();
-    });
-
-    this.app.use('/api/auth', authRoutes);
+    });    this.app.use('/api/auth', authRoutes);
     this.app.use('/api/admin', adminRoutes);
     this.app.use('/api/delivery', deliveryRoutes);
     this.app.use('/api/customer', customerRoutes);
@@ -213,17 +261,60 @@ class App {
   }
 
   private initializeSwagger(): void {
+    // Only enable Swagger in development or when explicitly enabled
+    if (process.env.NODE_ENV === 'production' && !(process.env as any).ENABLE_SWAGGER) {
+      // In production, provide a simple API documentation endpoint
+      this.app.get('/swagger', (req, res) => {
+        res.json({
+          message: 'API Documentation',
+          endpoints: {
+            health: '/health',
+            auth: '/api/auth/*',
+            admin: '/api/admin/*',
+            delivery: '/api/delivery/*',
+            customer: '/api/customer/*',
+            orders: '/api/orders/*',
+            meals: '/api/meals/*',
+            restaurants: '/api/restaurants/*'
+          },
+          note: 'Full Swagger UI is disabled in production for performance. Set ENABLE_SWAGGER=true to enable.'
+        });
+      });
+      return;
+    }
+
     const swaggerOptions = {
       explorer: true,
       customCss: '.swagger-ui .topbar { display: none }',
       customSiteTitle: 'Talabat API Documentation',
     };
 
-    this.app.use(
-      '/swagger',
-      swaggerUi.serve,
-      swaggerUi.setup(swaggerSpec, swaggerOptions),
-    );
+    try {
+      this.app.use(
+        '/swagger',
+        swaggerUi.serve,
+        swaggerUi.setup(swaggerSpec, swaggerOptions),
+      );
+    } catch (error) {
+      Logger.error(`Swagger initialization failed: ${String(error)}`);
+      // Fallback endpoint if Swagger fails
+      this.app.get('/swagger', (req, res) => {
+        res.json({
+          message: 'API Documentation (Swagger UI failed to load)',
+          error: 'Swagger UI encountered an error in serverless environment',
+          endpoints: {
+            health: '/health',
+            auth: '/api/auth/*',
+            admin: '/api/admin/*',
+            delivery: '/api/delivery/*',
+            customer: '/api/customer/*',
+            orders: '/api/orders/*',
+            meals: '/api/meals/*',
+            restaurants: '/api/restaurants/*'
+          }
+        });
+      });
+    }
   }
 
   private initializeErrorHandling(): void {

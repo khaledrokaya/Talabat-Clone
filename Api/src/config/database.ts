@@ -6,12 +6,9 @@ export const connectDB = async (): Promise<void> => {
     const mongoUrl =
       process.env.MONGO_URI || (process.env as any).MONGODB_URI || 'mongodb://localhost:27017/TalabatDB';
 
-    // Skip connection if no valid MongoDB URL is provided (for testing)
-    if (!mongoUrl || mongoUrl.includes('localhost')) {
-      Logger.warn('MongoDB URL not configured or using localhost - skipping connection in serverless environment');
-      return;
-    }
+    console.log('Attempting to connect to MongoDB...', mongoUrl.substring(0, 20) + '***');
 
+    // Don't skip connection for localhost anymore, let it try and fail gracefully
     await mongoose.connect(mongoUrl, {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 10000,
@@ -20,13 +17,16 @@ export const connectDB = async (): Promise<void> => {
       bufferMaxEntries: 0,
     });
 
+    console.log(`MongoDB connected successfully: ${mongoose.connection.host}`);
     Logger.info(`MongoDB connected: ${mongoose.connection.host}`);
 
     mongoose.connection.on('error', (err) => {
+      console.error('MongoDB connection error:', err);
       Logger.error(`MongoDB connection error: ${String(err)}`);
     });
 
     mongoose.connection.on('disconnected', () => {
+      console.log('MongoDB disconnected');
       Logger.warn('MongoDB disconnected');
     });
 
@@ -39,6 +39,7 @@ export const connectDB = async (): Promise<void> => {
       });
     }
   } catch (error) {
+    console.error('Error connecting to MongoDB:', error);
     Logger.error(`Error connecting to MongoDB: ${String(error)}`);
     // Don't throw in serverless environment, just log the error
     Logger.warn('Continuing without database connection...');
