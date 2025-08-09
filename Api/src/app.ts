@@ -155,7 +155,7 @@ class App {
       if (req.path === '/health' || req.path === '/') {
         return next();
       }
-      
+
       // Check if mongoose is connected
       try {
         const readyState = (mongoose.connection as any).readyState;
@@ -173,7 +173,7 @@ class App {
           status: 'service_unavailable'
         });
       }
-      
+
       next();
     });
 
