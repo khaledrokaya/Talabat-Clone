@@ -30,13 +30,13 @@ export const connectDB = async (): Promise<void> => {
     // Optimize for serverless environments
     const connectionOptions = {
       maxPoolSize: 5, // Reduced pool size for serverless
-      serverSelectionTimeoutMS: 30000, // Increased timeout
+      serverSelectionTimeoutMS: 15000, // Reduced timeout for faster feedback
       socketTimeoutMS: 45000,
-      connectTimeoutMS: 30000,
-      bufferCommands: false, // Disable buffering to fail fast
-      bufferMaxEntries: 0,
+      connectTimeoutMS: 15000,
+      bufferCommands: true, // Enable buffering for better reliability
       maxIdleTimeMS: 30000, // Close connections after 30s of inactivity
       heartbeatFrequencyMS: 10000, // Check connection every 10s
+      retryWrites: true,
     };
 
     // Cache the connection promise to prevent multiple simultaneous connections
@@ -77,6 +77,16 @@ export const connectDB = async (): Promise<void> => {
     console.error('Error connecting to MongoDB:', error);
     Logger.error(`Error connecting to MongoDB: ${String(error)}`);
     cachedConnection = null; // Reset cache on error
+
+    // For specific connection errors, provide more context
+    if (error instanceof Error) {
+      if (error.message.includes('MongoParseError')) {
+        Logger.error('MongoDB connection string parsing error - check MONGO_URI format');
+      } else if (error.message.includes('MongoNetworkError')) {
+        Logger.error('MongoDB network error - check database availability');
+      }
+    }
+
     throw error; // Re-throw to handle in middleware
   }
 };

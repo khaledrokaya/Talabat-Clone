@@ -207,7 +207,14 @@ class App {
           // Try to reconnect if disconnected
           console.log('Database disconnected, attempting to reconnect...');
           try {
-            await connectDB();
+            // Set a timeout for the connection attempt
+            const connectionPromise = connectDB();
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Connection timeout')), 10000)
+            );
+
+            await Promise.race([connectionPromise, timeoutPromise]);
+
             // Check again after connection attempt
             const newState = (mongoose.connection as any).readyState;
             if (newState === 1) {
@@ -233,23 +240,21 @@ class App {
         }
 
         if (readyState === 2) {
-          // Wait longer for connecting state in serverless
-          console.log('Database connecting, waiting...');
-          for (let i = 0; i < 10; i++) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            const newState = (mongoose.connection as any).readyState;
-            console.log(`Connection attempt ${i + 1}, state: ${newState}`);
-            if (newState === 1) {
-              return next();
-            }
-            if (newState === 0) {
-              break; // Connection failed, will be handled below
-            }
+          // Wait shorter time for connecting state
+          console.log('Database connecting, waiting briefly...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          const newState = (mongoose.connection as any).readyState;
+          if (newState === 1) {
+            return next();
           }
           return res.status(503).json({
             success: false,
-            message: 'Database connection timeout. Please try again in a moment.',
-            status: 'connecting'
+            message: 'Database connection in progress. Please try again in a moment.',
+            status: 'connecting',
+            debug: {
+              connectionState: 'connecting',
+              waitTime: '2000ms'
+            }
           });
         }
 
