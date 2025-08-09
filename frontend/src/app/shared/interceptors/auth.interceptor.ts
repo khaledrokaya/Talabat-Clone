@@ -12,16 +12,24 @@ export const AuthInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
   const authService = inject(AuthService);
   const router = inject(Router);
 
+  // Always include credentials for cross-origin requests
+  let authReq = req.clone({
+    setHeaders: {
+      'Content-Type': 'application/json'
+    },
+    withCredentials: true
+  });
+
   // Check if user is authenticated and add token
   const currentUser = authService.currentUserValue;
   const token = authService.getToken();
 
   if (currentUser && token) {
     // For all users (including admin), add JWT token
-    req = addTokenHeader(req, token);
+    authReq = addTokenHeader(authReq, token);
   }
 
-  return next(req).pipe(
+  return next(authReq).pipe(
     catchError((error: any) => {
       if (error.status === 401) {
         if (currentUser && currentUser.role === 'admin') {
@@ -37,7 +45,10 @@ export const AuthInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
 function addTokenHeader(request: HttpRequest<any>, token: string): HttpRequest<any> {
   return request.clone({
-    headers: request.headers.set('Authorization', `Bearer ${token}`)
+    setHeaders: {
+      'Authorization': `Bearer ${token}`
+    },
+    withCredentials: true
   });
 }
 

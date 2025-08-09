@@ -202,6 +202,8 @@ export class AuthService {
 
   private clearStoredAuth(): void {
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     this.deleteCookie('accessToken');
     this.deleteCookie('refreshToken');
 
@@ -342,6 +344,13 @@ export class AuthService {
         tap(response => {
           if (response.success && response.data && response.data.user) {
             console.log('Login response received:', response.data.user.role, response.data.user.email);
+
+            // Store tokens from response if available
+            if (response.data.tokens) {
+              console.log('Storing tokens from login response');
+              localStorage.setItem('accessToken', response.data.tokens.accessToken);
+              localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
+            }
 
             // Set login time for grace period
             this.lastLoginTime = Date.now();
@@ -503,13 +512,38 @@ export class AuthService {
     }
   }
 
-  // Get current access token from cookies (set by backend)
+  // Get current access token from localStorage (preferred) or cookies (fallback)
   getToken(): string | null {
-    return this.getCookie('accessToken');
+    // First try localStorage (for tokens from login response)
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      return token;
+    }
+    
+    // Fallback to cookies (for httpOnly cookies from backend)
+    const cookieToken = this.getCookie('accessToken');
+    
+    // Debug logging for production cookie issues
+    if (environment.production) {
+      console.log('Getting token - localStorage:', token ? 'Found' : 'Not found');
+      console.log('Getting token - cookie:', cookieToken ? 'Found' : 'Not found');
+      if (!token && !cookieToken) {
+        console.log('Available cookies:', document.cookie);
+      }
+    }
+    
+    return cookieToken;
   }
 
-  // Get refresh token from cookies (set by backend)
+  // Get refresh token from localStorage (preferred) or cookies (fallback)
   getRefreshToken(): string | null {
+    // First try localStorage
+    const token = localStorage.getItem('refreshToken');
+    if (token) {
+      return token;
+    }
+    
+    // Fallback to cookies
     return this.getCookie('refreshToken');
   }
 
