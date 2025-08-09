@@ -30,6 +30,5 @@
       "dest": "/index.html"
     }
   ],
-  "buildCommand": "npm run build:prod",
   "outputDirectory": "dist/food-delivery-platform/browser"
 }
