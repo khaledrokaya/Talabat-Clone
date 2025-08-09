@@ -1,27 +1,28 @@
 {
   "compilerOptions": {
+    "target": "ES2020",
     "module": "commonjs",
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "target": "ES2023",
-    "sourceMap": true,
+    "lib": [
+      "ES2020",
+      "DOM"
+    ],
     "outDir": "./dist",
-    "baseUrl": "./",
-    "incremental": true,
+    "rootDir": "./src",
+    "strict": false,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "strictNullChecks": false,
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": false,
     "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "declaration": false,
+    "sourceMap": false,
     "resolveJsonModule": true,
     "allowJs": true,
-    "strict": false
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "noPropertyAccessFromIndexSignature": false
   },
   "include": [
     "src/**/*"
