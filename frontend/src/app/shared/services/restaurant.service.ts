@@ -132,8 +132,25 @@ export class RestaurantService {
     return this.http.get<ApiResponse<FeaturedMealsResponse>>(`${environment.apiUrl}/restaurants/meals/featured`, { params });
   }
 
-  getRestaurantById(id: string): Observable<Restaurant> {
-    return this.http.get<Restaurant>(`${environment.apiUrl}/restaurants/${id}`);
+  getRestaurantById(id: string): Observable<ApiResponse<{ restaurant: any }>> {
+    return this.http.get<ApiResponse<{ restaurant: any }>>(`${environment.apiUrl}/restaurants/${id}`);
+  }
+
+  getMealById(mealId: string): Observable<ApiResponse<{ meal: any; relatedMeals: any[]; reviews: any[] }>> {
+    return this.http.get<ApiResponse<{ meal: any; relatedMeals: any[]; reviews: any[] }>>(`${environment.apiUrl}/restaurants/meals/${mealId}`);
+  }
+
+  getMealsByCategory(category: string, options?: { page?: number; limit?: number; sortBy?: string; sortOrder?: string }): Observable<ApiResponse<{ meals: any[]; pagination: any; category: string }>> {
+    let params = new HttpParams();
+
+    if (options) {
+      if (options.page) params = params.set('page', options.page.toString());
+      if (options.limit) params = params.set('limit', options.limit.toString());
+      if (options.sortBy) params = params.set('sortBy', options.sortBy);
+      if (options.sortOrder) params = params.set('sortOrder', options.sortOrder);
+    }
+
+    return this.http.get<ApiResponse<{ meals: any[]; pagination: any; category: string }>>(`${environment.apiUrl}/restaurants/meals/category/${category}`, { params });
   }
 
   getRestaurantProducts(restaurantId: string): Observable<any[]> {

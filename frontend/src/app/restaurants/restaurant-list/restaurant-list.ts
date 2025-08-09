@@ -4,6 +4,7 @@ import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { RestaurantService, RestaurantFilter } from '../../shared/services/restaurant.service';
+import { SearchService, SearchFilters } from '../../shared/services/search.service';
 import { FavoritesService } from '../../shared/services/favorites.service';
 import { Restaurant } from '../../shared/models/restaurant';
 import { RestaurantCard } from '../restaurant-card/restaurant-card';
@@ -41,28 +42,32 @@ export class RestaurantList implements OnInit {
   currentPage = 1;
   showAdvancedFilters = false;
 
-  // Enhanced categories with better cuisine mapping
+  // Enhanced categories with better cuisine mapping (matches API cuisine types)
   categories = [
     { name: 'All', value: '', icon: '🍽️', cuisine: '' },
     { name: 'Italian', value: 'italian', icon: '🍕', cuisine: 'Italian' },
-    { name: 'American', value: 'american', icon: '🍔', cuisine: 'American' },
-    { name: 'Asian', value: 'asian', icon: '🍜', cuisine: 'Asian' },
+    { name: 'Chinese', value: 'chinese', icon: '🥢', cuisine: 'Chinese' },
+    { name: 'Indian', value: 'indian', icon: '�', cuisine: 'Indian' },
     { name: 'Mexican', value: 'mexican', icon: '🌮', cuisine: 'Mexican' },
-    { name: 'Indian', value: 'indian', icon: '🍛', cuisine: 'Indian' },
+    { name: 'American', value: 'american', icon: '🍔', cuisine: 'American' },
+    { name: 'Japanese', value: 'japanese', icon: '�', cuisine: 'Japanese' },
+    { name: 'Thai', value: 'thai', icon: '🍤', cuisine: 'Thai' },
     { name: 'Mediterranean', value: 'mediterranean', icon: '🥙', cuisine: 'Mediterranean' },
     { name: 'French', value: 'french', icon: '🥐', cuisine: 'French' },
-    { name: 'Chinese', value: 'chinese', icon: '🥢', cuisine: 'Chinese' },
-    { name: 'Japanese', value: 'japanese', icon: '🍣', cuisine: 'Japanese' },
-    { name: 'Thai', value: 'thai', icon: '🍤', cuisine: 'Thai' }
+    { name: 'Lebanese', value: 'lebanese', icon: '🌯', cuisine: 'Lebanese' },
+    { name: 'Fast Food', value: 'fast-food', icon: '🍟', cuisine: 'Fast Food' },
+    { name: 'Desserts', value: 'desserts', icon: '�', cuisine: 'Desserts' },
+    { name: 'Healthy', value: 'healthy', icon: '🥗', cuisine: 'Healthy' },
+    { name: 'Vegan', value: 'vegan', icon: '�', cuisine: 'Vegan' }
   ];
 
-  // Sort options
+  // Sort options (updated to match API response structure)
   sortOptions = [
-    { label: 'Most Popular', value: 'rating', order: 'desc' },
-    { label: 'Fastest Delivery', value: 'deliveryTime', order: 'asc' },
-    { label: 'Lowest Delivery Fee', value: 'deliveryFee', order: 'asc' },
-    { label: 'Name A-Z', value: 'name', order: 'asc' },
-    { label: 'Name Z-A', value: 'name', order: 'desc' }
+    { label: 'Most Popular', value: 'ratings.averageRating', order: 'desc' },
+    { label: 'Fastest Delivery', value: 'restaurantDetails.averageDeliveryTime', order: 'asc' },
+    { label: 'Lowest Delivery Fee', value: 'restaurantDetails.deliveryFee', order: 'asc' },
+    { label: 'Name A-Z', value: 'restaurantDetails.name', order: 'asc' },
+    { label: 'Name Z-A', value: 'restaurantDetails.name', order: 'desc' }
   ];
 
   // Rating filter options
@@ -76,12 +81,24 @@ export class RestaurantList implements OnInit {
 
   constructor(
     private restaurantService: RestaurantService,
+    private searchService: SearchService,
     private favoritesService: FavoritesService,
     private route: ActivatedRoute,
     private router: Router
   ) { }
 
   ngOnInit(): void {
+    // Initialize categories from search service
+    this.categories = [
+      { name: 'All', value: '', icon: '🍽️', cuisine: '' },
+      ...this.searchService.getCuisineTypes().map(cuisine => ({
+        name: cuisine.label,
+        value: cuisine.value.toLowerCase(),
+        icon: cuisine.icon,
+        cuisine: cuisine.value
+      }))
+    ];
+
     // Check for query parameters
     this.route.queryParams.subscribe(params => {
       if (params['search']) {

@@ -519,10 +519,10 @@ export class AuthService {
     if (token) {
       return token;
     }
-    
+
     // Fallback to cookies (for httpOnly cookies from backend)
     const cookieToken = this.getCookie('accessToken');
-    
+
     // Debug logging for production cookie issues
     if (environment.production) {
       console.log('Getting token - localStorage:', token ? 'Found' : 'Not found');
@@ -531,7 +531,7 @@ export class AuthService {
         console.log('Available cookies:', document.cookie);
       }
     }
-    
+
     return cookieToken;
   }
 
@@ -542,7 +542,7 @@ export class AuthService {
     if (token) {
       return token;
     }
-    
+
     // Fallback to cookies
     return this.getCookie('refreshToken');
   }

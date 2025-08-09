@@ -1,99 +1,251 @@
 <div class="restaurant-details-container">
   <!-- Loading State -->
-  <div class="loading" *ngIf="loading">
-    <p>جاري تحميل تفاصيل المطعم...</p>
+  @if (loading) {
+  <div class="loading">
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Loading restaurant details...</p>
+    </div>
   </div>
+  }
 
   <!-- Error State -->
-  <div class="error" *ngIf="errorMessage">
-    <p>{{ errorMessage }}</p>
-    <a routerLink="/restaurants" class="btn btn-primary">العودة للمطاعم</a>
+  @if (errorMessage && !loading) {
+  <div class="error">
+    <div class="error-content">
+      <i class="fas fa-exclamation-triangle"></i>
+      <h3>{{ errorMessage }}</h3>
+      <button (click)="retryLoad()" class="btn btn-primary">
+        Try Again
+      </button>
+      <a routerLink="/restaurants" class="btn btn-secondary">
+        Back to Restaurants
+      </a>
+    </div>
   </div>
+  }
 
   <!-- Restaurant Details -->
-  <div *ngIf="restaurant && !loading">
+  @if (restaurant && !loading) {
+  <div class="restaurant-content">
     <!-- Restaurant Header -->
     <div class="restaurant-header">
       <div class="restaurant-image">
-        <img *ngIf="restaurant.image" [src]="restaurant.image" [alt]="restaurant.name">
-        <div class="restaurant-status" [class.closed]="!restaurant.isOpen">
-          {{ restaurant.isOpen ? 'مفتوح' : 'مغلق' }}
+        <img [src]="restaurant.image || 'assets/images/default-restaurant.jpg'" [alt]="getRestaurantName()"
+          (error)="onImageError($event)">
+        <div class="restaurant-status" [class.open]="isRestaurantOpen()" [class.closed]="!isRestaurantOpen()">
+          {{ isRestaurantOpen() ? 'Open' : 'Closed' }}
         </div>
       </div>
+
       <div class="restaurant-info">
-        <h1>{{ restaurant.name }}</h1>
-        <p class="cuisine">{{ restaurant.cuisine }}</p>
-        <p class="description">{{ restaurant.description }}</p>
+        <h1>{{ getRestaurantName() }}</h1>
+
+        @if (getCuisineTypes().length > 0) {
+        <div class="cuisine-types">
+          @for (cuisine of getCuisineTypes(); track cuisine) {
+          <span class="cuisine-tag">
+            {{ cuisine }}
+          </span>
+          }
+        </div>
+        }
+
+        @if (getRestaurantDescription()) {
+        <p class="description">
+          {{ getRestaurantDescription() }}
+        </p>
+        }
+
         <div class="restaurant-meta">
           <div class="meta-item">
-            <span class="icon">
-              <i class="fas fa-star"></i>
+            <i class="fas fa-star"></i>
+            <span>{{ getAverageRating() > 0 ? getAverageRating().toFixed(1) : 'New' }}</span>
+            @if (getTotalReviews() > 0) {
+            <span class="reviews-count">
+              ({{ getTotalReviews() }} reviews)
             </span>
-            <span>{{ restaurant.rating || 'جديد' }}</span>
+            }
           </div>
+
           <div class="meta-item">
-            <span class="icon">
-              <i class="fas fa-clock"></i>
-            </span>
-            <span>{{ restaurant.deliveryTime }} دقيقة</span>
+            <i class="fas fa-clock"></i>
+            <span>{{ getDeliveryTime() }} min</span>
           </div>
+
           <div class="meta-item">
-            <span class="icon">
-              <i class="fas fa-truck"></i>
-            </span>
-            <span>{{ restaurant.deliveryFee }} ريال</span>
+            <i class="fas fa-truck"></i>
+            <span>{{ getDeliveryFee() > 0 ? '$' + getDeliveryFee().toFixed(2) : 'Free delivery' }}</span>
           </div>
+
+          @if (getMinimumOrder() > 0) {
           <div class="meta-item">
-            <span class="icon">
-              <i class="fas fa-money-bill-wave"></i>
-            </span>
-            <span>الحد الأدنى: {{ restaurant.minimumOrder }} ريال</span>
+            <i class="fas fa-money-bill-wave"></i>
+            <span>Min order: ${{ getMinimumOrder() }}</span>
           </div>
+          }
         </div>
       </div>
     </div>
 
-    <!-- Menu Categories -->
+    <!-- Menu Section -->
     <div class="menu-section">
       <div class="container">
-        <h2>القائمة</h2>
+        <h2>Menu</h2>
 
-        <div class="menu-categories" *ngIf="menuCategories.length > 0">
-          <div class="category" *ngFor="let category of menuCategories">
-            <h3>{{ category.name }}</h3>
-            <p class="category-description" *ngIf="category.description">
-              {{ category.description }}
-            </p>
+        <!-- Category Filter -->
+        @if (menuCategories.length > 1) {
+        <div class="category-filter">
+          <button class="category-btn" [class.active]="selectedCategory === ''" (click)="selectCategory('')">
+            All Items
+          </button>
+          @for (category of menuCategories; track category.value) {
+          <button class="category-btn" [class.active]="selectedCategory === category.value"
+            (click)="selectCategory(category.value)">
+            {{ category.icon }} {{ category.label }}
+            <span class="count">({{ category.meals.length }})</span>
+          </button>
+          }
+        </div>
+        }
 
-            <div class="products-grid">
-              <div class="product-card" *ngFor="let product of category.products">
-                <div class="product-image" *ngIf="product.imageUrl">
-                  <img [src]="product.imageUrl" [alt]="product.name">
+        <!-- Meals Grid -->
+        @if (getFilteredMeals().length > 0) {
+        <div class="meals-grid">
+          @for (meal of getFilteredMeals(); track trackByMeal($index, meal)) {
+          <div class="meal-card">
+            <div class="meal-image-container">
+              <img [src]="getMealImage(meal)" [alt]="meal.name" (error)="onMealImageError($event)">
+
+              <!-- Discount Badge -->
+              @if (hasMealDiscount(meal)) {
+              <div class="discount-badge">
+                {{ meal.discount!.percentage }}% OFF
+              </div>
+              }
+
+              <!-- Availability Status -->
+              @if (!meal.isAvailable) {
+              <div class="availability-overlay">
+                <span>Unavailable</span>
+              </div>
+              }
+            </div>
+
+            <div class="meal-info">
+              <div class="meal-header">
+                <h4>{{ meal.name }}</h4>
+
+                <!-- Dietary Labels -->
+                <div class="dietary-labels">
+                  @if (meal.isVegetarian) {
+                  <span class="label vegetarian">🌱</span>
+                  }
+                  @if (meal.isVegan) {
+                  <span class="label vegan">🌿</span>
+                  }
+                  @if (meal.isGlutenFree) {
+                  <span class="label gluten-free">GF</span>
+                  }
                 </div>
-                <div class="product-info">
-                  <h4>{{ product.name }}</h4>
-                  <p class="product-description" *ngIf="product.description">
-                    {{ product.description }}
-                  </p>
-                  <div class="product-footer">
-                    <span class="price">{{ product.price }} ريال</span>
-                    <button (click)="addToCart(product, restaurant)" class="btn btn-primary btn-sm"
-                      [disabled]="!product.isAvailable || !restaurant.isOpen">
-                      {{ product.isAvailable ? 'إضافة للسلة' : 'غير متوفر' }}
-                    </button>
-                  </div>
+              </div>
+
+              @if (meal.description) {
+              <p class="meal-description">
+                {{ meal.description }}
+              </p>
+              }
+
+              <!-- Ingredients -->
+              @if (meal.ingredients && meal.ingredients.length > 0) {
+              <div class="ingredients">
+                <small>
+                  <strong>Ingredients:</strong>
+                  {{ meal.ingredients.join(', ') }}
+                </small>
+              </div>
+              }
+
+              <!-- Allergens -->
+              @if (meal.allergens && meal.allergens.length > 0) {
+              <div class="allergens">
+                <small class="allergen-warning">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  Contains: {{ meal.allergens.join(', ') }}
+                </small>
+              </div>
+              }
+
+              <!-- Nutritional Info -->
+              @if (meal.nutritionalInfo) {
+              <div class="nutritional-info">
+                <small>
+                  @if (meal.nutritionalInfo.calories) {
+                  <span>{{ meal.nutritionalInfo.calories }} cal</span>
+                  }
+                  @if (meal.nutritionalInfo.protein) {
+                  <span> • {{ meal.nutritionalInfo.protein }}g protein</span>
+                  }
+                </small>
+              </div>
+              }
+
+              <div class="meal-footer">
+                <div class="price-section">
+                  <span class="current-price">${{ getMealPrice(meal).toFixed(2) }}</span>
+                  @if (hasMealDiscount(meal)) {
+                  <span class="original-price">
+                    ${{ getMealOriginalPrice(meal).toFixed(2) }}
+                  </span>
+                  }
+                </div>
+
+                <div class="meal-actions">
+                  <span class="prep-time">
+                    <i class="fas fa-clock"></i>
+                    {{ meal.preparationTime }} min
+                  </span>
+
+                  <button (click)="addToCart(meal)" class="btn btn-primary"
+                    [disabled]="!meal.isAvailable || !isRestaurantOpen()"
+                    [title]="!meal.isAvailable ? 'Item unavailable' : !isRestaurantOpen() ? 'Restaurant closed' : 'Add to cart'">
+                    <i class="fas fa-plus"></i>
+                    Add to Cart
+                  </button>
                 </div>
               </div>
             </div>
           </div>
+          }
         </div>
+        }
 
         <!-- No Menu Items -->
-        <div class="no-menu" *ngIf="menuCategories.length === 0">
-          <h3>لا توجد عناصر في القائمة حالياً</h3>
-          <p>يرجى المحاولة مرة أخرى لاحقاً</p>
+        @if (meals.length === 0 && !loading) {
+        <div class="no-menu">
+          <div class="no-menu-content">
+            <i class="fas fa-utensils"></i>
+            <h3>No menu items available</h3>
+            <p>This restaurant hasn't added any items to their menu yet.</p>
+          </div>
         </div>
+        }
+
+        <!-- No Filtered Results -->
+        @if (meals.length > 0 && getFilteredMeals().length === 0) {
+        <div class="no-results">
+          <div class="no-results-content">
+            <i class="fas fa-search"></i>
+            <h3>No items in this category</h3>
+            <p>Try selecting a different category.</p>
+            <button (click)="selectCategory('')" class="btn btn-secondary">
+              Show All Items
+            </button>
+          </div>
+        </div>
+        }
       </div>
     </div>
   </div>
+  }
 </div>

@@ -485,11 +485,11 @@
 
       <div class="form-actions">
         <button type="button" class="btn btn-secondary" (click)="previousStep()">
-          السابق
+          Previous
         </button>
         <button type="button" class="btn btn-primary" (click)="onRegister()" [disabled]="!isFormValid() || isLoading">
           <span *ngIf="isLoading" class="spinner"></span>
-          {{ isLoading ? 'جار التسجيل...' : 'إنشاء الحساب' }}
+          {{ isLoading ? 'Creating Account...' : 'Create Account' }}
         </button>
       </div>
     </div>
@@ -505,7 +505,7 @@
 
     <!-- Login Link -->
     <div class="register-links">
-      <a routerLink="/auth/login">لديك حساب بالفعل؟ سجل الدخول</a>
+      <a routerLink="/auth/login">Already have an account? Sign In</a>
     </div>
   </div>
 </div>
