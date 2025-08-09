@@ -41,9 +41,13 @@ class App {
 
   private async initializeDatabase(): Promise<void> {
     try {
+      console.log('Initializing database connection...');
       await this.connectToDatabase();
+      console.log('Database initialization completed');
     } catch (error) {
+      console.error('Database initialization failed:', error);
       Logger.error(`Database initialization failed: ${String(error)}`);
+      // Don't prevent app from starting, but log the error
     }
   }
 
@@ -191,16 +195,27 @@ class App {
       // Check if mongoose is connected
       try {
         const readyState = (mongoose.connection as any).readyState;
-        console.log('Database connection state:', readyState);
+        console.log('Database connection state:', readyState, 'for path:', req.path);
 
         // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+        if (readyState === 1) {
+          // Already connected, proceed
+          return next();
+        }
+
         if (readyState === 0) {
           // Try to reconnect if disconnected
-          console.log('Attempting to reconnect to database...');
+          console.log('Database disconnected, attempting to reconnect...');
           try {
             await connectDB();
-            console.log('Reconnection successful, proceeding with request');
-            return next();
+            // Check again after connection attempt
+            const newState = (mongoose.connection as any).readyState;
+            if (newState === 1) {
+              console.log('Reconnection successful, proceeding with request');
+              return next();
+            } else {
+              throw new Error(`Connection failed, state: ${newState}`);
+            }
           } catch (reconnectError) {
             console.error('Reconnection failed:', reconnectError);
             return res.status(503).json({
@@ -210,22 +225,30 @@ class App {
               debug: {
                 connectionState: 'disconnected',
                 mongoUri: process.env.MONGO_URI ? 'configured' : 'not configured',
-                reconnectAttempted: true
+                reconnectAttempted: true,
+                error: String(reconnectError)
               }
             });
           }
         }
 
         if (readyState === 2) {
-          // Wait a bit for connecting state
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          const newState = (mongoose.connection as any).readyState;
-          if (newState === 1) {
-            return next();
+          // Wait longer for connecting state in serverless
+          console.log('Database connecting, waiting...');
+          for (let i = 0; i < 10; i++) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const newState = (mongoose.connection as any).readyState;
+            console.log(`Connection attempt ${i + 1}, state: ${newState}`);
+            if (newState === 1) {
+              return next();
+            }
+            if (newState === 0) {
+              break; // Connection failed, will be handled below
+            }
           }
           return res.status(503).json({
             success: false,
-            message: 'Database is currently connecting. Please try again in a moment.',
+            message: 'Database connection timeout. Please try again in a moment.',
             status: 'connecting'
           });
         }
