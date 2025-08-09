@@ -182,7 +182,7 @@ class App {
     });
 
     // API routes - add database check middleware
-    this.app.use('/api', (req, res, next) => {
+    this.app.use('/api', async (req, res, next) => {
       // Skip database check for health endpoints
       if (req.path === '/health' || req.path === '/' || req.path === '') {
         return next();
@@ -195,18 +195,34 @@ class App {
 
         // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
         if (readyState === 0) {
-          return res.status(503).json({
-            success: false,
-            message: 'Database connection not available. Please configure MONGO_URI environment variable.',
-            status: 'service_unavailable',
-            debug: {
-              connectionState: 'disconnected',
-              mongoUri: process.env.MONGO_URI ? 'configured' : 'not configured'
-            }
-          });
+          // Try to reconnect if disconnected
+          console.log('Attempting to reconnect to database...');
+          try {
+            await connectDB();
+            console.log('Reconnection successful, proceeding with request');
+            return next();
+          } catch (reconnectError) {
+            console.error('Reconnection failed:', reconnectError);
+            return res.status(503).json({
+              success: false,
+              message: 'Database connection failed. The service is temporarily unavailable.',
+              status: 'service_unavailable',
+              debug: {
+                connectionState: 'disconnected',
+                mongoUri: process.env.MONGO_URI ? 'configured' : 'not configured',
+                reconnectAttempted: true
+              }
+            });
+          }
         }
 
         if (readyState === 2) {
+          // Wait a bit for connecting state
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const newState = (mongoose.connection as any).readyState;
+          if (newState === 1) {
+            return next();
+          }
           return res.status(503).json({
             success: false,
             message: 'Database is currently connecting. Please try again in a moment.',
@@ -328,7 +344,12 @@ class App {
       await initializeApp();
     } catch (error) {
       Logger.error(`Database connection failed: ${error}`);
-      process.exit(1);
+      // Don't exit in serverless environments - let the app continue without DB
+      if (process.env.NODE_ENV !== 'production') {
+        process.exit(1);
+      } else {
+        Logger.warn('Continuing without database connection in production...');
+      }
     }
   }
 
