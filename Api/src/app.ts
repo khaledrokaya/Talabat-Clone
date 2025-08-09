@@ -300,7 +300,9 @@ class App {
       }
 
       next();
-    }); this.app.use('/api/auth', authRoutes);
+    });
+
+    this.app.use('/api/auth', authRoutes);
     this.app.use('/api/admin', adminRoutes);
     this.app.use('/api/delivery', deliveryRoutes);
     this.app.use('/api/customer', customerRoutes);
