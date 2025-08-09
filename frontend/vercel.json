@@ -5,7 +5,7 @@
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist/food-delivery-platform"
+        "distDir": "dist/food-delivery-platform/browser"
       }
     }
   ],
@@ -13,6 +13,10 @@
     {
       "src": "/assets/(.*)",
       "dest": "/assets/$1"
+    },
+    {
+      "src": "/media/(.*)",
+      "dest": "/media/$1"
     },
     {
       "src": "/(.*\\.(js|css|ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot))",
@@ -27,6 +31,5 @@
     }
   ],
   "buildCommand": "npm run build",
-  "outputDirectory": "dist/food-delivery-platform",
-  "framework": "angular"
+  "outputDirectory": "dist/food-delivery-platform/browser"
 }
