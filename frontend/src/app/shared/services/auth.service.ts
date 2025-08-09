@@ -289,8 +289,8 @@ export class AuthService {
   private setCookie(name: string, value: string, options: { days?: number; secure?: boolean; sameSite?: 'strict' | 'lax' | 'none'; path?: string } = {}): void {
     const {
       days = 7,
-      secure = true,
-      sameSite = 'strict',
+      secure = environment.production, // Use secure cookies only in production
+      sameSite = environment.production ? 'none' : 'lax', // Use 'none' for cross-origin in production
       path = '/'
     } = options;
 
@@ -300,6 +300,12 @@ export class AuthService {
       secure,
       sameSite
     };
+
+    // In production with cross-origin, we need secure + sameSite none
+    if (environment.production && secure && sameSite === 'none') {
+      cookieOptions.secure = true;
+      cookieOptions.sameSite = 'none';
+    }
 
     Cookies.set(name, value, cookieOptions);
   }
