@@ -3,7 +3,7 @@
   "builds": [
     {
       "src": "api/index.ts",
-      "use": "@vercel/node@3.0.7"
+      "use": "@vercel/node@2.15.10"
     }
   ],
   "routes": [

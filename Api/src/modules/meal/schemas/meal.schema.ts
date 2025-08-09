@@ -8,7 +8,7 @@ export interface IMeal extends Document {
   originalPrice?: number;
   image: string;
   category: string;
-  restaurantId: mongoose.Types.ObjectId;
+  restaurantId: any;
   ingredients?: string[];
   allergens?: string[];
   nutritionalInfo?: {
@@ -34,7 +34,7 @@ export interface IMeal extends Document {
   updatedAt: Date;
 }
 
-const mealSchema = new Schema<IMeal>(
+const mealSchema = new Schema(
   {
     name: {
       type: String,

@@ -171,3 +171,4 @@ uploads/
 public/uploads/
 .env.production
 .env.staging
+.vercel

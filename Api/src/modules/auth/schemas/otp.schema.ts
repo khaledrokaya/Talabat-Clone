@@ -12,7 +12,7 @@ export interface IOTPDocument extends Document {
   updatedAt: Date;
 }
 
-const otpSchema = new Schema<IOTPDocument>(
+const otpSchema = new Schema(
   {
     email: {
       type: String,

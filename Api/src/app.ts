@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
+import mongoose from 'mongoose';
 import swaggerSpec from './docs/swagger';
 import { connectDB } from './config/database';
 import { initializeApp } from './config/startup';
@@ -34,7 +35,16 @@ class App {
     this.initializeSwagger();
     this.initializeRoutes();
     this.initializeErrorHandling();
-    void this.connectToDatabase();
+    // Initialize database connection
+    this.initializeDatabase();
+  }
+
+  private async initializeDatabase(): Promise<void> {
+    try {
+      await this.connectToDatabase();
+    } catch (error) {
+      Logger.error(`Database initialization failed: ${String(error)}`);
+    }
   }
 
   private initializeMiddlewares(): void {
@@ -74,7 +84,7 @@ class App {
     this.app.use(
       express.json({
         limit: '10mb',
-        verify: (req: any, res: any, buf: Buffer) => {
+        verify: (req: any, res: any, buf: any) => {
           try {
             JSON.parse(buf.toString());
           } catch {
@@ -119,6 +129,16 @@ class App {
   }
 
   private initializeRoutes(): void {
+    // Root endpoint
+    this.app.get('/', (req, res) => {
+      res.status(200).json({
+        message: 'Welcome to Talabat API',
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+      });
+    });
+
     // Health check endpoint
     this.app.get('/health', (req, res) => {
       res.status(200).json({
@@ -129,7 +149,34 @@ class App {
       });
     });
 
-    // API routes
+    // API routes - add database check middleware
+    this.app.use('/api', (req, res, next) => {
+      // Skip database check for health endpoints
+      if (req.path === '/health' || req.path === '/') {
+        return next();
+      }
+      
+      // Check if mongoose is connected
+      try {
+        const readyState = (mongoose.connection as any).readyState;
+        if (readyState !== 1) {
+          return res.status(503).json({
+            success: false,
+            message: 'Database connection not available. Please configure MONGO_URI environment variable.',
+            status: 'service_unavailable'
+          });
+        }
+      } catch (error) {
+        return res.status(503).json({
+          success: false,
+          message: 'Database connection not available. Please configure MONGO_URI environment variable.',
+          status: 'service_unavailable'
+        });
+      }
+      
+      next();
+    });
+
     this.app.use('/api/auth', authRoutes);
     this.app.use('/api/admin', adminRoutes);
     this.app.use('/api/delivery', deliveryRoutes);

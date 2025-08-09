@@ -26,7 +26,7 @@ export interface IBaseUser extends Document {
 }
 
 // Base schema with common fields for all user types
-export const baseUserSchema = new Schema<IBaseUser>(
+export const baseUserSchema = new Schema(
   {
     email: {
       type: String,

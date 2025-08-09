@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IOrderItem {
-  mealId: mongoose.Types.ObjectId;
+  mealId: any;
   name: string;
   price: number;
   quantity: number;
@@ -11,20 +11,20 @@ export interface IOrderItem {
 export interface IOrder extends Document {
   _id: string;
   orderNumber: string;
-  customerId: mongoose.Types.ObjectId;
-  restaurantId: mongoose.Types.ObjectId;
-  deliveryPersonId?: mongoose.Types.ObjectId;
+  customerId: any;
+  restaurantId: any;
+  deliveryPersonId?: any;
   items: IOrderItem[];
   status:
-    | 'pending'
-    | 'confirmed'
-    | 'preparing'
-    | 'ready'
-    | 'assigned'
-    | 'picked-up'
-    | 'on-the-way'
-    | 'delivered'
-    | 'cancelled';
+  | 'pending'
+  | 'confirmed'
+  | 'preparing'
+  | 'ready'
+  | 'assigned'
+  | 'picked-up'
+  | 'on-the-way'
+  | 'delivered'
+  | 'cancelled';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   paymentMethod: 'cash' | 'card' | 'digital-wallet';
   subtotal: number;
@@ -65,7 +65,7 @@ export interface IOrder extends Document {
     status: string;
     timestamp: Date;
     note?: string;
-    updatedBy?: mongoose.Types.ObjectId;
+    updatedBy?: any;
   }[];
   timeline: {
     status: string;
@@ -76,7 +76,7 @@ export interface IOrder extends Document {
   updatedAt: Date;
 }
 
-const orderItemSchema = new Schema<IOrderItem>({
+const orderItemSchema = new Schema({
   mealId: {
     type: Schema.Types.ObjectId,
     ref: 'Meal',
@@ -104,7 +104,7 @@ const orderItemSchema = new Schema<IOrderItem>({
   },
 });
 
-const orderSchema = new Schema<IOrder>(
+const orderSchema = new Schema(
   {
     orderNumber: {
       type: String,
@@ -406,7 +406,7 @@ orderSchema.methods.getDeliveryDuration = function (): number | null {
   if (this.actualDeliveryTime && this.createdAt) {
     return Math.round(
       (this.actualDeliveryTime.getTime() - this.createdAt.getTime()) /
-        (1000 * 60),
+      (1000 * 60),
     ); // in minutes
   }
   return null;

@@ -24,6 +24,9 @@
   ],
   "author": "Talabat NTI Team",
   "license": "MIT",
+  "engines": {
+    "node": "18.x"
+  },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.9",
