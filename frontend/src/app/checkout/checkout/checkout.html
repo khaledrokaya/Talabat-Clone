@@ -1,97 +1,100 @@
 <div class="checkout-container">
   <div class="container">
-    <h1>إتمام الطلب</h1>
-    
+    <h1>Checkout</h1>
+
     <div class="checkout-content" *ngIf="cart$ | async as cart">
       <!-- Order Summary -->
       <div class="order-summary">
-        <h3>ملخص الطلب</h3>
+        <h3>Order Summary</h3>
         <div class="restaurant-info" *ngIf="cart.restaurantName">
           <h4>{{ cart.restaurantName }}</h4>
         </div>
-        
+
         <div class="order-items">
           <div class="order-item" *ngFor="let item of cart.items">
             <span class="item-name">{{ item.productName }}</span>
             <span class="item-quantity">x{{ item.quantity }}</span>
-            <span class="item-price">{{ item.totalPrice }} ريال</span>
+            <span class="item-price">{{ item.totalPrice }} EGP</span>
           </div>
         </div>
-        
+
         <div class="order-total">
           <div class="total-row">
-            <span>المجموع الفرعي:</span>
-            <span>{{ cart.totalAmount }} ريال</span>
+            <span>Subtotal:</span>
+            <span>{{ cart.totalAmount }} EGP</span>
           </div>
           <div class="total-row">
-            <span>رسوم التوصيل:</span>
-            <span>10 ريال</span>
+            <span>Delivery Fee:</span>
+            <span>10 EGP</span>
+          </div>
+          <div class="total-row">
+            <span>Tax (14%):</span>
+            <span>{{ calculateTax(cart.totalAmount).toFixed(2) }} EGP</span>
           </div>
           <div class="total-row final-total">
-            <span>المجموع النهائي:</span>
-            <span>{{ cart.totalAmount + 10 }} ريال</span>
+            <span>Total:</span>
+            <span>{{ calculateTotal(cart.totalAmount).toFixed(2) }} EGP</span>
           </div>
         </div>
       </div>
 
       <!-- Delivery Address -->
       <div class="delivery-section">
-        <h3>عنوان التوصيل</h3>
-        
+        <h3>Delivery Address</h3>
+
         <div class="loading" *ngIf="loading">
-          <p>جاري تحميل العناوين...</p>
+          <p>Loading addresses...</p>
         </div>
-        
+
         <div class="addresses" *ngIf="!loading && addresses.length > 0">
-          <div class="address-option" *ngFor="let address of addresses" 
-               [class.selected]="selectedAddress === address"
-               (click)="selectedAddress = address">
+          <div class="address-option" *ngFor="let address of addresses" [class.selected]="selectedAddress === address"
+            (click)="selectedAddress = address">
             <div class="address-details">
-              <h4>{{ address.label }}</h4>
-              <p>{{ address.street }}, {{ address.city }}</p>
-              <p>{{ address.building }} - {{ address.floor }}</p>
+              <h4>{{ address.label || 'Current Address' }}</h4>
+              <p><strong>Street:</strong> {{ address.street }}</p>
+              <p><strong>City:</strong> {{ address.city }}</p>
+              <p *ngIf="address.area"><strong>Area:</strong> {{ address.area }}</p>
+              <p *ngIf="address.building || address.floor">
+                <span *ngIf="address.building"><strong>Building:</strong> {{ address.building }}</span>
+                <span *ngIf="address.building && address.floor"> - </span>
+                <span *ngIf="address.floor"><strong>Floor:</strong> {{ address.floor }}</span>
+              </p>
             </div>
           </div>
         </div>
-        
+
         <div class="no-addresses" *ngIf="!loading && addresses.length === 0">
-          <p>لا توجد عناوين محفوظة. يرجى إضافة عنوان من الملف الشخصي.</p>
-          <a routerLink="/profile/addresses" class="btn btn-secondary">إضافة عنوان</a>
+          <p>No saved addresses found. Please add an address from your profile.</p>
+          <a routerLink="/profile/addresses" class="btn btn-secondary">Add Address</a>
         </div>
       </div>
 
       <!-- Payment Method -->
       <div class="payment-section">
-        <h3>طريقة الدفع</h3>
-        
+        <h3>Payment Method</h3>
+
         <div class="payment-options">
           <label class="payment-option">
-            <input type="radio" name="payment" value="cash_on_delivery" 
-                   [(ngModel)]="paymentMethod">
-            <span>الدفع عند الاستلام</span>
+            <input type="radio" name="payment" value="cash_on_delivery" [(ngModel)]="paymentMethod">
+            <span>Cash on Delivery</span>
           </label>
-          
+
           <label class="payment-option">
-            <input type="radio" name="payment" value="credit_card" 
-                   [(ngModel)]="paymentMethod">
-            <span>بطاقة ائتمان</span>
+            <input type="radio" name="payment" value="credit_card" [(ngModel)]="paymentMethod">
+            <span>Credit Card</span>
           </label>
-          
+
           <label class="payment-option">
-            <input type="radio" name="payment" value="wallet" 
-                   [(ngModel)]="paymentMethod">
-            <span>المحفظة الإلكترونية</span>
+            <input type="radio" name="payment" value="wallet" [(ngModel)]="paymentMethod">
+            <span>Digital Wallet</span>
           </label>
         </div>
       </div>
 
       <!-- Order Notes -->
       <div class="notes-section">
-        <h3>ملاحظات الطلب (اختياري)</h3>
-        <textarea 
-          [(ngModel)]="notes" 
-          placeholder="أضف أي ملاحظات خاصة للطلب..."
-          class="notes-input">
+        <h3>Order Notes (Optional)</h3>
+        <textarea [(ngModel)]="notes" placeholder="Add any special notes for your order..." class="notes-input">
         </textarea>
       </div>
 
@@ -102,14 +105,11 @@
 
       <!-- Place Order Button -->
       <div class="place-order-section">
-        <button 
-          (click)="placeOrder()" 
-          class="btn btn-primary btn-large"
+        <button (click)="placeOrder()" class="btn btn-primary btn-large"
           [disabled]="!selectedAddress || cart.items.length === 0">
-          تأكيد الطلب - {{ cart.totalAmount + 10 }} ريال
+          Place Order - {{ calculateTotal(cart.totalAmount).toFixed(2) }} EGP
         </button>
       </div>
     </div>
   </div>
 </div>
-

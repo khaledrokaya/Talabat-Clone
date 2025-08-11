@@ -1,0 +1,326 @@
+<div class="meal-form-container">
+  <div class="form-header">
+    <div class="header-content">
+      <h1>
+        <i class="fas fa-utensils"></i>
+        {{ isEditMode ? 'Edit Meal' : 'Add New Meal' }}
+      </h1>
+      <p>{{ isEditMode ? 'Update your meal information' : 'Create a new meal for your restaurant menu' }}</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-secondary" (click)="onCancel()">
+        <i class="fas fa-times"></i>
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading meal data...</p>
+  </div>
+
+  <!-- Form -->
+  <div *ngIf="!loading" class="form-content">
+    <form [formGroup]="mealForm" (ngSubmit)="onSubmit()" class="meal-form">
+      <div class="form-sections">
+
+        <!-- Basic Information Section -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <i class="fas fa-info-circle"></i>
+            Basic Information
+          </h3>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="name" class="required">Meal Name</label>
+              <input type="text" id="name" formControlName="name" class="form-control"
+                [class.is-invalid]="isFieldInvalid('name')" placeholder="Enter meal name">
+              <div *ngIf="isFieldInvalid('name')" class="invalid-feedback">
+                {{ getFieldError('name') }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="category" class="required">Category</label>
+              <select id="category" formControlName="category" class="form-control"
+                [class.is-invalid]="isFieldInvalid('category')">
+                <option value="">Select a category</option>
+                <option *ngFor="let category of categories" [value]="category.name">
+                  {{ category.name }} ({{ category.nameAr }})
+                </option>
+              </select>
+              <div *ngIf="isFieldInvalid('category')" class="invalid-feedback">
+                {{ getFieldError('category') }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="price" class="required">Price (EGP)</label>
+              <input type="number" id="price" formControlName="price" class="form-control"
+                [class.is-invalid]="isFieldInvalid('price')" step="0.01" min="0.01" placeholder="0.00">
+              <div *ngIf="isFieldInvalid('price')" class="invalid-feedback">
+                {{ getFieldError('price') }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="preparationTime" class="required">Preparation Time (minutes)</label>
+              <input type="number" id="preparationTime" formControlName="preparationTime" class="form-control"
+                [class.is-invalid]="isFieldInvalid('preparationTime')" min="1" placeholder="15">
+              <div *ngIf="isFieldInvalid('preparationTime')" class="invalid-feedback">
+                {{ getFieldError('preparationTime') }}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="description" class="required">Description</label>
+            <textarea id="description" formControlName="description" class="form-control"
+              [class.is-invalid]="isFieldInvalid('description')" rows="4"
+              placeholder="Describe your meal..."></textarea>
+            <div *ngIf="isFieldInvalid('description')" class="invalid-feedback">
+              {{ getFieldError('description') }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Image Upload Section -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <i class="fas fa-image"></i>
+            Meal Image
+          </h3>
+
+          <div class="image-upload-area">
+            <div *ngIf="!imagePreview" class="upload-placeholder" (click)="imageInput.click()">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <p>Click to upload meal image</p>
+              <small>JPG, PNG or GIF (Max 5MB)</small>
+            </div>
+
+            <div *ngIf="imagePreview" class="image-preview">
+              <img [src]="imagePreview" alt="Meal preview">
+              <div class="image-actions">
+                <button type="button" class="btn btn-sm btn-secondary" (click)="imageInput.click()">
+                  <i class="fas fa-edit"></i>
+                  Change
+                </button>
+                <button type="button" class="btn btn-sm btn-danger" (click)="removeImage()">
+                  <i class="fas fa-trash"></i>
+                  Remove
+                </button>
+              </div>
+            </div>
+
+            <input #imageInput type="file" accept="image/*" (change)="onImageSelected($event)" style="display: none;">
+          </div>
+        </div>
+
+        <!-- Details Section -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <i class="fas fa-list"></i>
+            Additional Details
+          </h3>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="ingredients">Ingredients</label>
+              <textarea id="ingredients" formControlName="ingredients" class="form-control" rows="3"
+                placeholder="Tomato, Cheese, Basil (separate with commas)"></textarea>
+              <small class="form-text text-muted">Separate ingredients with commas</small>
+            </div>
+
+            <div class="form-group">
+              <label for="allergens">Allergens</label>
+              <div class="allergen-checkbox-group">
+                <div class="allergen-checkbox" *ngFor="let option of allergenOptions">
+                  <input type="checkbox" [id]="'allergen-' + option.value" [checked]="isAllergenSelected(option.value)"
+                    (change)="onAllergenChange(option.value, $event)">
+                  <label [for]="'allergen-' + option.value">{{ option.label }}</label>
+                </div>
+              </div>
+              <small class="form-text text-muted">Select all allergens present in this meal</small>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="spiceLevel">Spice Level</label>
+            <select id="spiceLevel" formControlName="spiceLevel" class="form-control">
+              <option value="mild">Mild</option>
+              <option value="medium">Medium</option>
+              <option value="hot">Hot</option>
+              <option value="very-hot">Very Hot</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Nutritional Information Section -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <i class="fas fa-chart-pie"></i>
+            Nutritional Information (Optional)
+          </h3>
+
+          <div class="form-grid nutritional-grid">
+            <div class="form-group">
+              <label for="calories">Calories</label>
+              <input type="number" id="calories" formControlName="calories" class="form-control" step="0.1" min="0"
+                placeholder="250">
+            </div>
+
+            <div class="form-group">
+              <label for="protein">Protein (g)</label>
+              <input type="number" id="protein" formControlName="protein" class="form-control" step="0.1" min="0"
+                placeholder="12.5">
+            </div>
+
+            <div class="form-group">
+              <label for="carbs">Carbohydrates (g)</label>
+              <input type="number" id="carbs" formControlName="carbs" class="form-control" step="0.1" min="0"
+                placeholder="30.0">
+            </div>
+
+            <div class="form-group">
+              <label for="fat">Fat (g)</label>
+              <input type="number" id="fat" formControlName="fat" class="form-control" step="0.1" min="0"
+                placeholder="8.5">
+            </div>
+          </div>
+        </div>
+
+        <!-- Availability Section -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <i class="fas fa-toggle-on"></i>
+            Availability
+          </h3>
+
+          <div class="form-group">
+            <div class="custom-control custom-switch">
+              <input type="checkbox" class="custom-control-input" id="isAvailable" formControlName="isAvailable">
+              <label class="custom-control-label" for="isAvailable">
+                Available for ordering
+              </label>
+            </div>
+            <small class="form-text text-muted">
+              When disabled, customers won't be able to order this meal
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Discount Management Section (Only in Edit Mode) -->
+      <div *ngIf="isEditMode && selectedMeal" class="form-section discount-section">
+        <h3 class="d-flex align-items-center gap-3 section-title">
+          <i class="fas fa-tags text-primary"></i>
+          <p class="m-0 p-0">Discount Management</p>
+        </h3>
+
+        <!-- Current Discount Display -->
+        <div *ngIf="hasActiveDiscount()" class="current-discount">
+          <div class="discount-card">
+            <div class="discount-info">
+              <div class="discount-value">
+                <i class="fas fa-percentage"></i>
+                {{ getCurrentDiscount().percentage }}% OFF
+              </div>
+              <div class="discount-details">
+                <p class="original-price">
+                  <strong>Original Price:</strong> {{ formatPrice(selectedMeal.price) }}
+                </p>
+                <p class="discounted-price">
+                  <strong>Discounted Price:</strong>
+                  <span class="price-highlight">{{ formatPrice(calculateDiscountedPrice()) }}</span>
+                </p>
+                <p class="valid-until">
+                  <strong>Valid Until:</strong> {{ getCurrentDiscount().validUntil | date:'medium' }}
+                </p>
+                <p class="savings">
+                  <strong>You Save:</strong>
+                  <span class="savings-amount">{{ formatPrice(selectedMeal.price - calculateDiscountedPrice()) }}</span>
+                </p>
+              </div>
+            </div>
+            <div class="discount-actions">
+              <button type="button" class="btn btn-outline-danger btn-sm" (click)="removeDiscount()"
+                [disabled]="removingDiscount">
+                <i class="fas fa-times"></i>
+                {{ removingDiscount ? 'Removing...' : 'Remove Discount' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- No Discount State -->
+        <div *ngIf="!hasActiveDiscount()" class="no-discount">
+          <div class="no-discount-content">
+            <i class="fas fa-tags"></i>
+            <p>No active discount for this meal</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Set New Discount -->
+      <div class="discount-controls form-section">
+        <button type="button" class="btn btn-outline-primary" (click)="toggleDiscountSection()">
+          <i class="fas fa-plus"></i>
+          {{ showDiscountSection ? 'Cancel' : 'Set New Discount' }}
+        </button>
+      </div>
+
+      <!-- Discount Form -->
+      <div *ngIf="showDiscountSection" class="discount-form form-section">
+        <form [formGroup]="discountForm" (ngSubmit)="setDiscount()" class="discount-form-inner">
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="percentage" class="required">Discount Percentage</label>
+              <div class="input-group">
+                <input type="number" id="percentage" formControlName="percentage" class="form-control" min="1" max="99"
+                  placeholder="15">
+                <div class="input-group-append">
+                  <span class="input-group-text">%</span>
+                </div>
+              </div>
+              <small class="form-text text-muted">Enter a value between 1% and 99%</small>
+            </div>
+
+            <div class="form-group col-md-6">
+              <label for="validUntil" class="required">Valid Until</label>
+              <input type="date" id="validUntil" formControlName="validUntil" class="form-control" [min]="minDate">
+              <small class="form-text text-muted">Select the expiration date for this discount</small>
+            </div>
+          </div>
+
+          <div class="discount-form-actions">
+            <button type="button" class="btn btn-secondary btn-sm" (click)="toggleDiscountSection()">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-success btn-sm" [disabled]="settingDiscount || discountForm.invalid">
+              <i *ngIf="settingDiscount" class="fas fa-spinner fa-spin"></i>
+              <i *ngIf="!settingDiscount" class="fas fa-check"></i>
+              {{ settingDiscount ? 'Setting...' : 'Set Discount' }}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions form-section">
+        <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="submitting">
+          <i class="fas fa-times"></i>
+          Cancel
+        </button>
+
+        <button type="submit" class="btn btn-primary" [disabled]="submitting || mealForm.invalid">
+          <i *ngIf="submitting" class="fas fa-spinner fa-spin"></i>
+          <i *ngIf="!submitting" class="fas" [class.fa-plus]="!isEditMode" [class.fa-save]="isEditMode"></i>
+          {{ submitting ? 'Saving...' : (isEditMode ? 'Update Meal' : 'Create Meal') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

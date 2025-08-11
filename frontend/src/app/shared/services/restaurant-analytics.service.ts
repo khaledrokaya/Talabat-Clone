@@ -86,17 +86,17 @@ export class RestaurantAnalyticsService {
 
   /**
    * Get comprehensive restaurant dashboard data
-   * Endpoint: GET /api/user/restaurants/dashboard
+   * Endpoint: GET /api/restaurant/dashboard
    */
   getDashboardData(): Observable<ApiResponse<{ dashboard: DashboardStats }>> {
     return this.http.get<ApiResponse<{ dashboard: DashboardStats }>>(
-      `${this.API_BASE}/user/restaurants/dashboard`
+      `${this.API_BASE}/restaurant/dashboard`
     );
   }
 
   /**
    * Get restaurant analytics data
-   * Endpoint: GET /api/user/restaurants/analytics
+   * Endpoint: GET /api/restaurant/analytics
    */
   getAnalytics(startDate?: string, endDate?: string): Observable<ApiResponse<AnalyticsData>> {
     let params = new HttpParams();
@@ -104,7 +104,7 @@ export class RestaurantAnalyticsService {
     if (endDate) params = params.set('endDate', endDate);
 
     return this.http.get<ApiResponse<AnalyticsData>>(
-      `${this.API_BASE}/user/restaurants/analytics`,
+      `${this.API_BASE}/restaurant/analytics`,
       { params }
     );
   }
@@ -125,7 +125,7 @@ export class RestaurantAnalyticsService {
    */
   getRealTimeStats(): Observable<ApiResponse<DashboardStats['todayStats']>> {
     return this.http.get<ApiResponse<DashboardStats['todayStats']>>(
-      `${this.API_BASE}/user/restaurants/dashboard/realtime`
+      `${this.API_BASE}/restaurant/dashboard/realtime`
     );
   }
 

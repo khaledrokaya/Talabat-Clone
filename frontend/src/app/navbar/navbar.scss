@@ -152,8 +152,9 @@
       transform: translateY(-10px);
       transition: all 0.2s ease;
       border: 1px solid rgba(0, 0, 0, 0.05);
-      z-index: 10000;
+      z-index: 99999 !important;
       /* Ensure dropdown appears above all other content */
+      margin-top: 8px;
 
       .navbar-item {
         color: #2E3440;
@@ -163,6 +164,7 @@
         white-space: nowrap;
         margin: 8px;
         border-radius: 8px;
+        padding: 8px 16px;
 
         &:hover {
           background-color: #f8f9fa;
@@ -183,17 +185,11 @@
     }
 
     &:hover .navbar-dropdown,
-    &.is-active .navbar-dropdown {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-
-    /* Force show on click for mobile/touch devices */
+    &.is-active .navbar-dropdown,
     &.show-dropdown .navbar-dropdown {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: translateY(0) !important;
     }
   }
 }

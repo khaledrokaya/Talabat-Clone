@@ -9,11 +9,20 @@ export class MealController {
    */
   getAllMeals = asyncHandler(
     async (req: Request, res: Response, _next: NextFunction) => {
-      const { page = 1, limit = 10, restaurant, category, search } = req.query;
+      const { page = 1, limit = 10, restaurant, category, search, isAvailable, includeUnavailable } = req.query;
 
       const filter: any = {};
-      if (restaurant) filter.restaurant = restaurant;
+      if (restaurant) filter.restaurantId = restaurant;
       if (category) filter.category = category;
+
+      // Handle availability filtering
+      if (isAvailable !== undefined) {
+        filter.isAvailable = isAvailable === 'true';
+      } else if (!includeUnavailable) {
+        // Default behavior for public API - only show available meals
+        filter.isAvailable = true;
+      }
+
       if (search) {
         filter.$or = [
           { name: { $regex: search, $options: 'i' } },
@@ -23,7 +32,7 @@ export class MealController {
 
       const skip = (Number(page) - 1) * Number(limit);
       const meals = await Meal.find(filter)
-        .populate('restaurant', 'name location')
+        .populate('restaurantId', 'firstName lastName restaurantDetails')
         .skip(skip)
         .limit(Number(limit))
         .sort({ createdAt: -1 });
@@ -48,8 +57,8 @@ export class MealController {
     async (req: Request, res: Response, _next: NextFunction) => {
       const { mealId } = req.params;
       const meal = await Meal.findById(mealId).populate(
-        'restaurant',
-        'name location rating',
+        'restaurantId',
+        'firstName lastName restaurantDetails',
       );
 
       if (!meal) {
@@ -72,10 +81,16 @@ export class MealController {
   getMealsByRestaurant = asyncHandler(
     async (req: Request, res: Response, _next: NextFunction) => {
       const { restaurantId } = req.params;
-      const { page = 1, limit = 10, category } = req.query;
+      const { page = 1, limit = 10, category, isAvailable } = req.query;
 
-      const filter: any = { restaurant: restaurantId };
+      const filter: any = { restaurantId };
       if (category) filter.category = category;
+
+      // Only filter by availability if explicitly requested
+      // This allows restaurant owners to see all their meals
+      if (isAvailable !== undefined) {
+        filter.isAvailable = isAvailable === 'true';
+      }
 
       const skip = (Number(page) - 1) * Number(limit);
       const meals = await Meal.find(filter)
@@ -153,7 +168,7 @@ export class MealController {
 
       const skip = (Number(page) - 1) * Number(limit);
       const meals = await Meal.find(filter)
-        .populate('restaurant', 'name location rating')
+        .populate('restaurantId', 'firstName lastName restaurantDetails')
         .skip(skip)
         .limit(Number(limit))
         .sort({ createdAt: -1 });
@@ -185,7 +200,7 @@ export class MealController {
       const { limit = 10 } = req.query;
 
       const meals = await Meal.find({ isAvailable: true })
-        .populate('restaurant', 'name location rating')
+        .populate('restaurantId', 'firstName lastName restaurantDetails')
         .sort({ orderCount: -1, rating: -1 })
         .limit(Number(limit));
 

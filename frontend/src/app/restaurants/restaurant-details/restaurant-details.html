@@ -114,105 +114,126 @@
         <div class="meals-grid">
           @for (meal of getFilteredMeals(); track trackByMeal($index, meal)) {
           <div class="meal-card">
-            <div class="meal-image-container">
-              <img [src]="getMealImage(meal)" [alt]="meal.name" (error)="onMealImageError($event)">
+            <div class="meal-content">
+              <div class="meal-info">
+                <div class="meal-header">
+                  <h4>{{ meal.name }}</h4>
 
-              <!-- Discount Badge -->
-              @if (hasMealDiscount(meal)) {
-              <div class="discount-badge">
-                {{ meal.discount!.percentage }}% OFF
-              </div>
-              }
-
-              <!-- Availability Status -->
-              @if (!meal.isAvailable) {
-              <div class="availability-overlay">
-                <span>Unavailable</span>
-              </div>
-              }
-            </div>
-
-            <div class="meal-info">
-              <div class="meal-header">
-                <h4>{{ meal.name }}</h4>
-
-                <!-- Dietary Labels -->
-                <div class="dietary-labels">
-                  @if (meal.isVegetarian) {
-                  <span class="label vegetarian">🌱</span>
-                  }
-                  @if (meal.isVegan) {
-                  <span class="label vegan">🌿</span>
-                  }
-                  @if (meal.isGlutenFree) {
-                  <span class="label gluten-free">GF</span>
-                  }
+                  <!-- Dietary Labels -->
+                  <div class="dietary-labels">
+                    @if (meal.isVegetarian) {
+                    <span class="label vegetarian">🌱</span>
+                    }
+                    @if (meal.isVegan) {
+                    <span class="label vegan">🌿</span>
+                    }
+                    @if (meal.isGlutenFree) {
+                    <span class="label gluten-free">GF</span>
+                    }
+                  </div>
                 </div>
-              </div>
 
-              @if (meal.description) {
-              <p class="meal-description">
-                {{ meal.description }}
-              </p>
-              }
+                @if (meal.description) {
+                <p class="meal-description">
+                  {{ meal.description }}
+                </p>
+                }
 
-              <!-- Ingredients -->
-              @if (meal.ingredients && meal.ingredients.length > 0) {
-              <div class="ingredients">
-                <small>
-                  <strong>Ingredients:</strong>
-                  {{ meal.ingredients.join(', ') }}
-                </small>
-              </div>
-              }
-
-              <!-- Allergens -->
-              @if (meal.allergens && meal.allergens.length > 0) {
-              <div class="allergens">
-                <small class="allergen-warning">
-                  <i class="fas fa-exclamation-triangle"></i>
-                  Contains: {{ meal.allergens.join(', ') }}
-                </small>
-              </div>
-              }
-
-              <!-- Nutritional Info -->
-              @if (meal.nutritionalInfo) {
-              <div class="nutritional-info">
-                <small>
-                  @if (meal.nutritionalInfo.calories) {
-                  <span>{{ meal.nutritionalInfo.calories }} cal</span>
+                <div class="meal-meta">
+                  <!-- Ingredients -->
+                  @if (meal.ingredients && meal.ingredients.length > 0) {
+                  <div class="ingredients">
+                    <small>
+                      <strong>Ingredients:</strong>
+                      {{ meal.ingredients.join(', ') }}
+                    </small>
+                  </div>
                   }
-                  @if (meal.nutritionalInfo.protein) {
-                  <span> • {{ meal.nutritionalInfo.protein }}g protein</span>
-                  }
-                </small>
-              </div>
-              }
 
-              <div class="meal-footer">
-                <div class="price-section">
-                  <span class="current-price">${{ getMealPrice(meal).toFixed(2) }}</span>
-                  @if (hasMealDiscount(meal)) {
-                  <span class="original-price">
-                    ${{ getMealOriginalPrice(meal).toFixed(2) }}
-                  </span>
+                  <!-- Allergens -->
+                  @if (meal.allergens && meal.allergens.length > 0) {
+                  <div class="allergens">
+                    <small class="allergen-warning">
+                      <i class="fas fa-exclamation-triangle"></i>
+                      Contains: {{ meal.allergens.join(', ') }}
+                    </small>
+                  </div>
+                  }
+
+                  <!-- Nutritional Info -->
+                  @if (meal.nutritionalInfo) {
+                  <div class="nutritional-info">
+                    <small>
+                      @if (meal.nutritionalInfo.calories) {
+                      <span>{{ meal.nutritionalInfo.calories }} cal</span>
+                      }
+                      @if (meal.nutritionalInfo.protein) {
+                      <span> • {{ meal.nutritionalInfo.protein }}g protein</span>
+                      }
+                    </small>
+                  </div>
                   }
                 </div>
 
-                <div class="meal-actions">
-                  <span class="prep-time">
-                    <i class="fas fa-clock"></i>
-                    {{ meal.preparationTime }} min
-                  </span>
+                <div class="meal-footer">
+                  <div class="price-section">
+                    <span class="current-price">${{ getMealPrice(meal).toFixed(2) }}</span>
+                    @if (hasMealDiscount(meal)) {
+                    <span class="original-price">
+                      ${{ getMealOriginalPrice(meal).toFixed(2) }}
+                    </span>
+                    }
+                    <div class="prep-time">
+                      <i class="fas fa-clock"></i>
+                      {{ meal.preparationTime }} min
+                    </div>
+                  </div>
 
-                  <button (click)="addToCart(meal)" class="btn btn-primary"
-                    [disabled]="!meal.isAvailable || !isRestaurantOpen()"
-                    [title]="!meal.isAvailable ? 'Item unavailable' : !isRestaurantOpen() ? 'Restaurant closed' : 'Add to cart'">
-                    <i class="fas fa-plus"></i>
-                    Add to Cart
-                  </button>
+                  <div class="cart-controls">
+                    @if (!isInCart(meal._id)) {
+                    <button (click)="addToCart(meal)" class="add-to-cart-btn"
+                      [disabled]="!meal.isAvailable || !isRestaurantOpen()"
+                      [title]="!meal.isAvailable ? 'Item unavailable' : !isRestaurantOpen() ? 'Restaurant closed' : 'Add to cart'">
+                      <i class="fas fa-plus"></i>
+                      Add to Cart
+                    </button>
+                    } @else {
+                    <div class="quantity-controls">
+                      <button class="quantity-btn remove-btn" (click)="decreaseQuantity(meal)"
+                        [title]="getCartQuantity(meal._id) === 1 ? 'Remove from cart' : 'Decrease quantity'">
+                        @if (getCartQuantity(meal._id) === 1) {
+                        <i class="fas fa-trash"></i>
+                        } @else {
+                        <i class="fas fa-minus"></i>
+                        }
+                      </button>
+                      <span class="quantity-display">{{ getCartQuantity(meal._id) }}</span>
+                      <button class="quantity-btn" (click)="increaseQuantity(meal)"
+                        [disabled]="!meal.isAvailable || !isRestaurantOpen()" title="Increase quantity">
+                        <i class="fas fa-plus"></i>
+                      </button>
+                    </div>
+                    }
+                  </div>
                 </div>
+              </div>
+
+              <div class="meal-image-container">
+                <img [src]="getMealImage(meal)" [alt]="meal.name" (error)="onMealImageError($event)">
+
+                <!-- Discount Badge -->
+                @if (hasMealDiscount(meal)) {
+                <div class="discount-badge">
+                  {{ meal.discount!.percentage }}% OFF
+                </div>
+                }
+
+                <!-- Availability Status -->
+                @if (!meal.isAvailable) {
+                <div class="availability-overlay">
+                  <span>Unavailable</span>
+                </div>
+                }
               </div>
             </div>
           </div>

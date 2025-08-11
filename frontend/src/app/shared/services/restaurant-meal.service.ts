@@ -15,11 +15,17 @@ export interface Meal {
   preparationTime: number; // in minutes
   ingredients?: string[];
   allergens?: string[];
+  spiceLevel?: 'mild' | 'medium' | 'hot' | 'very-hot';
   nutritionalInfo?: {
     calories: number;
     protein: number;
     carbs: number;
     fat: number;
+  };
+  discount?: {
+    percentage: number;
+    validUntil: string;
+    isActive: boolean;
   };
   restaurantId?: string;
   createdAt?: string;
@@ -34,6 +40,7 @@ export interface CreateMealRequest {
   preparationTime: number;
   ingredients?: string[];
   allergens?: string[];
+  spiceLevel?: 'mild' | 'medium' | 'hot' | 'very-hot';
   nutritionalInfo?: {
     calories: number;
     protein: number;
@@ -41,10 +48,12 @@ export interface CreateMealRequest {
     fat: number;
   };
   isAvailable?: boolean;
+  imageUrl?: string; // Add imageUrl field
 }
 
 export interface UpdateMealRequest extends Partial<CreateMealRequest> {
   isAvailable?: boolean;
+  imageUrl?: string; // Add imageUrl field
 }
 
 export interface MealFilters {
@@ -52,6 +61,7 @@ export interface MealFilters {
   limit?: number;
   category?: string;
   isAvailable?: boolean;
+  includeUnavailable?: boolean; // Add this option
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   search?: string;
@@ -72,12 +82,11 @@ export interface MealsListResponse {
 }
 
 export interface MealCategory {
-  id: string;
+  _id: string;
   name: string;
-  description?: string;
-  image?: string;
-  sortOrder: number;
-  isActive: boolean;
+  nameAr: string;
+  count: number;
+  color: string;
 }
 
 export interface ApiResponse<T = any> {
@@ -90,13 +99,13 @@ export interface ApiResponse<T = any> {
   providedIn: 'root'
 })
 export class RestaurantMealService {
-  private readonly API_BASE = `${environment.apiUrl}/api/restaurants/manage`;
+  private readonly API_BASE = `${environment.apiUrl}`;
 
   constructor(private http: HttpClient) { }
 
   /**
-   * Get paginated list of restaurant meals
-   * GET /api/restaurants/manage/meals
+   * Get paginated list of restaurant meals (for restaurant owners)
+   * GET /api/restaurant/meals
    */
   getMeals(filters: MealFilters = {}): Observable<ApiResponse<MealsListResponse>> {
     let params = new HttpParams();
@@ -105,6 +114,7 @@ export class RestaurantMealService {
     if (filters.limit) params = params.set('limit', filters.limit.toString());
     if (filters.category) params = params.set('category', filters.category);
     if (filters.isAvailable !== undefined) params = params.set('isAvailable', filters.isAvailable.toString());
+    if (filters.includeUnavailable) params = params.set('includeUnavailable', 'true');
     if (filters.sortBy) params = params.set('sortBy', filters.sortBy);
     if (filters.sortOrder) params = params.set('sortOrder', filters.sortOrder);
     if (filters.search) params = params.set('search', filters.search);
@@ -112,117 +122,109 @@ export class RestaurantMealService {
     if (filters.priceMax) params = params.set('priceMax', filters.priceMax.toString());
 
     return this.http.get<ApiResponse<MealsListResponse>>(
-      `${this.API_BASE}/meals`,
+      `${this.API_BASE}/restaurant/meals`,
       { params }
     );
   }
 
   /**
-   * Get meal by ID
-   * GET /api/restaurants/manage/meals/:id
+   * Get meal by ID (public endpoint)
+   * GET /api/restaurants/meals/{mealId}
    */
   getMealById(mealId: string): Observable<ApiResponse<{ meal: Meal }>> {
     return this.http.get<ApiResponse<{ meal: Meal }>>(
-      `${this.API_BASE}/meals/${mealId}`
+      `${this.API_BASE}/restaurants/meals/${mealId}`
     );
   }
 
   /**
-   * Create new meal
-   * POST /api/restaurants/manage/meals
+   * Create new meal (restaurant owner endpoint)
+   * POST /api/restaurant/meals
    */
   createMeal(mealData: CreateMealRequest): Observable<ApiResponse<{ meal: Meal }>> {
     return this.http.post<ApiResponse<{ meal: Meal }>>(
-      `${this.API_BASE}/meals`,
+      `${this.API_BASE}/restaurant/meals`,
       mealData
     );
   }
 
   /**
-   * Update existing meal
-   * PUT /api/restaurants/manage/meals/:id
+   * Update existing meal (restaurant owner endpoint)
+   * PUT /api/restaurant/meals/{mealId}
    */
   updateMeal(mealId: string, mealData: UpdateMealRequest): Observable<ApiResponse<{ meal: Meal }>> {
     return this.http.put<ApiResponse<{ meal: Meal }>>(
-      `${this.API_BASE}/meals/${mealId}`,
+      `${this.API_BASE}/restaurant/meals/${mealId}`,
       mealData
     );
   }
 
   /**
-   * Delete meal
-   * DELETE /api/restaurants/manage/meals/:id
+   * Delete meal (restaurant owner endpoint)
+   * DELETE /api/restaurant/meals/{mealId}
    */
   deleteMeal(mealId: string): Observable<ApiResponse<any>> {
     return this.http.delete<ApiResponse<any>>(
-      `${this.API_BASE}/meals/${mealId}`
+      `${this.API_BASE}/restaurant/meals/${mealId}`
     );
   }
 
   /**
-   * Toggle meal availability
-   * PATCH /api/restaurants/manage/meals/:id/availability
+   * Toggle meal availability (restaurant owner endpoint)
+   * PATCH /api/restaurant/meals/{mealId}/availability
    */
   toggleMealAvailability(mealId: string, isAvailable: boolean): Observable<ApiResponse<{ meal: Meal }>> {
     return this.http.patch<ApiResponse<{ meal: Meal }>>(
-      `${this.API_BASE}/meals/${mealId}/availability`,
+      `${this.API_BASE}/restaurant/meals/${mealId}/availability`,
       { isAvailable }
     );
   }
 
   /**
-   * Upload meal image
-   * POST /api/restaurants/manage/meals/:id/image
+   * Set Meal Discount (restaurant owner endpoint)
+   * POST /api/restaurant/meals/{mealId}/discount
    */
-  uploadMealImage(mealId: string, imageFile: File): Observable<ApiResponse<{ imageUrl: string }>> {
-    const formData = new FormData();
-    formData.append('image', imageFile);
-
-    return this.http.post<ApiResponse<{ imageUrl: string }>>(
-      `${this.API_BASE}/meals/${mealId}/image`,
-      formData
+  setMealDiscount(mealId: string, discountData: { percentage: number; validUntil: string }): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(
+      `${this.API_BASE}/restaurant/meals/${mealId}/discount`,
+      discountData
     );
+  }
+
+  /**
+   * Remove Meal Discount (restaurant owner endpoint)
+   * DELETE /api/restaurant/meals/{mealId}/discount
+   */
+  removeMealDiscount(mealId: string): Observable<ApiResponse<any>> {
+    return this.http.delete<ApiResponse<any>>(
+      `${this.API_BASE}/restaurant/meals/${mealId}/discount`
+    );
+  }
+
+  /**
+   * Convert image file to data URL for simple image storage
+   * This is a simplified approach - in production you'd upload to a cloud service
+   */
+  convertImageToDataUrl(imageFile: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        resolve(e.target?.result as string);
+      };
+      reader.onerror = (error) => {
+        reject(error);
+      };
+      reader.readAsDataURL(imageFile);
+    });
   }
 
   /**
    * Get meal categories
-   * GET /api/restaurants/manage/categories
+   * GET /api/meals/categories
    */
-  getCategories(): Observable<ApiResponse<{ categories: MealCategory[] }>> {
-    return this.http.get<ApiResponse<{ categories: MealCategory[] }>>(
-      `${this.API_BASE}/categories`
-    );
-  }
-
-  /**
-   * Create new category
-   * POST /api/restaurants/manage/categories
-   */
-  createCategory(categoryData: Omit<MealCategory, 'id'>): Observable<ApiResponse<{ category: MealCategory }>> {
-    return this.http.post<ApiResponse<{ category: MealCategory }>>(
-      `${this.API_BASE}/categories`,
-      categoryData
-    );
-  }
-
-  /**
-   * Update category
-   * PUT /api/restaurants/manage/categories/:id
-   */
-  updateCategory(categoryId: string, categoryData: Partial<MealCategory>): Observable<ApiResponse<{ category: MealCategory }>> {
-    return this.http.put<ApiResponse<{ category: MealCategory }>>(
-      `${this.API_BASE}/categories/${categoryId}`,
-      categoryData
-    );
-  }
-
-  /**
-   * Delete category
-   * DELETE /api/restaurants/manage/categories/:id
-   */
-  deleteCategory(categoryId: string): Observable<ApiResponse<any>> {
-    return this.http.delete<ApiResponse<any>>(
-      `${this.API_BASE}/categories/${categoryId}`
+  getCategories(): Observable<ApiResponse<MealCategory[]>> {
+    return this.http.get<ApiResponse<MealCategory[]>>(
+      `${this.API_BASE}/meals/categories`
     );
   }
 
@@ -295,18 +297,48 @@ export class RestaurantMealService {
 
   getCategoryColor(category: string): string {
     const categoryColors: Record<string, string> = {
-      'appetizers': '#ff6b6b',
-      'main-courses': '#4ecdc4',
-      'desserts': '#45b7d1',
-      'beverages': '#96ceb4',
-      'salads': '#feca57',
-      'soups': '#ff9ff3',
-      'seafood': '#54a0ff',
-      'grilled': '#5f27cd',
-      'pasta': '#00d2d3',
-      'pizza': '#ff6348'
+      'Pizza': '#ff6b6b',
+      'Burgers': '#4ecdc4',
+      'Fried Chicken': '#45b7d1',
+      'Seafood': '#96ceb4',
+      'Desserts': '#ffeaa7',
+      'Grilled': '#fd79a8',
+      'Sandwiches': '#fdcb6e',
+      'Shawarma': '#6c5ce7',
+      'Fast Food': '#a29bfe',
+      'Pasta': '#e17055',
+      'Breakfast': '#00b894',
+      'Asian': '#74b9ff',
+      'Street Food': '#55a3ff',
+      'Pastries': '#ffa502',
+      'Waffles': '#ff7675',
+      'American': '#fd79a8',
+      'Ice Cream': '#fdcb6e',
+      'Italian': '#00b894',
+      'Arabic Sweets': '#e84393',
+      'Chicken': '#fdcb6e',
+      'Snacks': '#a29bfe',
+      'BBQ': '#fd79a8',
+      'Chocolate': '#6c5ce7',
+      'Chinese': '#ff7675',
+      'Arabic': '#00b894',
+      'Coffee': '#795548',
+      'Calzone': '#ff6b6b',
+      'Kebab': '#fd79a8',
+      'Crepe': '#fdcb6e',
+      'Koshari': '#e17055',
+      'Cake': '#ffeaa7',
+      'Bakery': '#fab1a0',
+      'Beverages': '#74b9ff',
+      'Egyptian': '#00b894',
+      'Pastry': '#fab1a0',
+      'Nuts': '#e17055',
+      'Manakish': '#fdcb6e',
+      'Mandi': '#fd79a8',
+      'Vegetarian': '#00b894',
+      'Noodles': '#ff7675'
     };
-    return categoryColors[category.toLowerCase()] || '#6c757d';
+    return categoryColors[category] || '#6c757d';
   }
 
   getAvailabilityText(isAvailable: boolean): string {

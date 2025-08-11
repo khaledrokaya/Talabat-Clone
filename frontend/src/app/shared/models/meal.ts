@@ -27,7 +27,8 @@ export interface Meal {
   };
   discount?: {
     percentage: number;
-    validUntil?: Date;
+    validUntil: string;
+    isActive?: boolean;
   };
   tags?: string[];
   spicyLevel?: number;

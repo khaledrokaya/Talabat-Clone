@@ -1,17 +1,18 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Router } from '@angular/router';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import {
   RestaurantMealService,
   Meal,
   MealFilters,
-  CreateMealRequest,
-  UpdateMealRequest,
   MealCategory,
   ApiResponse,
   MealsListResponse
 } from '../../shared/services/restaurant-meal.service';
+import { RateLimiterService } from '../../shared/services/rate-limiter.service';
+import { DebounceService } from '../../shared/services/debounce.service';
 
 @Component({
   selector: 'app-meals-management',
@@ -29,13 +30,13 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
   pagination: any = null;
 
   filterForm!: FormGroup;
-  mealForm!: FormGroup;
 
   currentFilters: MealFilters = {
     page: 1,
     limit: 12,
     sortBy: 'createdAt',
-    sortOrder: 'desc'
+    sortOrder: 'desc',
+    includeUnavailable: true // Include unavailable meals for restaurant management
   };
 
   mealStats = {
@@ -45,18 +46,14 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
     averagePrice: 0
   };
 
-  selectedMeal: Meal | null = null;
-  showMealModal = false;
-  isEditMode = false;
-  selectedImage: File | null = null;
-  imagePreview: string | null = null;
-  submittingMeal = false; // Add loading state for form submission
-
   constructor(
     private mealService: RestaurantMealService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private router: Router,
+    private rateLimiter: RateLimiterService,
+    private debounceService: DebounceService
   ) {
-    this.initializeForms();
+    this.initializeForm();
   }
 
   ngOnInit() {
@@ -69,9 +66,12 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+
+    // Clean up debounce service
+    this.debounceService.complete('meals-filters');
   }
 
-  private initializeForms() {
+  private initializeForm() {
     this.filterForm = this.fb.group({
       category: [''],
       isAvailable: [''],
@@ -81,30 +81,26 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
       sortBy: ['createdAt'],
       sortOrder: ['desc']
     });
-
-    this.mealForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(2)]],
-      description: ['', [Validators.required, Validators.minLength(10)]],
-      price: ['', [Validators.required, Validators.min(0.01)]],
-      category: ['', Validators.required],
-      preparationTime: ['', [Validators.required, Validators.min(1)]],
-      ingredients: [''],
-      allergens: [''],
-      isAvailable: [true],
-      calories: [''],
-      protein: [''],
-      carbs: [''],
-      fat: ['']
-    });
   }
 
   private setupFormSubscriptions() {
+    // Use debounce service for form changes
+    const { input$, output$ } = this.debounceService.createDebouncedObservable<any>(
+      'meals-filters',
+      800, // Increased debounce time to reduce API calls
+      false
+    );
+
+    // Subscribe to form changes and emit to debounce service
     this.filterForm.valueChanges
-      .pipe(
-        takeUntil(this.destroy$),
-        debounceTime(500),
-        distinctUntilChanged()
-      )
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(filters => {
+        input$.next(filters);
+      });
+
+    // Subscribe to debounced output
+    output$
+      .pipe(takeUntil(this.destroy$))
       .subscribe(filters => {
         this.currentFilters = {
           ...this.currentFilters,
@@ -118,30 +114,75 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
   loadMeals() {
     this.loading = true;
 
-    this.mealService.getMeals(this.currentFilters)
+    // Use rate limiter with caching
+    const cacheKey = `meals-${JSON.stringify(this.currentFilters)}`;
+
+    this.rateLimiter.executeRequest(
+      () => this.mealService.getMeals(this.currentFilters),
+      cacheKey,
+      {
+        cacheDuration: 60000, // Cache for 1 minute
+        rateLimit: true
+      }
+    )
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (response: ApiResponse<MealsListResponse>) => {
+        next: (response: any) => {
+          console.log('Meals API Response:', response);
           if (response.success) {
-            this.meals = response.data.meals;
-            this.pagination = response.data.pagination;
+            // Handle both response formats
+            if (Array.isArray(response.data)) {
+              // Direct array format: { success: true, data: [...] }
+              this.meals = response.data;
+              this.pagination = {
+                page: this.currentFilters.page || 1,
+                limit: this.currentFilters.limit || 12,
+                total: response.data.length,
+                pages: Math.ceil(response.data.length / (this.currentFilters.limit || 12))
+              };
+            } else if (response.data && response.data.meals) {
+              // Nested format: { success: true, data: { meals: [...], pagination: {...} } }
+              this.meals = response.data.meals;
+              this.pagination = response.data.pagination;
+            } else {
+              console.warn('Unexpected API response format:', response);
+              this.meals = [];
+              this.pagination = null;
+            }
+          } else {
+            console.error('API returned success: false');
+            this.meals = [];
           }
           this.loading = false;
         },
         error: (error) => {
           console.error('Error loading meals:', error);
+          if (error.message.includes('Rate limit exceeded')) {
+            alert('Too many requests. Please wait a moment before trying again.');
+          } else {
+            console.error('Network or server error:', error);
+          }
+          this.meals = [];
           this.loading = false;
         }
       });
   }
 
   loadCategories() {
-    this.mealService.getCategories()
+    // Use rate limiter with longer cache duration for categories (they change rarely)
+    this.rateLimiter.executeRequest(
+      () => this.mealService.getCategories(),
+      'meal-categories',
+      {
+        cacheDuration: 300000, // Cache for 5 minutes
+        rateLimit: true
+      }
+    )
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
           if (response.success) {
-            this.categories = response.data.categories;
+            this.categories = response.data;
           }
         },
         error: (error) => {
@@ -151,7 +192,15 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
   }
 
   loadMealStats() {
-    this.mealService.getMealsStats()
+    // Use rate limiter with caching for stats
+    this.rateLimiter.executeRequest(
+      () => this.mealService.getMealsStats(),
+      'meal-stats',
+      {
+        cacheDuration: 120000, // Cache for 2 minutes
+        rateLimit: true
+      }
+    )
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
@@ -166,6 +215,11 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
   }
 
   refreshData() {
+    // Clear cache and reload
+    this.rateLimiter.clearCache('meal-categories');
+    this.rateLimiter.clearCache('meal-stats');
+    this.rateLimiter.clearCache(); // Clear all meals cache
+
     this.loadMeals();
     this.loadCategories();
     this.loadMealStats();
@@ -200,228 +254,20 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
     return pages;
   }
 
-  openAddMealModal() {
-    this.selectedMeal = null;
-    this.isEditMode = false;
-    this.mealForm.reset();
-    this.mealForm.patchValue({ isAvailable: true });
-    this.selectedImage = null;
-    this.imagePreview = null;
-    this.submittingMeal = false;
-    this.showMealModal = true;
+  // Navigation methods
+  navigateToAddMeal() {
+    this.router.navigate(['/restaurant-dashboard/meals-management/add']);
   }
 
-  openEditMealModal(meal: Meal) {
-    this.selectedMeal = meal;
-    this.isEditMode = true;
-    this.populateMealForm(meal);
-    this.submittingMeal = false;
-    this.showMealModal = true;
-  }
-
-  closeMealModal() {
-    this.showMealModal = false;
-    this.selectedMeal = null;
-    this.mealForm.reset();
-    this.selectedImage = null;
-    this.imagePreview = null;
-    this.submittingMeal = false;
-  }
-
-  private populateMealForm(meal: Meal) {
-    this.mealForm.patchValue({
-      name: meal.name,
-      description: meal.description,
-      price: meal.price,
-      category: meal.category,
-      preparationTime: meal.preparationTime,
-      ingredients: meal.ingredients?.join(', ') || '',
-      allergens: meal.allergens?.join(', ') || '',
-      isAvailable: meal.isAvailable,
-      calories: meal.nutritionalInfo?.calories || '',
-      protein: meal.nutritionalInfo?.protein || '',
-      carbs: meal.nutritionalInfo?.carbs || '',
-      fat: meal.nutritionalInfo?.fat || ''
-    });
-
-    if (meal.image) {
-      this.imagePreview = meal.image;
-    }
-  }
-
-  onImageSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      this.selectedImage = file;
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.imagePreview = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  saveMeal() {
-    console.log('saveMeal method called');
-
-    if (this.submittingMeal) {
-      console.log('Already submitting, ignoring duplicate call');
-      return;
-    }
-
-    if (this.mealForm.invalid) {
-      this.markFormGroupTouched(this.mealForm);
-      console.log('Form is invalid:', this.mealForm.errors);
-      console.log('Form values:', this.mealForm.value);
-
-      // Show specific validation errors
-      Object.keys(this.mealForm.controls).forEach(key => {
-        const control = this.mealForm.get(key);
-        if (control && control.invalid) {
-          console.log(`${key} is invalid:`, control.errors);
-        }
-      });
-
-      alert('Please fill in all required fields correctly.');
-      return;
-    }
-
-    this.submittingMeal = true;
-    const formValue = this.mealForm.value;
-    console.log('Saving meal with form value:', formValue);
-
-    const mealData: CreateMealRequest | UpdateMealRequest = {
-      name: formValue.name,
-      description: formValue.description,
-      price: parseFloat(formValue.price),
-      category: formValue.category,
-      preparationTime: parseInt(formValue.preparationTime),
-      ingredients: formValue.ingredients ? formValue.ingredients.split(',').map((i: string) => i.trim()) : [],
-      allergens: formValue.allergens ? formValue.allergens.split(',').map((a: string) => a.trim()) : [],
-      isAvailable: formValue.isAvailable
-    };
-
-    // Add nutritional info if provided
-    if (formValue.calories || formValue.protein || formValue.carbs || formValue.fat) {
-      mealData.nutritionalInfo = {
-        calories: parseFloat(formValue.calories) || 0,
-        protein: parseFloat(formValue.protein) || 0,
-        carbs: parseFloat(formValue.carbs) || 0,
-        fat: parseFloat(formValue.fat) || 0
-      };
-    }
-
-    console.log('Final meal data:', mealData);
-
-    // Validate meal data
-    const errors = this.mealService.validateMealData(mealData);
-    if (errors.length > 0) {
-      console.error('Validation errors:', errors);
-      alert('Validation errors:\n' + errors.join('\n'));
-      this.submittingMeal = false;
-      return;
-    }
-
-    if (this.isEditMode && this.selectedMeal) {
-      this.updateMeal(this.selectedMeal.id!, mealData as UpdateMealRequest);
-    } else {
-      this.createMeal(mealData as CreateMealRequest);
-    }
-  }
-
-  private createMeal(mealData: CreateMealRequest) {
-    console.log('Creating meal with data:', mealData);
-
-    this.mealService.createMeal(mealData)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
-          console.log('Create meal response:', response);
-
-          if (response.success) {
-            const newMeal = response.data.meal;
-            console.log('New meal created:', newMeal);
-
-            // Upload image if selected
-            if (this.selectedImage && newMeal.id) {
-              console.log('Uploading image for meal:', newMeal.id);
-              this.uploadMealImage(newMeal.id);
-            }
-
-            this.closeMealModal();
-            this.loadMeals();
-            this.loadMealStats();
-            this.submittingMeal = false;
-            alert('Meal created successfully!');
-          } else {
-            console.error('Meal creation failed:', response);
-            this.submittingMeal = false;
-            alert('Failed to create meal: ' + (response.message || 'Unknown error'));
-          }
-        },
-        error: (error) => {
-          console.error('Error creating meal:', error);
-          this.submittingMeal = false;
-
-          let errorMessage = 'Error creating meal. Please try again.';
-
-          if (error.error && error.error.message) {
-            errorMessage = error.error.message;
-          } else if (error.message) {
-            errorMessage = error.message;
-          }
-
-          alert(errorMessage);
-        }
-      });
-  }
-
-  private updateMeal(mealId: string, mealData: UpdateMealRequest) {
-    this.mealService.updateMeal(mealId, mealData)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
-          if (response.success) {
-            // Upload image if selected
-            if (this.selectedImage) {
-              this.uploadMealImage(mealId);
-            }
-
-            this.closeMealModal();
-            this.loadMeals();
-            this.loadMealStats();
-            alert('Meal updated successfully!');
-          }
-        },
-        error: (error) => {
-          console.error('Error updating meal:', error);
-          alert('Error updating meal. Please try again.');
-        }
-      });
-  }
-
-  private uploadMealImage(mealId: string) {
-    if (!this.selectedImage) return;
-
-    this.mealService.uploadMealImage(mealId, this.selectedImage)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
-          if (response.success) {
-            console.log('Image uploaded successfully');
-          }
-        },
-        error: (error) => {
-          console.error('Error uploading image:', error);
-        }
-      });
+  navigateToEditMeal(meal: Meal) {
+    const mealId = (meal as any)._id || meal.id;
+    this.router.navigate(['/restaurant-dashboard/meals-management/edit', mealId]);
   }
 
   deleteMeal(meal: Meal) {
+    const mealId = (meal as any)._id || meal.id;
     if (confirm(`Are you sure you want to delete "${meal.name}"?`)) {
-      this.mealService.deleteMeal(meal.id!)
+      this.mealService.deleteMeal(mealId!)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (response) => {
@@ -440,9 +286,10 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
   }
 
   toggleMealAvailability(meal: Meal) {
+    const mealId = (meal as any)._id || meal.id;
     const newAvailability = !meal.isAvailable;
 
-    this.mealService.toggleMealAvailability(meal.id!, newAvailability)
+    this.mealService.toggleMealAvailability(mealId!, newAvailability)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
@@ -458,31 +305,22 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
       });
   }
 
-  duplicateMeal(meal: Meal) {
-    const newName = `${meal.name} (Copy)`;
-
-    this.mealService.duplicateMeal(meal.id!, newName)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.loadMeals();
-            this.loadMealStats();
-            alert('Meal duplicated successfully!');
-          }
-        },
-        error: (error) => {
-          console.error('Error duplicating meal:', error);
-          alert('Error duplicating meal. Please try again.');
-        }
-      });
+  // Discount utility methods
+  hasActiveDiscount(meal: Meal): boolean {
+    return !!(meal.discount && meal.discount.percentage > 0 &&
+      new Date(meal.discount.validUntil) > new Date());
   }
 
-  private markFormGroupTouched(formGroup: FormGroup) {
-    Object.keys(formGroup.controls).forEach(key => {
-      const control = formGroup.get(key);
-      control?.markAsTouched();
-    });
+  getActiveDiscount(meal: Meal): any {
+    if (!this.hasActiveDiscount(meal)) return null;
+    return meal.discount;
+  }
+
+  getDiscountedPrice(meal: Meal): number {
+    const activeDiscount = this.getActiveDiscount(meal);
+    if (!activeDiscount) return meal.price;
+
+    return meal.price * (1 - activeDiscount.percentage / 100);
   }
 
   // Utility methods

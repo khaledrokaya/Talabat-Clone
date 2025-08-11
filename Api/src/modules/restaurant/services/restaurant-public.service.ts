@@ -101,8 +101,7 @@ export class RestaurantPublicService {
    */
   async getMealById(mealId: string): Promise<any> {
     const meal = await Meal.findById(mealId)
-      .populate('restaurantId', 'restaurantDetails address ratings')
-      .populate('reviews.customerId', 'firstName lastName');
+      .populate('restaurantId', 'restaurantDetails address ratings');
 
     if (!meal) {
       throw new AppError('Meal not found', 404);

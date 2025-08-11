@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Subject, takeUntil } from 'rxjs';
 import { RestaurantService } from '../../shared/services/restaurant.service';
 import { CartService, CartItem } from '../../shared/services/cart.service';
+import { RateLimiterService } from '../../shared/services/rate-limiter.service';
 import { Restaurant, Meal } from '../../shared/models/restaurant';
 import { environment } from '../../../environments/environment';
 import { timeout, catchError, of } from 'rxjs';
@@ -15,7 +17,9 @@ import { timeout, catchError, of } from 'rxjs';
   templateUrl: './restaurant-details.html',
   styleUrl: './restaurant-details.scss'
 })
-export class RestaurantDetails implements OnInit {
+export class RestaurantDetails implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+
   restaurant: any | null = null;
   meals: Meal[] = [];
   menuCategories: any[] = [];
@@ -44,37 +48,52 @@ export class RestaurantDetails implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private restaurantService: RestaurantService,
-    private cartService: CartService
+    private cartService: CartService,
+    private rateLimiter: RateLimiterService
   ) { }
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
-      const restaurantId = params.get('id');
-      if (restaurantId) {
-        console.log('Restaurant ID from route:', restaurantId);
-        // Test API connectivity first
-        this.testApiConnectivity();
-        this.loadRestaurantDetails(restaurantId);
-      } else {
-        this.errorMessage = 'No restaurant ID provided';
-        this.loading = false;
-      }
-    });
+    this.route.paramMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(params => {
+        const restaurantId = params.get('id');
+        if (restaurantId) {
+          console.log('Restaurant ID from route:', restaurantId);
+          // Test API connectivity first
+          this.testApiConnectivity();
+          this.loadRestaurantDetails(restaurantId);
+        } else {
+          this.errorMessage = 'No restaurant ID provided';
+          this.loading = false;
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   testApiConnectivity(): void {
     console.log('Testing API connectivity...');
     console.log('Base API URL:', environment.apiUrl);
 
-    // Test if we can reach the restaurants endpoint
-    this.restaurantService.getRestaurants({ limit: 1 })
-      .pipe(
+    // Test if we can reach the restaurants endpoint with rate limiting
+    this.rateLimiter.executeRequest(
+      () => this.restaurantService.getRestaurants({ limit: 1 }).pipe(
         timeout(10000),
         catchError(error => {
           console.error('API connectivity test failed:', error);
           return of(null);
         })
-      )
+      ),
+      'api-connectivity-test',
+      {
+        cacheDuration: 60000, // Cache for 1 minute
+        rateLimit: true
+      }
+    )
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
           if (response) {
@@ -96,15 +115,24 @@ export class RestaurantDetails implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
-    // Add timeout and retry logic
-    this.restaurantService.getRestaurantById(id)
-      .pipe(
+    // Use rate limiter with caching
+    const cacheKey = `restaurant-details-${id}`;
+
+    this.rateLimiter.executeRequest(
+      () => this.restaurantService.getRestaurantById(id).pipe(
         timeout(15000), // 15 second timeout
         catchError(error => {
           console.error('API call failed:', error);
           return of(null); // Return null on error
         })
-      )
+      ),
+      cacheKey,
+      {
+        cacheDuration: 300000, // Cache for 5 minutes (restaurant details change rarely)
+        rateLimit: true
+      }
+    )
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
           console.log('Restaurant API Response:', response);
@@ -213,6 +241,40 @@ export class RestaurantDetails implements OnInit {
     console.log('Added to cart:', cartItem);
   }
 
+  // Cart management methods
+  getCartQuantity(mealId: string): number {
+    const cartItem = this.cartService.currentCart.items.find(item => item.productId === mealId);
+    return cartItem ? cartItem.quantity : 0;
+  }
+
+  isInCart(mealId: string): boolean {
+    return this.getCartQuantity(mealId) > 0;
+  }
+
+  increaseQuantity(meal: Meal): void {
+    if (!meal.isAvailable || !this.isRestaurantOpen()) {
+      return;
+    }
+
+    const currentQuantity = this.getCartQuantity(meal._id);
+    if (currentQuantity > 0) {
+      this.cartService.updateQuantity(meal._id, currentQuantity + 1);
+    } else {
+      this.addToCart(meal);
+    }
+  }
+
+  decreaseQuantity(meal: Meal): void {
+    const currentQuantity = this.getCartQuantity(meal._id);
+    if (currentQuantity > 0) {
+      this.cartService.updateQuantity(meal._id, currentQuantity - 1);
+    }
+  }
+
+  removeFromCart(mealId: string): void {
+    this.cartService.removeFromCart(mealId);
+  }
+
   // Helper methods for template
   getRestaurantName(): string {
     return this.restaurant?.restaurantDetails?.name || this.restaurant?.name || 'Unknown Restaurant';
@@ -268,10 +330,9 @@ export class RestaurantDetails implements OnInit {
   }
 
   hasMealDiscount(meal: Meal): boolean {
-    return !!(meal.discount && meal.discount.percentage > 0);
-  }
-
-  trackByMeal(index: number, meal: Meal): string {
+    return !!(meal.discount && meal.discount.percentage > 0 &&
+      new Date(meal.discount.validUntil) > new Date());
+  } trackByMeal(index: number, meal: Meal): string {
     return meal._id || index.toString();
   }
 

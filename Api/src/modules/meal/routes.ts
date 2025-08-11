@@ -2,9 +2,13 @@ import { Router } from 'express';
 import { MealController } from './controllers/meal.controller';
 import { validateRequest } from '../shared/middlewares/validation.middleware';
 import { query, param } from 'express-validator';
+import categoryRoutes from './routes/categoryRoutes';
 
 const router = Router();
 const mealController = new MealController();
+
+// Category routes
+router.use('/categories', categoryRoutes);
 
 /**
  * @swagger

@@ -163,42 +163,42 @@ export class RestaurantService {
   }
 
   createCategory(categoryData: any): Observable<any> {
-    return this.http.post<any>(`${environment.apiUrl}/user/restaurants/categories`, categoryData);
+    return this.http.post<any>(`${environment.apiUrl}/restaurant/categories`, categoryData);
   }
 
   updateCategory(categoryId: string, categoryData: any): Observable<any> {
-    return this.http.put<any>(`${environment.apiUrl}/user/restaurants/categories/${categoryId}`, categoryData);
+    return this.http.put<any>(`${environment.apiUrl}/restaurant/categories/${categoryId}`, categoryData);
   }
 
   deleteCategory(categoryId: string): Observable<any> {
-    return this.http.delete<any>(`${environment.apiUrl}/user/restaurants/categories/${categoryId}`);
+    return this.http.delete<any>(`${environment.apiUrl}/restaurant/categories/${categoryId}`);
   }
 
   // Product/Meal management
   getProducts(): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/user/restaurants/meals`);
+    return this.http.get<any[]>(`${environment.apiUrl}/restaurant/meals`);
   }
 
   createProduct(productData: any): Observable<any> {
-    return this.http.post<any>(`${environment.apiUrl}/user/restaurants/meals`, productData);
+    return this.http.post<any>(`${environment.apiUrl}/restaurant/meals`, productData);
   }
 
   updateProduct(productId: string, productData: any): Observable<any> {
-    return this.http.put<any>(`${environment.apiUrl}/user/restaurants/meals/${productId}`, productData);
+    return this.http.put<any>(`${environment.apiUrl}/restaurant/meals/${productId}`, productData);
   }
 
   deleteProduct(productId: string): Observable<any> {
-    return this.http.delete<any>(`${environment.apiUrl}/user/restaurants/meals/${productId}`);
+    return this.http.delete<any>(`${environment.apiUrl}/restaurant/meals/${productId}`);
   }
 
   // Restaurant statistics (use analytics service instead)
   getRestaurantStats(): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/user/restaurants/dashboard`);
+    return this.http.get<any>(`${environment.apiUrl}/restaurant/dashboard`);
   }
 
   // Restaurant Dashboard Data (for restaurant owners)
   getRestaurantDashboard(): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/restaurants/manage/dashboard`);
+    return this.http.get<any>(`${environment.apiUrl}/restaurant/dashboard`);
   }
 
   // Restaurant Analytics (for restaurant owners)
@@ -207,7 +207,7 @@ export class RestaurantService {
     if (startDate) params = params.set('startDate', startDate);
     if (endDate) params = params.set('endDate', endDate);
 
-    return this.http.get<any>(`${environment.apiUrl}/user/restaurants/analytics`, { params });
+    return this.http.get<any>(`${environment.apiUrl}/restaurant/analytics`, { params });
   }
 
   // Order management for restaurant

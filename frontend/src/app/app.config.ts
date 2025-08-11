@@ -5,12 +5,13 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 
 import { routes } from './app.routes';
 import { AuthInterceptor } from './shared/interceptors/auth.interceptor';
+import { rateLimitInterceptor } from './shared/interceptors/rate-limit.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([AuthInterceptor])),
+    provideHttpClient(withInterceptors([AuthInterceptor, rateLimitInterceptor])),
     provideAnimationsAsync()
   ]
 };

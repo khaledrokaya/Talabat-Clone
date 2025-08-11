@@ -2,6 +2,7 @@ import { Restaurant } from '../schemas/restaurant.schema';
 import Meal from '../../meal/schemas/meal.schema';
 import { AppError } from '../../shared/middlewares/error.middleware';
 import { CreateMealDTO, UpdateMealDTO } from '../dto/restaurant.dto';
+import mongoose from 'mongoose';
 
 export class RestaurantUserService {
   /**
@@ -21,8 +22,15 @@ export class RestaurantUserService {
       throw new AppError('Restaurant must be verified to add meals', 403);
     }
 
+    // Map imageUrl to image field if provided
+    const processedMealData = { ...mealData };
+    if ((mealData as any).imageUrl) {
+      processedMealData.image = (mealData as any).imageUrl;
+      delete (processedMealData as any).imageUrl;
+    }
+
     const meal = new Meal({
-      ...mealData,
+      ...processedMealData,
       restaurantId,
     });
 
@@ -51,7 +59,14 @@ export class RestaurantUserService {
       throw new AppError('Meal not found', 404);
     }
 
-    Object.assign(meal, updateData);
+    // Map imageUrl to image field if provided
+    const processedUpdateData = { ...updateData };
+    if ((updateData as any).imageUrl) {
+      processedUpdateData.image = (updateData as any).imageUrl;
+      delete (processedUpdateData as any).imageUrl;
+    }
+
+    Object.assign(meal, processedUpdateData);
     await meal.save();
 
     return meal;
@@ -110,7 +125,7 @@ export class RestaurantUserService {
   async setMealDiscount(
     restaurantId: string,
     mealId: string,
-    discountPercentage: number,
+    discountData: { percentage: number; validUntil: string; isActive?: boolean },
   ): Promise<any> {
     const meal = await Meal.findOne({ _id: mealId, restaurantId });
     if (!meal) {
@@ -118,8 +133,9 @@ export class RestaurantUserService {
     }
 
     meal.discount = {
-      percentage: discountPercentage,
-      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      percentage: discountData.percentage,
+      validUntil: new Date(discountData.validUntil),
+      isActive: discountData.isActive !== false,
     };
 
     await meal.save();
@@ -135,11 +151,11 @@ export class RestaurantUserService {
       throw new AppError('Meal not found', 404);
     }
 
-    meal.discount = {
-      percentage: 0,
-      validUntil: new Date(), // Expired immediately
-    };
+    if (!meal.discount) {
+      throw new AppError('No discount found for this meal', 404);
+    }
 
+    meal.discount = undefined;
     await meal.save();
     return meal;
   }

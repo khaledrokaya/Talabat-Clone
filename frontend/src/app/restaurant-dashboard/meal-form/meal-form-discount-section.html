@@ -1,0 +1,106 @@
+<!-- Discount Management Section (Only in Edit Mode) -->
+<div *ngIf="isEditMode && selectedMeal" class="form-section">
+  <h3 class="section-title header-title">
+    <i class="fas fa-tags"></i>
+    Discount Management
+  </h3>
+
+  <!-- Current Discount Display -->
+  <div *ngIf="hasActiveDiscount()" class="current-discount">
+    <div class="discount-card">
+      <div class="discount-info">
+        <div class="discount-value">
+          <i class="fas fa-percentage"></i>
+          {{ getCurrentDiscount().percentage }}% OFF
+        </div>
+        <div class="discount-details">
+          <p class="original-price">
+            <strong>Original Price:</strong> {{ formatPrice(selectedMeal.price) }}
+          </p>
+          <p class="discounted-price">
+            <strong>Discounted Price:</strong>
+            <span class="price-highlight">{{ formatPrice(calculateDiscountedPrice()) }}</span>
+          </p>
+          <p class="valid-until">
+            <strong>Valid Until:</strong> {{ getCurrentDiscount().validUntil | date:'medium' }}
+          </p>
+          <p class="savings">
+            <strong>You Save:</strong>
+            <span class="savings-amount">{{ formatPrice(selectedMeal.price - calculateDiscountedPrice()) }}</span>
+          </p>
+        </div>
+      </div>
+      <div class="discount-actions">
+        <button type="button" class="btn btn-outline-danger btn-sm" (click)="removeDiscount()"
+          [disabled]="removingDiscount">
+          <i class="fas fa-times"></i>
+          {{ removingDiscount ? 'Removing...' : 'Remove Discount' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Discount State -->
+  <div *ngIf="!hasActiveDiscount()" class="no-discount">
+    <div class="no-discount-content">
+      <i class="fas fa-tags"></i>
+      <p>No active discount for this meal</p>
+    </div>
+  </div>
+
+  <!-- Set New Discount -->
+  <div class="discount-controls">
+    <button type="button" class="btn btn-outline-primary" (click)="toggleDiscountSection()">
+      <i class="fas fa-plus"></i>
+      {{ showDiscountSection ? 'Cancel' : 'Set New Discount' }}
+    </button>
+  </div>
+
+  <!-- Discount Form -->
+  <div *ngIf="showDiscountSection" class="discount-form">
+    <form [formGroup]="discountForm" (ngSubmit)="setDiscount()" class="discount-form-inner">
+      <h4 class="form-title">
+        <i class="fas fa-plus-circle"></i>
+        Set New Discount
+      </h4>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="percentage" class="required">Discount Percentage</label>
+          <div class="input-group">
+            <input type="number" id="percentage" formControlName="percentage" class="form-control" min="1" max="99"
+              placeholder="15">
+            <div class="input-group-append">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <small class="form-text text-muted">Enter a value between 1% and 99%</small>
+          <div *ngIf="discountForm.get('percentage')?.invalid && discountForm.get('percentage')?.touched"
+            class="invalid-feedback">
+            Please enter a valid percentage between 1 and 99
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="validUntil" class="required">Valid Until</label>
+          <input type="date" id="validUntil" formControlName="validUntil" class="form-control" [min]="minDate">
+          <small class="form-text text-muted">Select the expiry date for this discount</small>
+          <div *ngIf="discountForm.get('validUntil')?.invalid && discountForm.get('validUntil')?.touched"
+            class="invalid-feedback">
+            Please select a future date
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="toggleDiscountSection()">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="!discountForm.valid || settingDiscount">
+          <i class="fas fa-check" *ngIf="!settingDiscount"></i>
+          <i class="fas fa-spinner fa-spin" *ngIf="settingDiscount"></i>
+          {{ settingDiscount ? 'Setting...' : 'Set Discount' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

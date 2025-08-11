@@ -6,7 +6,8 @@ export interface IMeal extends Document {
   description: string;
   price: number;
   originalPrice?: number;
-  image: string;
+  image?: string;
+  images?: string[];
   category: string;
   restaurantId: any;
   ingredients?: string[];
@@ -25,6 +26,7 @@ export interface IMeal extends Document {
   discount?: {
     percentage: number;
     validUntil: Date;
+    isActive?: boolean;
   };
   ratings: {
     average: number;
@@ -59,35 +61,53 @@ const mealSchema = new Schema(
     },
     image: {
       type: String,
-      required: [true, 'Meal image is required'],
       validate: {
         validator: function (v: string) {
-          return /^https?:\/\/.+\.(jpg|jpeg|png|webp)$/i.test(v);
+          // Make image optional - allow empty/undefined
+          if (!v) return true;
+
+          // Allow both data URLs and regular URLs
+          if (v.startsWith('data:image/')) {
+            return /^data:image\/(jpeg|jpg|png|gif|webp);base64,([A-Za-z0-9+/=])+$/i.test(v);
+          }
+
+          // Regular URL validation
+          try {
+            new URL(v);
+            return true;
+          } catch {
+            return false;
+          }
         },
-        message: 'Please provide a valid image URL',
+        message: 'Please provide a valid image URL or data URL',
       },
     },
+    images: [{
+      type: String,
+      validate: {
+        validator: function (v: string) {
+          if (!v) return true;
+
+          // Allow both data URLs and regular URLs
+          if (v.startsWith('data:image/')) {
+            return /^data:image\/(jpeg|jpg|png|gif|webp);base64,([A-Za-z0-9+/=])+$/i.test(v);
+          }
+
+          // Regular URL validation
+          try {
+            new URL(v);
+            return true;
+          } catch {
+            return false;
+          }
+        },
+        message: 'Please provide a valid image URL or data URL',
+      },
+    }],
     category: {
       type: String,
       required: [true, 'Category is required'],
-      enum: {
-        values: [
-          'appetizers',
-          'main-course',
-          'desserts',
-          'beverages',
-          'salads',
-          'soups',
-          'pizza',
-          'pasta',
-          'burgers',
-          'sandwiches',
-          'seafood',
-          'vegetarian',
-          'kids-menu',
-        ],
-        message: 'Please select a valid category',
-      },
+      trim: true,
     },
     restaurantId: {
       type: Schema.Types.ObjectId,
@@ -106,12 +126,12 @@ const mealSchema = new Schema(
         enum: [
           'dairy',
           'eggs',
-          'nuts',
-          'gluten',
-          'soy',
-          'seafood',
+          'fish',
           'shellfish',
-          'sesame',
+          'tree_nuts',
+          'peanuts',
+          'wheat',
+          'soy',
         ],
         trim: true,
       },
@@ -159,6 +179,10 @@ const mealSchema = new Schema(
           message: 'Discount expiry date must be in the future',
         },
       },
+      isActive: {
+        type: Boolean,
+        default: true,
+      },
     },
     ratings: {
       average: {
@@ -195,7 +219,7 @@ mealSchema.index({ name: 'text', description: 'text' });
 
 // Virtual for discounted price
 mealSchema.virtual('discountedPrice').get(function () {
-  if (this.discount && this.discount.validUntil > new Date()) {
+  if (this.discount && this.discount.isActive !== false && this.discount.validUntil > new Date()) {
     return this.price * (1 - this.discount.percentage / 100);
   }
   return this.price;
@@ -203,15 +227,27 @@ mealSchema.virtual('discountedPrice').get(function () {
 
 // Virtual for effective price (considering discount)
 mealSchema.virtual('effectivePrice').get(function () {
-  if (this.discount && this.discount.validUntil > new Date()) {
+  if (this.discount && this.discount.isActive !== false && this.discount.validUntil > new Date()) {
     return this.price * (1 - this.discount.percentage / 100);
   }
   return this.price;
 });
 
+// Method to get active discount
+mealSchema.methods.getActiveDiscount = function () {
+  if (!this.discount) return null;
+
+  const now = new Date();
+  if (this.discount.isActive !== false && this.discount.validUntil > now) {
+    return this.discount;
+  }
+
+  return null;
+};
+
 // Method to check if meal is on discount
 mealSchema.methods.isOnDiscount = function (): boolean {
-  return !!(this.discount && this.discount.validUntil > new Date());
+  return !!this.getActiveDiscount();
 };
 
 // Static method to find meals by restaurant
@@ -219,22 +255,28 @@ mealSchema.statics.findByRestaurant = function (
   restaurantId: string,
   options: any = {},
 ) {
-  const query = { restaurantId, isAvailable: true };
+  const query: any = { restaurantId };
+
+  // Only filter by availability if explicitly requested
+  // For restaurant management, we want to show all meals (available and unavailable)
+  if (options.isAvailable !== undefined) {
+    query.isAvailable = options.isAvailable;
+  }
 
   if (options.category) {
-    (query as any).category = options.category;
+    query.category = options.category;
   }
 
   if (options.vegetarian) {
-    (query as any).isVegetarian = true;
+    query.isVegetarian = true;
   }
 
   if (options.vegan) {
-    (query as any).isVegan = true;
+    query.isVegan = true;
   }
 
   if (options.glutenFree) {
-    (query as any).isGlutenFree = true;
+    query.isGlutenFree = true;
   }
 
   return this.find(query)
@@ -249,8 +291,16 @@ mealSchema.statics.searchMeals = function (
 ) {
   const query: any = {
     $text: { $search: searchTerm },
-    isAvailable: true,
   };
+
+  // Only filter by availability for public searches
+  // For restaurant management, allow searching all meals
+  if (filters.isAvailable !== undefined) {
+    query.isAvailable = filters.isAvailable;
+  } else if (!filters.includeUnavailable) {
+    // Default behavior for public searches - only show available meals
+    query.isAvailable = true;
+  }
 
   if (filters.category) {
     query.category = filters.category;

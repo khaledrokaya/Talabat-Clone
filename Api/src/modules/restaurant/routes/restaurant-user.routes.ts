@@ -271,7 +271,7 @@ router.use(authorize('restaurant_owner'));
 
 /**
  * @swagger
- * /api/restaurants/manage/dashboard:
+ * /api/restaurant/dashboard:
  *   get:
  *     summary: Get restaurant dashboard data
  *     description: Retrieve comprehensive dashboard data including today's stats, recent orders, and key performance indicators
@@ -420,7 +420,7 @@ router.get('/meals', restaurantUserController.getMyMeals);
 
 /**
  * @swagger
- * /api/restaurants/manage/meals:
+ * /api/restaurant/meals:
  *   post:
  *     summary: Create a new meal
  *     description: Add a new meal to the restaurant's menu with detailed information including ingredients, nutritional data, and pricing
@@ -508,7 +508,7 @@ router.post('/meals', validateCreateMeal, restaurantUserController.createMeal);
 
 /**
  * @swagger
- * /api/restaurants/manage/meals/{mealId}:
+ * /api/restaurant/meals/{mealId}:
  *   put:
  *     summary: Update a meal
  *     description: Update an existing meal's information including name, price, description, and availability
@@ -607,7 +607,7 @@ router.put(
 
 /**
  * @swagger
- * /api/restaurants/manage/meals/{mealId}:
+ * /api/restaurant/meals/{mealId}:
  *   delete:
  *     summary: Delete a meal
  *     description: Remove a meal from the restaurant menu permanently
@@ -750,6 +750,9 @@ router.patch(
  *               validUntil:
  *                 type: string
  *                 format: date-time
+ *               isActive:
+ *                 type: boolean
+ *                 default: true
  *     responses:
  *       200:
  *         description: Discount set successfully

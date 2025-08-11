@@ -342,75 +342,6 @@ router.get('/', restaurantPublicController.getRestaurants);
 
 /**
  * @swagger
- * /api/restaurants/{restaurantId}:
- *   get:
- *     summary: Get restaurant by ID with menu (public)
- *     description: Retrieve detailed information about a specific restaurant including its complete menu
- *     tags: [Restaurant Public]
- *     parameters:
- *       - in: path
- *         name: restaurantId
- *         required: true
- *         schema:
- *           type: string
- *           pattern: '^[0-9a-fA-F]{24}$'
- *         description: MongoDB ObjectId of the restaurant
- *         example: "507f1f77bcf86cd799439011"
- *     responses:
- *       200:
- *         description: Restaurant retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/ApiResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       type: object
- *                       properties:
- *                         restaurant:
- *                           $ref: '#/components/schemas/RestaurantWithMenu'
- *             example:
- *               success: true
- *               message: "Restaurant retrieved successfully"
- *               data:
- *                 restaurant:
- *                   _id: "507f1f77bcf86cd799439011"
- *                   name: "Pizza Palace"
- *                   description: "Authentic Italian pizzas"
- *                   cuisine: "Italian"
- *                   rating: 4.5
- *                   isOpen: true
- *                   menu:
- *                     - _id: "507f1f77bcf86cd799439012"
- *                       name: "Margherita Pizza"
- *                       price: 12.99
- *                       category: "pizza"
- *                       isAvailable: true
- *       404:
- *         description: Restaurant not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiError'
- *             example:
- *               success: false
- *               message: "Restaurant not found"
- *       400:
- *         description: Invalid restaurant ID format
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiError'
- *             example:
- *               success: false
- *               message: "Invalid restaurant ID format"
- */
-router.get('/:restaurantId', restaurantPublicController.getRestaurantById);
-
-/**
- * @swagger
  * /api/restaurants/location/nearby:
  *   get:
  *     summary: Get nearby restaurants (public)
@@ -1003,5 +934,74 @@ router.get(
   validateMealId,
   restaurantPublicController.getMealById,
 );
+
+/**
+ * @swagger
+ * /api/restaurants/{restaurantId}:
+ *   get:
+ *     summary: Get restaurant by ID with menu (public)
+ *     description: Retrieve detailed information about a specific restaurant including its complete menu
+ *     tags: [Restaurant Public]
+ *     parameters:
+ *       - in: path
+ *         name: restaurantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *         description: MongoDB ObjectId of the restaurant
+ *         example: "507f1f77bcf86cd799439011"
+ *     responses:
+ *       200:
+ *         description: Restaurant retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         restaurant:
+ *                           $ref: '#/components/schemas/RestaurantWithMenu'
+ *             example:
+ *               success: true
+ *               message: "Restaurant retrieved successfully"
+ *               data:
+ *                 restaurant:
+ *                   _id: "507f1f77bcf86cd799439011"
+ *                   name: "Pizza Palace"
+ *                   description: "Authentic Italian pizzas"
+ *                   cuisine: "Italian"
+ *                   rating: 4.5
+ *                   isOpen: true
+ *                   menu:
+ *                     - _id: "507f1f77bcf86cd799439012"
+ *                       name: "Margherita Pizza"
+ *                       price: 12.99
+ *                       category: "pizza"
+ *                       isAvailable: true
+ *       404:
+ *         description: Restaurant not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiError'
+ *             example:
+ *               success: false
+ *               message: "Restaurant not found"
+ *       400:
+ *         description: Invalid restaurant ID format
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiError'
+ *             example:
+ *               success: false
+ *               message: "Invalid restaurant ID format"
+ */
+router.get('/:restaurantId', restaurantPublicController.getRestaurantById);
 
 export default router;

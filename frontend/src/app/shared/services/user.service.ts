@@ -12,8 +12,8 @@ export class UserService {
 
   constructor(private http: HttpClient) { }
 
-  getProfile(): Observable<User> {
-    return this.http.get<User>(`${environment.apiUrl}/user/profile`);
+  getProfile(): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/auth/profile`);
   }
 
   updateProfile(userData: Partial<User>): Observable<User> {

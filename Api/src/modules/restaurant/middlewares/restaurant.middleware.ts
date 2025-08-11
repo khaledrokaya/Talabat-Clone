@@ -1,6 +1,25 @@
 import { body, query, param } from 'express-validator';
 
+// Middleware to ensure JSON-only requests (no form-data)
+export const validateJsonOnly = (req: any, res: any, next: any) => {
+  const contentType = req.headers['content-type'];
+
+  if (req.method !== 'GET' && req.method !== 'DELETE') {
+    if (!contentType || !contentType.includes('application/json')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Content-Type must be application/json. Form data and file uploads are not supported. Use data URLs for images.',
+        expectedContentType: 'application/json',
+        receivedContentType: contentType || 'not specified'
+      });
+    }
+  }
+
+  next();
+};
+
 export const validateCreateMeal = [
+  validateJsonOnly,
   body('name')
     .trim()
     .notEmpty()
@@ -16,74 +35,156 @@ export const validateCreateMeal = [
     .withMessage('Description must be between 10 and 500 characters'),
 
   body('price')
+    .notEmpty()
+    .withMessage('Price is required')
     .isFloat({ min: 0.01 })
-    .withMessage('Price must be a positive number'),
+    .withMessage('Price must be a positive number greater than 0'),
 
   body('category')
     .trim()
     .notEmpty()
     .withMessage('Category is required')
-    .isIn([
-      'appetizer',
-      'main_course',
-      'dessert',
-      'beverage',
-      'salad',
-      'soup',
-      'sandwich',
-      'pizza',
-      'pasta',
-      'seafood',
-      'meat',
-      'vegetarian',
-      'vegan',
-    ])
-    .withMessage('Invalid category'),
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Category must be between 1 and 50 characters'),
 
-  body('prepTime')
+  body('preparationTime')
+    .notEmpty()
+    .withMessage('Preparation time is required')
     .isInt({ min: 1, max: 180 })
     .withMessage('Preparation time must be between 1 and 180 minutes'),
 
   body('ingredients')
-    .isArray({ min: 1 })
-    .withMessage('At least one ingredient is required'),
+    .optional()
+    .isArray({ min: 0 })
+    .withMessage('Ingredients must be an array')
+    .custom((value) => {
+      if (value && value.length > 0) {
+        for (let ingredient of value) {
+          if (typeof ingredient !== 'string' || ingredient.trim().length === 0) {
+            throw new Error('Each ingredient must be a non-empty string');
+          }
+        }
+      }
+      return true;
+    }),
 
   body('ingredients.*')
+    .optional()
     .trim()
     .notEmpty()
-    .withMessage('Ingredient cannot be empty'),
+    .withMessage('Ingredient cannot be empty')
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Each ingredient must be between 1 and 100 characters'),
 
-  body('images').optional().isArray().withMessage('Images must be an array'),
+  body('imageUrl')
+    .optional()
+    .custom((value) => {
+      if (value === null || value === undefined) {
+        return true; // Optional field
+      }
+
+      if (typeof value !== 'string') {
+        throw new Error('Image URL must be a string');
+      }
+
+      if (value.trim().length === 0) {
+        throw new Error('Image URL cannot be empty if provided');
+      }
+
+      // Check if it's a data URL
+      if (value.startsWith('data:image/')) {
+        const dataUrlPattern = /^data:image\/(jpeg|jpg|png|gif|webp);base64,([A-Za-z0-9+/=])+$/;
+        if (!dataUrlPattern.test(value)) {
+          throw new Error('Invalid data URL format. Expected: data:image/[jpeg|jpg|png|gif|webp];base64,[base64data]');
+        }
+        return true;
+      }
+
+      // Check if it's a regular URL
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        throw new Error('Image URL must be a valid URL or data URL');
+      }
+    })
+    .withMessage('Image URL must be a valid URL or data URL'),
+
+  body('images')
+    .optional()
+    .isArray()
+    .withMessage('Images must be an array')
+    .custom((value) => {
+      if (value && value.length > 20) {
+        throw new Error('Maximum 20 images allowed');
+      }
+      return true;
+    }),
 
   body('images.*')
     .optional()
-    .isURL()
-    .withMessage('Each image must be a valid URL'),
+    .custom((value) => {
+      if (value === null || value === undefined) {
+        return true;
+      }
+
+      if (typeof value !== 'string') {
+        throw new Error('Each image must be a string (URL or data URL)');
+      }
+
+      if (value.trim().length === 0) {
+        throw new Error('Image URL cannot be empty');
+      }
+
+      // Check if it's a data URL
+      if (value.startsWith('data:image/')) {
+        const dataUrlPattern = /^data:image\/(jpeg|jpg|png|gif|webp);base64,([A-Za-z0-9+/=])+$/;
+        if (!dataUrlPattern.test(value)) {
+          throw new Error('Invalid data URL format. Expected: data:image/[jpeg|jpg|png|gif|webp];base64,[base64data]');
+        }
+        return true;
+      }
+
+      // Check if it's a regular URL
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        throw new Error('Image must be a valid URL or data URL');
+      }
+    })
+    .withMessage('Each image must be a valid URL or data URL'),
 
   body('isVegetarian')
     .optional()
     .isBoolean()
-    .withMessage('isVegetarian must be a boolean'),
+    .withMessage('isVegetarian must be a boolean (true or false)'),
 
   body('isVegan')
     .optional()
     .isBoolean()
-    .withMessage('isVegan must be a boolean'),
+    .withMessage('isVegan must be a boolean (true or false)'),
 
   body('isGlutenFree')
     .optional()
     .isBoolean()
-    .withMessage('isGlutenFree must be a boolean'),
+    .withMessage('isGlutenFree must be a boolean (true or false)'),
 
   body('spicyLevel')
     .optional()
     .isIn(['mild', 'medium', 'hot', 'very_hot'])
-    .withMessage('Invalid spicy level'),
+    .withMessage('Spicy level must be one of: mild, medium, hot, very_hot'),
 
   body('allergens')
     .optional()
     .isArray()
-    .withMessage('Allergens must be an array'),
+    .withMessage('Allergens must be an array')
+    .custom((value) => {
+      if (value && value.length > 8) {
+        throw new Error('Maximum 8 allergens allowed');
+      }
+      return true;
+    }),
 
   body('allergens.*')
     .optional()
@@ -97,27 +198,27 @@ export const validateCreateMeal = [
       'wheat',
       'soy',
     ])
-    .withMessage('Invalid allergen'),
+    .withMessage('Invalid allergen. Must be one of: dairy, eggs, fish, shellfish, tree_nuts, peanuts, wheat, soy'),
 
   body('nutritionalInfo.calories')
     .optional()
-    .isInt({ min: 0 })
-    .withMessage('Calories must be a non-negative integer'),
+    .isInt({ min: 0, max: 9999 })
+    .withMessage('Calories must be a non-negative integer between 0 and 9999'),
 
   body('nutritionalInfo.protein')
     .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Protein must be a non-negative number'),
+    .isFloat({ min: 0, max: 999 })
+    .withMessage('Protein must be a non-negative number between 0 and 999 grams'),
 
   body('nutritionalInfo.carbs')
     .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Carbs must be a non-negative number'),
+    .isFloat({ min: 0, max: 999 })
+    .withMessage('Carbs must be a non-negative number between 0 and 999 grams'),
 
   body('nutritionalInfo.fat')
     .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Fat must be a non-negative number'),
+    .isFloat({ min: 0, max: 999 })
+    .withMessage('Fat must be a non-negative number between 0 and 999 grams'),
 
   body('portionSize')
     .optional()
@@ -128,96 +229,179 @@ export const validateCreateMeal = [
   body('isAvailable')
     .optional()
     .isBoolean()
-    .withMessage('isAvailable must be a boolean'),
+    .withMessage('isAvailable must be a boolean (true or false)'),
 ];
 
 export const validateUpdateMeal = [
+  validateJsonOnly,
   param('mealId').isMongoId().withMessage('Invalid meal ID'),
 
   body('name')
     .optional()
     .trim()
+    .notEmpty()
+    .withMessage('Meal name cannot be empty if provided')
     .isLength({ min: 2, max: 100 })
     .withMessage('Meal name must be between 2 and 100 characters'),
 
   body('description')
     .optional()
     .trim()
+    .notEmpty()
+    .withMessage('Description cannot be empty if provided')
     .isLength({ min: 10, max: 500 })
     .withMessage('Description must be between 10 and 500 characters'),
 
   body('price')
     .optional()
     .isFloat({ min: 0.01 })
-    .withMessage('Price must be a positive number'),
+    .withMessage('Price must be a positive number greater than 0'),
 
   body('category')
     .optional()
     .trim()
-    .isIn([
-      'appetizer',
-      'main_course',
-      'dessert',
-      'beverage',
-      'salad',
-      'soup',
-      'sandwich',
-      'pizza',
-      'pasta',
-      'seafood',
-      'meat',
-      'vegetarian',
-      'vegan',
-    ])
-    .withMessage('Invalid category'),
+    .notEmpty()
+    .withMessage('Category cannot be empty if provided')
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Category must be between 1 and 50 characters'),
 
-  body('prepTime')
+  body('preparationTime')
     .optional()
     .isInt({ min: 1, max: 180 })
     .withMessage('Preparation time must be between 1 and 180 minutes'),
 
   body('ingredients')
     .optional()
-    .isArray({ min: 1 })
-    .withMessage('At least one ingredient is required'),
+    .isArray({ min: 0 })
+    .withMessage('Ingredients must be an array')
+    .custom((value) => {
+      if (value && value.length > 0) {
+        for (let ingredient of value) {
+          if (typeof ingredient !== 'string' || ingredient.trim().length === 0) {
+            throw new Error('Each ingredient must be a non-empty string');
+          }
+        }
+      }
+      return true;
+    }),
 
   body('ingredients.*')
     .optional()
     .trim()
     .notEmpty()
-    .withMessage('Ingredient cannot be empty'),
+    .withMessage('Ingredient cannot be empty')
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Each ingredient must be between 1 and 100 characters'),
 
-  body('images').optional().isArray().withMessage('Images must be an array'),
+  body('imageUrl')
+    .optional()
+    .custom((value) => {
+      if (value === null || value === undefined) {
+        return true; // Optional field
+      }
+
+      if (typeof value !== 'string') {
+        throw new Error('Image URL must be a string');
+      }
+
+      if (value.trim().length === 0) {
+        throw new Error('Image URL cannot be empty if provided');
+      }
+
+      // Check if it's a data URL
+      if (value.startsWith('data:image/')) {
+        const dataUrlPattern = /^data:image\/(jpeg|jpg|png|gif|webp);base64,([A-Za-z0-9+/=])+$/;
+        if (!dataUrlPattern.test(value)) {
+          throw new Error('Invalid data URL format. Expected: data:image/[jpeg|jpg|png|gif|webp];base64,[base64data]');
+        }
+        return true;
+      }
+
+      // Check if it's a regular URL
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        throw new Error('Image URL must be a valid URL or data URL');
+      }
+    })
+    .withMessage('Image URL must be a valid URL or data URL'),
+
+  body('images')
+    .optional()
+    .isArray()
+    .withMessage('Images must be an array')
+    .custom((value) => {
+      if (value && value.length > 20) {
+        throw new Error('Maximum 20 images allowed');
+      }
+      return true;
+    }),
 
   body('images.*')
     .optional()
-    .isURL()
-    .withMessage('Each image must be a valid URL'),
+    .custom((value) => {
+      if (value === null || value === undefined) {
+        return true;
+      }
+
+      if (typeof value !== 'string') {
+        throw new Error('Each image must be a string (URL or data URL)');
+      }
+
+      if (value.trim().length === 0) {
+        throw new Error('Image URL cannot be empty');
+      }
+
+      // Check if it's a data URL
+      if (value.startsWith('data:image/')) {
+        const dataUrlPattern = /^data:image\/(jpeg|jpg|png|gif|webp);base64,([A-Za-z0-9+/=])+$/;
+        if (!dataUrlPattern.test(value)) {
+          throw new Error('Invalid data URL format. Expected: data:image/[jpeg|jpg|png|gif|webp];base64,[base64data]');
+        }
+        return true;
+      }
+
+      // Check if it's a regular URL
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        throw new Error('Image must be a valid URL or data URL');
+      }
+    })
+    .withMessage('Each image must be a valid URL or data URL'),
 
   body('isVegetarian')
     .optional()
     .isBoolean()
-    .withMessage('isVegetarian must be a boolean'),
+    .withMessage('isVegetarian must be a boolean (true or false)'),
 
   body('isVegan')
     .optional()
     .isBoolean()
-    .withMessage('isVegan must be a boolean'),
+    .withMessage('isVegan must be a boolean (true or false)'),
 
   body('isGlutenFree')
     .optional()
     .isBoolean()
-    .withMessage('isGlutenFree must be a boolean'),
+    .withMessage('isGlutenFree must be a boolean (true or false)'),
 
   body('spicyLevel')
     .optional()
     .isIn(['mild', 'medium', 'hot', 'very_hot'])
-    .withMessage('Invalid spicy level'),
+    .withMessage('Spicy level must be one of: mild, medium, hot, very_hot'),
 
   body('allergens')
     .optional()
     .isArray()
-    .withMessage('Allergens must be an array'),
+    .withMessage('Allergens must be an array')
+    .custom((value) => {
+      if (value && value.length > 8) {
+        throw new Error('Maximum 8 allergens allowed');
+      }
+      return true;
+    }),
 
   body('allergens.*')
     .optional()
@@ -231,27 +415,27 @@ export const validateUpdateMeal = [
       'wheat',
       'soy',
     ])
-    .withMessage('Invalid allergen'),
+    .withMessage('Invalid allergen. Must be one of: dairy, eggs, fish, shellfish, tree_nuts, peanuts, wheat, soy'),
 
   body('nutritionalInfo.calories')
     .optional()
-    .isInt({ min: 0 })
-    .withMessage('Calories must be a non-negative integer'),
+    .isInt({ min: 0, max: 9999 })
+    .withMessage('Calories must be a non-negative integer between 0 and 9999'),
 
   body('nutritionalInfo.protein')
     .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Protein must be a non-negative number'),
+    .isFloat({ min: 0, max: 999 })
+    .withMessage('Protein must be a non-negative number between 0 and 999 grams'),
 
   body('nutritionalInfo.carbs')
     .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Carbs must be a non-negative number'),
+    .isFloat({ min: 0, max: 999 })
+    .withMessage('Carbs must be a non-negative number between 0 and 999 grams'),
 
   body('nutritionalInfo.fat')
     .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Fat must be a non-negative number'),
+    .isFloat({ min: 0, max: 999 })
+    .withMessage('Fat must be a non-negative number between 0 and 999 grams'),
 
   body('portionSize')
     .optional()
@@ -262,7 +446,7 @@ export const validateUpdateMeal = [
   body('isAvailable')
     .optional()
     .isBoolean()
-    .withMessage('isAvailable must be a boolean'),
+    .withMessage('isAvailable must be a boolean (true or false)'),
 ];
 
 export const validateSearchMeals = [

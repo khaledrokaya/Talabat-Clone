@@ -10,13 +10,32 @@ const restaurantUserService = new RestaurantUserService();
 
 export class RestaurantUserController {
   /**
+   * Helper method to format validation errors with detailed information
+   */
+  private formatValidationErrors(errors: any): string {
+    const errorMessages = errors.array().map((error: any) => {
+      const field = error.type === 'field' ? error.path : error.param || 'unknown';
+      const value = error.type === 'field' ? error.value : error.value;
+
+      // Provide context for different error types
+      if (value === undefined || value === null || value === '') {
+        return `${field}: ${error.msg} (field is missing or empty)`;
+      } else {
+        return `${field}: ${error.msg} (received: ${typeof value === 'object' ? JSON.stringify(value) : value})`;
+      }
+    });
+
+    return `Validation failed: ${errorMessages.join(', ')}`;
+  }
+
+  /**
    * Create a new meal
    */
   createMeal = asyncHandler(
     async (req: AuthenticatedRequest, res: Response) => {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        throw new AppError('Validation failed', 400);
+        throw new AppError(this.formatValidationErrors(errors), 400);
       }
 
       const restaurantId = req.user!.id;
@@ -38,7 +57,7 @@ export class RestaurantUserController {
     async (req: AuthenticatedRequest, res: Response) => {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        throw new AppError('Validation failed', 400);
+        throw new AppError(this.formatValidationErrors(errors), 400);
       }
 
       const restaurantId = req.user!.id;
@@ -128,11 +147,12 @@ export class RestaurantUserController {
 
       const restaurantId = req.user!.id;
       const { mealId } = req.params;
-      const { discountPercentage } = req.body;
+      const { percentage, validUntil, isActive = true } = req.body;
+
       const meal = await restaurantUserService.setMealDiscount(
         restaurantId,
         mealId,
-        discountPercentage,
+        { percentage, validUntil, isActive },
       );
 
       res.json(
@@ -153,6 +173,7 @@ export class RestaurantUserController {
 
       const restaurantId = req.user!.id;
       const { mealId } = req.params;
+
       const meal = await restaurantUserService.removeMealDiscount(
         restaurantId,
         mealId,

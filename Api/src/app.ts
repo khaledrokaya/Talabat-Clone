@@ -196,19 +196,47 @@ class App {
             register: 'POST /api/auth/register',
             logout: 'POST /api/auth/logout'
           },
-          restaurants: {
+          'restaurants (public)': {
             list: 'GET /api/restaurants',
-            details: 'GET /api/restaurants/:id'
+            details: 'GET /api/restaurants/:id',
+            nearby: 'GET /api/restaurants/location/nearby',
+            topRated: 'GET /api/restaurants/featured/top-rated',
+            mealSearch: 'GET /api/restaurants/meals/search',
+            featuredMeals: 'GET /api/restaurants/meals/featured',
+            mealsByCategory: 'GET /api/restaurants/meals/category/:category',
+            mealDetails: 'GET /api/restaurants/meals/:mealId'
+          },
+          'restaurant (management - requires auth)': {
+            dashboard: 'GET /api/restaurant/dashboard',
+            analytics: 'GET /api/restaurant/analytics',
+            profile: 'PUT /api/restaurant/profile',
+            operationalStatus: 'PATCH /api/restaurant/operational-status',
+            meals: {
+              list: 'GET /api/restaurant/meals',
+              create: 'POST /api/restaurant/meals',
+              update: 'PUT /api/restaurant/meals/:id',
+              delete: 'DELETE /api/restaurant/meals/:id',
+              toggleAvailability: 'PATCH /api/restaurant/meals/:id/availability',
+              setDiscount: 'POST /api/restaurant/meals/:id/discount',
+              removeDiscount: 'DELETE /api/restaurant/meals/:id/discount'
+            }
           },
           meals: {
             list: 'GET /api/meals',
-            details: 'GET /api/meals/:id'
+            details: 'GET /api/meals/:id',
+            categories: 'GET /api/meals/categories'
           },
           orders: {
             create: 'POST /api/orders',
             list: 'GET /api/orders',
             details: 'GET /api/orders/:id'
           }
+        },
+        notes: {
+          imageHandling: 'All image uploads should be done as data URLs (base64) in JSON requests. No form-data or binary uploads.',
+          authentication: 'Use Bearer token for authenticated endpoints.',
+          publicEndpoints: 'Use /api/restaurants/* for public browsing',
+          privateEndpoints: 'Use /api/restaurant/* for restaurant management (requires authentication)'
         },
         status: 'healthy',
         timestamp: new Date().toISOString()
@@ -307,8 +335,8 @@ class App {
     this.app.use('/api/customer', customerRoutes);
     this.app.use('/api/orders', orderRoutes);
     this.app.use('/api/meals', mealRoutes);
-    this.app.use('/api/restaurants', restaurantPublicRoutes);
-    this.app.use('/api/user/restaurants', restaurantUserRoutes);
+    this.app.use('/api/restaurants', restaurantPublicRoutes); // Public restaurant endpoints
+    this.app.use('/api/restaurant', restaurantUserRoutes); // Private restaurant management endpoints
 
     // 404 handler for API routes
     this.app.use('/api/*', (req, res) => {
@@ -318,12 +346,15 @@ class App {
         availableEndpoints: [
           '/api/auth',
           '/api/admin',
-          '/api/restaurants',
+          '/api/restaurants (public)',
+          '/api/restaurant (private, requires auth)',
           '/api/meals',
           '/api/delivery',
           '/api/customer',
           '/api/orders',
         ],
+        documentation: '/swagger',
+        help: 'Visit /api for complete endpoint documentation'
       });
     });
 
