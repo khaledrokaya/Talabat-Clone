@@ -1,1 +1,60 @@
-<p>verify-email works!</p>
+<div class="verify-email-container">
+  <div class="verify-email-card">
+    <!-- Logo -->
+    <div class="logo-section">
+      <app-talabat-logo></app-talabat-logo>
+    </div>
+
+    <!-- Header -->
+    <div class="header-section">
+      <h2>Verify Your Email</h2>
+      <p class="subtitle">
+        {{ type === 'registration' ? 'To complete registration, please enter the verification code sent to' : 'To reset
+        your password, please enter the verification code sent to' }}
+      </p>
+      <p class="email">{{ email }}</p>
+    </div>
+
+    <!-- OTP Input Form -->
+    <form (ngSubmit)="onVerifyOTP()" class="verify-form">
+      <div class="form-group">
+        <label for="otp">Verification Code (6 digits)</label>
+        <input type="text" id="otp" [(ngModel)]="otp" name="otp" placeholder="000000" maxlength="6" pattern="[0-9]{6}"
+          class="otp-input" [class.error]="errorMessage" required />
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Success Message -->
+      <div *ngIf="successMessage" class="success-message">
+        {{ successMessage }}
+      </div>
+
+      <!-- Verify Button -->
+      <button type="submit" class="verify-btn" [disabled]="isLoading || otp.length !== 6" [class.loading]="isLoading">
+        <span *ngIf="!isLoading">Verify</span>
+        <span *ngIf="isLoading">Verifying...</span>
+      </button>
+    </form>
+
+    <!-- Resend OTP Section -->
+    <div class="resend-section">
+      <p class="resend-text">Didn't receive the code?</p>
+      <button type="button" class="resend-btn" [disabled]="!canResend || isResending" (click)="onResendOTP()">
+        <span *ngIf="!isResending && canResend">Send New Code</span>
+        <span *ngIf="isResending">Sending...</span>
+        <span *ngIf="!canResend && countdown > 0">Resend in {{ countdown }}s</span>
+      </button>
+    </div>
+
+    <!-- Back Link -->
+    <div class="back-section">
+      <button type="button" class="back-btn" (click)="goBack()">
+        {{ type === 'registration' ? 'Back to Login' : 'Back to Password Recovery' }}
+      </button>
+    </div>
+  </div>
+</div>

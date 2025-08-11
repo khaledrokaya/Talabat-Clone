@@ -174,7 +174,7 @@ export class PersonalData implements OnInit, OnDestroy {
   }
 
   onSubmitPersonalData() {
-    if (this.profileForm.invalid || this.addressForm.invalid || this.deliveryPreferencesForm.invalid) {
+    if (this.profileForm.invalid) {
       this.markFormGroupTouched();
       return;
     }
@@ -183,20 +183,88 @@ export class PersonalData implements OnInit, OnDestroy {
     this.clearMessages();
 
     const personalData = this.profileForm.value;
-    const addressData = this.addressForm.value;
-    const deliveryData = this.deliveryPreferencesForm.value;
 
-    // Create the update data according to the specified format
+    // Create the update data for personal info only
     const updateData = {
       firstName: personalData.firstName,
       lastName: personalData.lastName,
-      phone: personalData.phone,
+      phone: personalData.phone
+    };
+
+    const updateSub = this.profileService.updateProfile(updateData).subscribe({
+      next: (updatedProfile: CustomerProfile) => {
+        this.profile = updatedProfile;
+        this.successMessage = 'Personal information updated successfully';
+        this.submitting = false;
+        this.hideMessageAfterDelay();
+
+        // Update auth service with new user data by refreshing user state
+        this.authService.refreshUserState();
+      },
+      error: (error: any) => {
+        console.error('Error updating personal data:', error);
+        this.errorMessage = error.error?.message || 'Error saving personal information';
+        this.submitting = false;
+        this.hideMessageAfterDelay();
+      }
+    });
+    this.subscriptions.push(updateSub);
+  }
+
+  onSubmitAddress() {
+    if (this.addressForm.invalid) {
+      this.markAddressFormTouched();
+      return;
+    }
+
+    this.submitting = true;
+    this.clearMessages();
+
+    const addressData = this.addressForm.value;
+
+    // Create the update data for address only
+    const updateData = {
       address: {
         street: addressData.street,
         city: addressData.city,
         state: addressData.state,
         zipCode: addressData.zipCode
+      }
+    };
+
+    const updateSub = this.profileService.updateProfile(updateData).subscribe({
+      next: (updatedProfile: CustomerProfile) => {
+        this.profile = updatedProfile;
+        this.successMessage = 'Address updated successfully';
+        this.submitting = false;
+        this.hideMessageAfterDelay();
+
+        // Update auth service with new user data by refreshing user state
+        this.authService.refreshUserState();
       },
+      error: (error: any) => {
+        console.error('Error updating address:', error);
+        this.errorMessage = error.error?.message || 'Error saving address';
+        this.submitting = false;
+        this.hideMessageAfterDelay();
+      }
+    });
+    this.subscriptions.push(updateSub);
+  }
+
+  onSubmitDeliveryPreferences() {
+    if (this.deliveryPreferencesForm.invalid) {
+      this.markDeliveryFormTouched();
+      return;
+    }
+
+    this.submitting = true;
+    this.clearMessages();
+
+    const deliveryData = this.deliveryPreferencesForm.value;
+
+    // Create the update data for delivery preferences only
+    const updateData = {
       deliveryPreferences: {
         preferredDeliveryTime: deliveryData.preferredDeliveryTime,
         specialInstructions: deliveryData.specialInstructions
@@ -206,7 +274,7 @@ export class PersonalData implements OnInit, OnDestroy {
     const updateSub = this.profileService.updateProfile(updateData).subscribe({
       next: (updatedProfile: CustomerProfile) => {
         this.profile = updatedProfile;
-        this.successMessage = 'Changes saved successfully';
+        this.successMessage = 'Delivery preferences updated successfully';
         this.submitting = false;
         this.hideMessageAfterDelay();
 
@@ -214,8 +282,8 @@ export class PersonalData implements OnInit, OnDestroy {
         this.authService.refreshUserState();
       },
       error: (error: any) => {
-        console.error('Error updating profile:', error);
-        this.errorMessage = error.error?.message || 'Error saving data';
+        console.error('Error updating delivery preferences:', error);
+        this.errorMessage = error.error?.message || 'Error saving delivery preferences';
         this.submitting = false;
         this.hideMessageAfterDelay();
       }
@@ -286,13 +354,17 @@ export class PersonalData implements OnInit, OnDestroy {
       const control = this.profileForm.get(key);
       control?.markAsTouched();
     });
+  }
 
+  private markAddressFormTouched() {
     // Mark address form as touched
     Object.keys(this.addressForm.controls).forEach(key => {
       const control = this.addressForm.get(key);
       control?.markAsTouched();
     });
+  }
 
+  private markDeliveryFormTouched() {
     // Mark delivery preferences form as touched
     Object.keys(this.deliveryPreferencesForm.controls).forEach(key => {
       const control = this.deliveryPreferencesForm.get(key);

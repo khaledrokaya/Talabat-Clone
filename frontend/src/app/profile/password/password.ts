@@ -177,8 +177,20 @@ export class Password implements OnInit {
           this.isLoading = false;
           console.error('خطأ في تغيير كلمة المرور:', error);
 
-          if (error.status === 400) {
-            this.errorMessage = 'كلمة المرور الحالية غير صحيحة';
+          // Handle different types of errors
+          if (error.status === 404) {
+            this.errorMessage = 'خدمة تغيير كلمة المرور غير متوفرة حالياً. يرجى المحاولة لاحقاً.';
+          } else if (error.status === 400) {
+            // Check if there's a specific error message from the server
+            if (error.error && error.error.message) {
+              this.errorMessage = error.error.message;
+            } else {
+              this.errorMessage = 'كلمة المرور الحالية غير صحيحة';
+            }
+          } else if (error.status === 401) {
+            this.errorMessage = 'جلسة المستخدم منتهية. يرجى تسجيل الدخول مرة أخرى.';
+          } else if (error.status === 422) {
+            this.errorMessage = 'البيانات المدخلة غير صحيحة. يرجى التحقق من كلمة المرور الجديدة.';
           } else {
             this.errorMessage = 'حدث خطأ أثناء تغيير كلمة المرور. يرجى المحاولة مرة أخرى.';
           }

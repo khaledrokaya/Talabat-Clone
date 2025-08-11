@@ -99,9 +99,31 @@ export class AuthService {
         throw new AppError('Invalid role specified', 400);
     }
 
-    // Auto-verify email as per requirements
-    user.isEmailVerified = true;
+    // Keep email verification as false until OTP is verified
+    user.isEmailVerified = false;
     await user.save();
+
+    // Generate OTP for email verification
+    const otp = Helpers.generateOTP();
+    const otpExpiry = new Date();
+    otpExpiry.setMinutes(
+      otpExpiry.getMinutes() + parseInt(process.env.OTP_EXPIRES_IN || '10'),
+    );
+
+    // Save OTP
+    await OTP.create({
+      email: email.toLowerCase(),
+      otp,
+      purpose: 'email_verification',
+      expiresAt: otpExpiry,
+    });
+
+    // Send registration OTP email
+    await emailService.sendRegistrationOTP(
+      email.toLowerCase(),
+      otp,
+      user.firstName,
+    );
 
     // Prepare response message based on role
     let message = '';
@@ -120,11 +142,11 @@ export class AuthService {
         message = 'Customer registered successfully. Please verify your email with the OTP sent.';
         break;
       case 'restaurant_owner':
-        message = 'Restaurant registered successfully. Your application is pending admin approval.';
+        message = 'Restaurant registered successfully. Please verify your email with the OTP sent before admin approval.';
         responseData.verificationStatus = 'pending';
         break;
       case 'delivery':
-        message = 'Delivery driver registered successfully. Your application is pending admin approval.';
+        message = 'Delivery driver registered successfully. Please verify your email with the OTP sent before admin approval.';
         responseData.verificationStatus = 'pending';
         break;
     }
@@ -240,7 +262,37 @@ export class AuthService {
 
     // Check if email is verified
     if (!user.isEmailVerified) {
-      throw new AppError('Please verify your email first', 401);
+      // Generate new OTP for verification
+      await OTP.deleteMany({
+        email: email.toLowerCase(),
+        purpose: 'email_verification',
+      });
+
+      const otp = Helpers.generateOTP();
+      const otpExpiry = new Date();
+      otpExpiry.setMinutes(
+        otpExpiry.getMinutes() + parseInt(process.env.OTP_EXPIRES_IN || '10'),
+      );
+
+      await OTP.create({
+        email: email.toLowerCase(),
+        otp,
+        purpose: 'email_verification',
+        expiresAt: otpExpiry,
+      });
+
+      // Send registration OTP email
+      await emailService.sendRegistrationOTP(
+        email.toLowerCase(),
+        otp,
+        user.firstName,
+      );
+
+      // Create a custom error that the frontend can handle
+      const error = new AppError('Please verify your email first. A new OTP has been sent to your email.', 403);
+      (error as any).errorCode = 'EMAIL_NOT_VERIFIED';
+      (error as any).email = email.toLowerCase();
+      throw error;
     }
 
     // Verify password

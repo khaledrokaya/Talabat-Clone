@@ -1,25 +1,14 @@
 <div class="personal-data-container">
   <div class="container">
-    <!-- Header -->
-    <div class="page-header">
-      <div class="header-content">
-        <h1>
-          <i class="fas fa-user-edit"></i>
-          Personal Information
-        </h1>
-        <p>Update your personal information, address and delivery preferences</p>
-      </div>
-    </div>
-
     <!-- Success/Error Messages -->
     @if (successMessage) {
-    <div class="alert alert-success alert-dismissible fade show">
+    <div class="alert alert-success">
       <i class="fas fa-check-circle"></i>
       {{ successMessage }}
     </div>
     }
     @if (errorMessage) {
-    <div class="alert alert-danger alert-dismissible fade show">
+    <div class="alert alert-danger">
       <i class="fas fa-exclamation-circle"></i>
       {{ errorMessage }}
     </div>
@@ -56,102 +45,97 @@
     <!-- Personal Data Tab -->
     @if (activeTab === 'personal') {
     <div class="tab-content">
-      <div class="row">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-header">
-              <h3>
-                <i class="fas fa-info-circle"></i>
-                Basic Information
-              </h3>
-            </div>
-            <div class="card-body">
-              <form [formGroup]="profileForm" (ngSubmit)="onSubmitPersonalData()" class="profile-form">
-                <div class="row">
-                  <!-- First Name -->
-                  <div class="col-md-6">
-                    <div class="form-group">
-                      <label for="firstName" class="form-label">
-                        <i class="fas fa-user"></i>
-                        First Name *
-                      </label>
-                      <input type="text" id="firstName" formControlName="firstName" class="form-control"
-                        placeholder="Enter your first name"
-                        [class.is-invalid]="isFieldInvalid(profileForm, 'firstName')">
-                      @if (isFieldInvalid(profileForm, 'firstName')) {
-                      <div class="invalid-feedback">
-                        {{ getFieldError(profileForm, 'firstName') }}
-                      </div>
-                      }
-                    </div>
-                  </div>
-
-                  <!-- Last Name -->
-                  <div class="col-md-6">
-                    <div class="form-group">
-                      <label for="lastName" class="form-label">
-                        <i class="fas fa-user"></i>
-                        Last Name *
-                      </label>
-                      <input type="text" id="lastName" formControlName="lastName" class="form-control"
-                        placeholder="Enter your last name" [class.is-invalid]="isFieldInvalid(profileForm, 'lastName')">
-                      @if (isFieldInvalid(profileForm, 'lastName')) {
-                      <div class="invalid-feedback">
-                        {{ getFieldError(profileForm, 'lastName') }}
-                      </div>
-                      }
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Email -->
+      <div class="card">
+        <div class="card-header">
+          <h3>
+            <i class="fas fa-info-circle"></i>
+            Basic Information
+          </h3>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="profileForm" (ngSubmit)="onSubmitPersonalData()" class="profile-form">
+            <div class="row">
+              <!-- First Name -->
+              <div class="col-md-6">
                 <div class="form-group">
-                  <label for="email" class="form-label">
-                    <i class="fas fa-envelope"></i>
-                    Email Address
+                  <label for="firstName" class="form-label">
+                    <i class="fas fa-user"></i>
+                    First Name *
                   </label>
-                  <input type="email" id="email" formControlName="email" class="form-control"
-                    placeholder="Email address" readonly [class.is-invalid]="isFieldInvalid(profileForm, 'email')">
-                  <small class="form-text text-muted">Email address cannot be changed</small>
-                  @if (isFieldInvalid(profileForm, 'email')) {
+                  <input type="text" id="firstName" formControlName="firstName" class="form-control"
+                    placeholder="Enter your first name" [class.is-invalid]="isFieldInvalid(profileForm, 'firstName')">
+                  @if (isFieldInvalid(profileForm, 'firstName')) {
                   <div class="invalid-feedback">
-                    {{ getFieldError(profileForm, 'email') }}
+                    {{ getFieldError(profileForm, 'firstName') }}
                   </div>
                   }
                 </div>
+              </div>
 
-                <!-- Phone -->
+              <!-- Last Name -->
+              <div class="col-md-6">
                 <div class="form-group">
-                  <label for="phone" class="form-label">
-                    <i class="fas fa-phone"></i>
-                    Phone Number *
+                  <label for="lastName" class="form-label">
+                    <i class="fas fa-user"></i>
+                    Last Name *
                   </label>
-                  <input type="tel" id="phone" formControlName="phone" class="form-control"
-                    placeholder="Enter your phone number" [class.is-invalid]="isFieldInvalid(profileForm, 'phone')">
-                  @if (isFieldInvalid(profileForm, 'phone')) {
+                  <input type="text" id="lastName" formControlName="lastName" class="form-control"
+                    placeholder="Enter your last name" [class.is-invalid]="isFieldInvalid(profileForm, 'lastName')">
+                  @if (isFieldInvalid(profileForm, 'lastName')) {
                   <div class="invalid-feedback">
-                    {{ getFieldError(profileForm, 'phone') }}
+                    {{ getFieldError(profileForm, 'lastName') }}
                   </div>
                   }
                 </div>
-
-                <!-- Action Buttons -->
-                <div class="form-actions">
-                  <button type="submit" class="btn btn-primary" [disabled]="profileForm.invalid || submitting">
-                    @if (submitting) {
-                    <span class="spinner-border spinner-border-sm me-2"></span>
-                    }
-                    <i class="fas fa-save"></i>
-                    Save Changes
-                  </button>
-                  <button type="button" class="btn btn-secondary" (click)="resetForm('personal')">
-                    <i class="fas fa-undo"></i>
-                    Reset
-                  </button>
-                </div>
-              </form>
+              </div>
             </div>
-          </div>
+
+            <!-- Email -->
+            <div class="form-group">
+              <label for="email" class="form-label">
+                <i class="fas fa-envelope"></i>
+                Email Address
+              </label>
+              <input type="email" id="email" formControlName="email" class="form-control" placeholder="Email address"
+                readonly [class.is-invalid]="isFieldInvalid(profileForm, 'email')">
+              <small class="form-text text-muted">Email address cannot be changed</small>
+              @if (isFieldInvalid(profileForm, 'email')) {
+              <div class="invalid-feedback">
+                {{ getFieldError(profileForm, 'email') }}
+              </div>
+              }
+            </div>
+
+            <!-- Phone -->
+            <div class="form-group">
+              <label for="phone" class="form-label">
+                <i class="fas fa-phone"></i>
+                Phone Number *
+              </label>
+              <input type="tel" id="phone" formControlName="phone" class="form-control"
+                placeholder="Enter your phone number" [class.is-invalid]="isFieldInvalid(profileForm, 'phone')">
+              @if (isFieldInvalid(profileForm, 'phone')) {
+              <div class="invalid-feedback">
+                {{ getFieldError(profileForm, 'phone') }}
+              </div>
+              }
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" [disabled]="profileForm.invalid || submitting">
+                @if (submitting) {
+                <span class="spinner"></span>
+                }
+                <i class="fas fa-save"></i>
+                Save Personal Info
+              </button>
+              <button type="button" class="btn btn-secondary" (click)="resetForm('personal')">
+                <i class="fas fa-undo"></i>
+                Reset
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -168,7 +152,7 @@
           </h3>
         </div>
         <div class="card-body">
-          <form [formGroup]="addressForm" class="address-form">
+          <form [formGroup]="addressForm" (ngSubmit)="onSubmitAddress()" class="address-form">
             <div class="form-group">
               <label for="street" class="form-label">
                 <i class="fas fa-road"></i>
@@ -183,7 +167,7 @@
               }
             </div>
 
-            <div class="row-cols-1">
+            <div class="row">
               <div class="col-md-6">
                 <div class="form-group">
                   <label for="city" class="form-label">
@@ -231,7 +215,10 @@
             </div>
 
             <div class="form-actions">
-              <button type="submit" class="btn btn-primary">
+              <button type="submit" class="btn btn-primary" [disabled]="addressForm.invalid || submitting">
+                @if (submitting) {
+                <span class="spinner"></span>
+                }
                 <i class="fas fa-save"></i>
                 Save Address
               </button>
@@ -257,7 +244,7 @@
           </h3>
         </div>
         <div class="card-body">
-          <form [formGroup]="deliveryPreferencesForm" class="delivery-form">
+          <form [formGroup]="deliveryPreferencesForm" (ngSubmit)="onSubmitDeliveryPreferences()" class="delivery-form">
             <div class="form-group">
               <label for="preferredTime" class="form-label">
                 <i class="fas fa-clock"></i>
@@ -291,7 +278,10 @@
             </div>
 
             <div class="form-actions">
-              <button type="submit" class="btn btn-primary">
+              <button type="submit" class="btn btn-primary" [disabled]="deliveryPreferencesForm.invalid || submitting">
+                @if (submitting) {
+                <span class="spinner"></span>
+                }
                 <i class="fas fa-save"></i>
                 Save Preferences
               </button>
@@ -305,24 +295,6 @@
       </div>
     </div>
     }
-
-    <!-- Unified Save Button -->
-    <div class="unified-actions mt-4">
-      <div class="text-center">
-        <button type="button" class="btn btn-primary btn-lg" (click)="onSubmitPersonalData()"
-          [disabled]="profileForm.invalid || addressForm.invalid || deliveryPreferencesForm.invalid || submitting">
-          @if (submitting) {
-          <span class="spinner-border spinner-border-sm me-2"></span>
-          }
-          <i class="fas fa-save"></i>
-          Save All Changes
-        </button>
-        <button type="button" class="btn btn-secondary btn-lg ms-3" (click)="resetAllForms()">
-          <i class="fas fa-undo"></i>
-          Reset All
-        </button>
-      </div>
-    </div>
     }
   </div>
 </div>

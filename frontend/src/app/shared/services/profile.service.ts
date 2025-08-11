@@ -124,7 +124,7 @@ export class ProfileService {
   }
 
   changePassword(passwordData: ChangePasswordRequest): Observable<{ success: boolean, message: string }> {
-    return this.http.put<{ success: boolean, message: string }>(`${this.apiUrl}/auth/change-password`, passwordData, {
+    return this.http.post<{ success: boolean, message: string }>(`${this.apiUrl}/auth/change-password`, passwordData, {
       withCredentials: true
     });
   }

@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import * as nodemailer from 'nodemailer';
 import { Helpers } from '../utils/helpers';
 
 export interface EmailOptions {
@@ -13,12 +13,12 @@ export class EmailService {
 
   constructor() {
     this.transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: parseInt(process.env.EMAIL_PORT || '587'),
-      secure: process.env.EMAIL_SECURE === 'true',
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true',
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
       },
     });
   }
@@ -28,8 +28,9 @@ export class EmailService {
    */
   async sendEmail(options: EmailOptions): Promise<void> {
     try {
+      // In development mode, try to send email but don't fail if it doesn't work
       const mailOptions = {
-        from: process.env.EMAIL_FROM,
+        from: process.env.SMTP_FROM_EMAIL || 'noreply@talabat.com',
         to: options.to,
         subject: options.subject,
         text: options.text,
@@ -40,6 +41,13 @@ export class EmailService {
       console.log(`✅ Email sent to ${options.to}`);
     } catch (error) {
       console.error('❌ Failed to send email:', error);
+
+      // In development, don't fail the request if email fails
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📧 [DEV MODE] Email sending failed, but continuing...');
+        return;
+      }
+
       throw new Error('Failed to send email');
     }
   }
@@ -170,7 +178,8 @@ export class EmailService {
           .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
           .header { text-align: center; margin-bottom: 30px; }
           .logo { font-size: 28px; font-weight: bold; color: #ff6b35; }
-          .welcome-box { background: linear-gradient(135deg, #ff6b35, #f7931e); color: white; padding: 30px; border-radius: 10px; text-align: center; margin: 20px 0; }
+          .welcome-section { text-align: center; margin: 30px 0; }
+          .role-badge { display: inline-block; padding: 10px 20px; background-color: #ff6b35; color: white; border-radius: 25px; font-weight: bold; text-transform: capitalize; }
           .features { margin: 30px 0; }
           .feature { margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-radius: 8px; }
           .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
@@ -182,42 +191,16 @@ export class EmailService {
             <div class="logo">🍽️ Talabat</div>
           </div>
           
-          <div class="welcome-box">
-            <h1>🎉 Welcome to Talabat!</h1>
-            <p>Your ${role} account has been successfully created and verified.</p>
+          <div class="welcome-section">
+            <h2>Welcome to Talabat, ${firstName}! 🎉</h2>
+            <p>Your account has been successfully verified and you're ready to start your journey with us.</p>
+            <div class="role-badge">${role.replace('_', ' ')}</div>
           </div>
-          
-          <p>Hi ${firstName},</p>
-          <p>Congratulations! Your account is now active and ready to use. Here's what you can do:</p>
-          
+
           <div class="features">
-            ${role === 'customer'
-        ? `
-              <div class="feature">🍕 Browse restaurants and discover amazing food</div>
-              <div class="feature">🛒 Order your favorite meals with ease</div>
-              <div class="feature">🚚 Track your orders in real-time</div>
-              <div class="feature">⭐ Rate and review your dining experience</div>
-            `
-        : role === 'restaurant_owner'
-          ? `
-              <div class="feature">🏪 Manage your restaurant profile</div>
-              <div class="feature">📋 Add and manage your menu items</div>
-              <div class="feature">📊 Track orders and sales analytics</div>
-              <div class="feature">🚚 Assign delivery drivers</div>
-            `
-          : role === 'delivery'
-            ? `
-              <div class="feature">📦 Receive delivery assignments</div>
-              <div class="feature">🗺️ Navigate with integrated maps</div>
-              <div class="feature">💰 Track your earnings</div>
-              <div class="feature">⚡ Update delivery status in real-time</div>
-            `
-            : ''
-      }
+            ${this.getRoleSpecificFeatures(role)}
           </div>
-          
-          <p>Ready to get started? Visit our platform and explore all the features we have to offer!</p>
-          
+
           <div class="footer">
             <p>Best regards,<br>The Talabat Team</p>
             <p>&copy; ${new Date().getFullYear()} Talabat. All rights reserved.</p>
@@ -231,15 +214,74 @@ export class EmailService {
   }
 
   /**
+   * Get role-specific features for welcome email
+   */
+  private getRoleSpecificFeatures(role: string): string {
+    switch (role) {
+      case 'customer':
+        return `
+          <div class="feature">
+            <h3>🍕 Order Your Favorites</h3>
+            <p>Browse thousands of restaurants and order your favorite meals with just a few taps.</p>
+          </div>
+          <div class="feature">
+            <h3>🚚 Fast Delivery</h3>
+            <p>Get your food delivered quickly and safely to your doorstep.</p>
+          </div>
+          <div class="feature">
+            <h3>💳 Secure Payments</h3>
+            <p>Pay safely with multiple payment options including cash on delivery.</p>
+          </div>
+        `;
+      case 'restaurant_owner':
+        return `
+          <div class="feature">
+            <h3>🏪 Manage Your Restaurant</h3>
+            <p>Update your menu, prices, and restaurant information easily.</p>
+          </div>
+          <div class="feature">
+            <h3>📊 Track Orders</h3>
+            <p>Monitor incoming orders and manage them efficiently.</p>
+          </div>
+          <div class="feature">
+            <h3>💰 Grow Your Business</h3>
+            <p>Reach more customers and increase your revenue with our platform.</p>
+          </div>
+        `;
+      case 'delivery':
+        return `
+          <div class="feature">
+            <h3>🛵 Start Delivering</h3>
+            <p>Accept delivery requests and start earning immediately.</p>
+          </div>
+          <div class="feature">
+            <h3>📱 Easy-to-Use App</h3>
+            <p>Navigate efficiently with our driver-friendly interface.</p>
+          </div>
+          <div class="feature">
+            <h3>💵 Flexible Earnings</h3>
+            <p>Work on your schedule and earn money on your terms.</p>
+          </div>
+        `;
+      default:
+        return `
+          <div class="feature">
+            <h3>🚀 Get Started</h3>
+            <p>Explore all the features available in your dashboard.</p>
+          </div>
+        `;
+    }
+  }
+
+  /**
    * Send order confirmation email
    */
   async sendOrderConfirmation(
     email: string,
     firstName: string,
-    orderNumber: string,
     orderDetails: any,
   ): Promise<void> {
-    const subject = `Order Confirmation - ${orderNumber}`;
+    const subject = `Order Confirmed - #${orderDetails.orderNumber}`;
 
     const html = `
       <!DOCTYPE html>
@@ -252,7 +294,9 @@ export class EmailService {
           .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
           .header { text-align: center; margin-bottom: 30px; }
           .logo { font-size: 28px; font-weight: bold; color: #ff6b35; }
-          .order-details { background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+          .order-details { margin: 20px 0; }
+          .order-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+          .total { font-weight: bold; font-size: 18px; padding: 15px 0; border-top: 2px solid #ff6b35; margin-top: 15px; }
           .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
         </style>
       </head>
@@ -261,19 +305,32 @@ export class EmailService {
           <div class="header">
             <div class="logo">🍽️ Talabat</div>
           </div>
-          <h2>Order Confirmation</h2>
+          <h2>Order Confirmed! 🎉</h2>
           <p>Hi ${firstName},</p>
-          <p>Thank you for your order! We're preparing your delicious meal.</p>
+          <p>Thank you for your order! Your order <strong>#${orderDetails.orderNumber}</strong> has been confirmed and is being prepared.</p>
           
           <div class="order-details">
-            <h3>Order #${orderNumber}</h3>
-            <p><strong>Total Amount:</strong> ${Helpers.formatCurrency(orderDetails.totalAmount)}</p>
-            <p><strong>Estimated Delivery:</strong> ${orderDetails.estimatedDelivery}</p>
+            <h3>Order Details:</h3>
+            ${orderDetails.items?.map((item: any) => `
+              <div class="order-item">
+                <span>${item.quantity}x ${item.name}</span>
+                <span>$${item.price.toFixed(2)}</span>
+              </div>
+            `).join('') || ''}
+            
+            <div class="total">
+              <div style="display: flex; justify-content: space-between;">
+                <span>Total:</span>
+                <span>$${orderDetails.total?.toFixed(2) || '0.00'}</span>
+              </div>
+            </div>
           </div>
-          
-          <p>You can track your order status through our app or website.</p>
-          
+
+          <p><strong>Estimated Delivery Time:</strong> ${orderDetails.estimatedDeliveryTime || '30-45 minutes'}</p>
+          <p><strong>Delivery Address:</strong> ${orderDetails.deliveryAddress || 'Not specified'}</p>
+
           <div class="footer">
+            <p>We'll keep you updated on your order status!</p>
             <p>Best regards,<br>The Talabat Team</p>
             <p>&copy; ${new Date().getFullYear()} Talabat. All rights reserved.</p>
           </div>
@@ -286,5 +343,35 @@ export class EmailService {
   }
 }
 
-// Export singleton instance
-export const emailService = new EmailService();
+// Export singleton instance - lazy loaded
+let emailServiceInstance: EmailService | null = null;
+
+export const emailService = {
+  getInstance(): EmailService {
+    if (!emailServiceInstance) {
+      emailServiceInstance = new EmailService();
+    }
+    return emailServiceInstance;
+  },
+
+  // Proxy methods for backward compatibility
+  async sendEmail(options: EmailOptions): Promise<void> {
+    return this.getInstance().sendEmail(options);
+  },
+
+  async sendRegistrationOTP(email: string, otp: string, firstName: string): Promise<void> {
+    return this.getInstance().sendRegistrationOTP(email, otp, firstName);
+  },
+
+  async sendPasswordResetOTP(email: string, otp: string, firstName: string): Promise<void> {
+    return this.getInstance().sendPasswordResetOTP(email, otp, firstName);
+  },
+
+  async sendWelcomeEmail(email: string, firstName: string, role: string): Promise<void> {
+    return this.getInstance().sendWelcomeEmail(email, firstName, role);
+  },
+
+  async sendOrderConfirmation(email: string, firstName: string, orderDetails: any): Promise<void> {
+    return this.getInstance().sendOrderConfirmation(email, firstName, orderDetails);
+  }
+};

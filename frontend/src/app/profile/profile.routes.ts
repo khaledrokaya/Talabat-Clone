@@ -12,10 +12,6 @@ export const PROFILE_ROUTES: Routes = [
       { path: 'personal-data', component: PersonalData },
       { path: 'password', component: Password },
       { path: 'favorites', component: Favorites },
-      {
-        path: 'orders',
-        loadChildren: () => import('../orders/orders.routes').then(m => m.ORDERS_ROUTES)
-      },
       { path: '', redirectTo: 'personal-data', pathMatch: 'full' }
     ]
   }

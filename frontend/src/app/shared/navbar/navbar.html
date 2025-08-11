@@ -4,8 +4,7 @@
       <!-- Logo -->
       <div class="navbar-brand">
         <a routerLink="/" class="brand-link">
-          <i class="fas fa-utensils brand-icon"></i>
-          <span class="brand-text">FoodDelivery</span>
+          <app-talabat-logo width="120" height="40" customClass="brand-logo"></app-talabat-logo>
         </a>
       </div>
 
@@ -19,7 +18,7 @@
           <i class="fas fa-store"></i>
           <span>Restaurants</span>
         </a>
-        @if (authService.isLoggedIn()) {
+        @if (authService.isLoggedIn() && currentUser?.role === "customer") {
         <a routerLink="/orders" routerLinkActive="active" class="nav-link">
           <i class="fas fa-receipt"></i>
           <span>My Orders</span>
@@ -56,10 +55,12 @@
 
           @if (showUserMenu) {
           <div class="dropdown-menu">
+            @if (currentUser?.role === 'customer') {
             <a routerLink="/profile" class="dropdown-item" (click)="closeUserMenu()">
               <i class="fas fa-user-circle"></i>
               <span>Profile</span>
             </a>
+            }
 
             @if (currentUser?.role === 'restaurant_owner') {
             <a routerLink="/restaurant-dashboard" class="dropdown-item" (click)="closeUserMenu()">

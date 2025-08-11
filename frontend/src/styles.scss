@@ -129,7 +129,7 @@ a {
 }
 
 a:hover {
-  color: var(--primary-dark);
+  color: white;
   text-decoration: underline;
 }
 
@@ -171,6 +171,7 @@ a:hover {
     background: var(--primary-dark);
     box-shadow: var(--shadow-md);
     transform: translateY(-1px);
+    color: white;
   }
 
   &:active {
@@ -847,4 +848,33 @@ button:focus,
   visibility: visible !important;
   transform: translateY(0) !important;
   z-index: var(--z-dropdown, 9999) !important;
+}
+
+/* Auth Logo Styles */
+.auth-logo {
+  margin-bottom: 16px;
+  transition: transform 0.3s ease;
+
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+.login-header,
+.register-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.admin-brand-logo {
+  margin-bottom: 16px;
+  transition: transform 0.3s ease;
+
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+.footer-logo {
+  margin-bottom: 12px;
 }

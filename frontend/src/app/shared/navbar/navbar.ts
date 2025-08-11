@@ -5,11 +5,12 @@ import { AuthService } from '../services/auth.service';
 import { CartService } from '../services/cart.service';
 import { User } from '../models/user';
 import { Subscription } from 'rxjs';
+import { TalabatLogo } from '../components/talabat-logo/talabat-logo';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TalabatLogo],
   templateUrl: './navbar.html',
   styleUrls: ['./navbar.scss']
 })

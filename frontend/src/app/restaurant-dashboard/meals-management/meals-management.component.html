@@ -134,8 +134,7 @@
       @for (meal of meals; track meal.id) {
       <div class="meal-card">
         <div class="meal-image">
-          <img [src]="meal.image || '/assets/images/default-meal.jpg'" [alt]="meal.name"
-            (error)="$event.target.src='/assets/images/default-meal.jpg'">
+          <img [src]="meal.image || '/assets/images/default-meal.jpg'" [alt]="meal.name">
           <div class="meal-status" [style.background-color]="getAvailabilityColor(meal.isAvailable)">
             {{ getAvailabilityText(meal.isAvailable) }}
           </div>

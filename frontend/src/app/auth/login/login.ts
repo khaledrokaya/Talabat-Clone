@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../shared/services/auth.service';
+import { TalabatLogo } from '../../shared/components/talabat-logo/talabat-logo';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TalabatLogo],
   templateUrl: './login.html',
   styleUrl: './login.scss'
 })
@@ -21,7 +22,7 @@ export class Login {
 
   onLogin(): void {
     if (!this.email || !this.password) {
-      this.errorMessage = 'يرجى ملء جميع الحقول';
+      this.errorMessage = 'Please fill in all fields';
       return;
     }
 
@@ -62,8 +63,27 @@ export class Login {
 
         if (error.error && !error.error.success) {
           this.errorMessage = error.error.message || 'Login failed. Please try again.';
+
+          // Check if it's an email verification error
+          if (error.error.data && error.error.data.errorCode === 'EMAIL_NOT_VERIFIED') {
+            const email = error.error.data.email;
+            console.log('Email not verified, redirecting to verification page for:', email);
+
+            // Show success message about OTP being sent
+            alert('A verification code has been sent to your email. Please check your inbox and verify your email to login.');
+
+            // Navigate to verify-email page with email parameter and indicate OTP was sent
+            this.router.navigate(['/auth/verify-email'], {
+              queryParams: {
+                email: email,
+                type: 'registration',
+                otpSent: 'true'
+              }
+            });
+            return;
+          }
         } else {
-          this.errorMessage = 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.';
+          this.errorMessage = 'An unexpected error occurred. Please try again.';
         }
 
         // Show alert for better user experience

@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService, CustomerRegisterRequest, RestaurantRegisterRequest, DeliveryRegisterRequest } from '../../shared/services/auth.service';
+import { TalabatLogo } from '../../shared/components/talabat-logo/talabat-logo';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, TalabatLogo],
   templateUrl: './register.html',
   styleUrl: './register.scss'
 })
@@ -241,7 +242,7 @@ export class Register {
 
   onRegister(): void {
     if (!this.isFormValid()) {
-      this.errorMessage = 'يرجى ملء جميع الحقول المطلوبة';
+      this.errorMessage = 'Please fill in all required fields';
       return;
     }
 
@@ -403,12 +404,23 @@ export class Register {
   private handleSuccess(response: any): void {
     this.isLoading = false;
     if (response.success) {
-      this.successMessage = 'تم التسجيل بنجاح! يرجى التحقق من بريدك الإلكتروني.';
+      this.successMessage = 'Registration successful! Please check your email for verification.';
+
+      // Get email from the basic form
+      const email = this.basicForm.get('email')?.value;
+
       setTimeout(() => {
-        this.router.navigate(['/auth/login']);
+        // Redirect to verify-email page with email parameter and indicate OTP was sent
+        this.router.navigate(['/auth/verify-email'], {
+          queryParams: {
+            email: email,
+            type: 'registration',
+            otpSent: 'true'
+          }
+        });
       }, 2000);
     } else {
-      this.errorMessage = response.message || 'فشل التسجيل. يرجى المحاولة مرة أخرى.';
+      this.errorMessage = response.message || 'Registration failed. Please try again.';
     }
   }
 
@@ -417,9 +429,9 @@ export class Register {
     console.error('Registration failed', error);
 
     if (error.error && !error.error.success) {
-      this.errorMessage = error.error.message || 'فشل التسجيل. يرجى المحاولة مرة أخرى.';
+      this.errorMessage = error.error.message || 'Registration failed. Please try again.';
     } else {
-      this.errorMessage = 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.';
+      this.errorMessage = 'An unexpected error occurred. Please try again.';
     }
 
     // Show alert for better user experience

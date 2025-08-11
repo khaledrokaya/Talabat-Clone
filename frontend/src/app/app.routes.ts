@@ -1,11 +1,9 @@
 import { Routes } from '@angular/router';
 import { authGuard, customerGuard, restaurantGuard, adminGuard } from './shared/guards/auth.guard';
 import { UnauthorizedComponent } from './shared/components/unauthorized.component';
-import { AuthTestComponent } from './auth-test/auth-test.component';
 
 export const routes: Routes = [
   { path: 'auth', loadChildren: () => import('./auth/auth.routes').then(m => m.AUTH_ROUTES) },
-  { path: 'auth-test', component: AuthTestComponent },
   { path: 'home', loadChildren: () => import('./home/home.routes').then(m => m.HOME_ROUTES) },
   { path: 'restaurants', loadChildren: () => import('./restaurants/restaurants.routes').then(m => m.RESTAURANTS_ROUTES) },
   { path: 'cart', loadChildren: () => import('./cart/cart.routes').then(m => m.CART_ROUTES), canActivate: [authGuard] },

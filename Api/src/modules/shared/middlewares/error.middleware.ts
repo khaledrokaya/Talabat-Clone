@@ -66,10 +66,15 @@ export const errorHandler = (
       message,
       process.env.NODE_ENV === 'development'
         ? {
-            stack: err.stack,
-            name: err.name,
-          }
-        : undefined,
+          stack: err.stack,
+          name: err.name,
+          errorCode: (err as any).errorCode,
+          email: (err as any).email,
+        }
+        : {
+          errorCode: (err as any).errorCode,
+          email: (err as any).email,
+        },
     ),
   );
 };

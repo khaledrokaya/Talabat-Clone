@@ -97,6 +97,10 @@ export class Favorites implements OnInit {
     this.router.navigate(['/restaurants']);
   }
 
+  refreshFavorites(): void {
+    this.loadFavorites();
+  }
+
   // Restaurant card interaction handlers
   onFavoriteToggle(restaurant: any): void {
     // On favorites page, toggling favorite means removing it

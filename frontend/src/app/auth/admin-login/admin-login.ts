@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService, LoginRequest } from '../../shared/services/auth.service';
+import { TalabatLogo } from '../../shared/components/talabat-logo/talabat-logo';
 
 @Component({
   selector: 'app-admin-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, TalabatLogo],
   templateUrl: './admin-login.html',
   styleUrls: ['./admin-login.scss']
 })

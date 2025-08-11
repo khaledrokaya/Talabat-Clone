@@ -743,8 +743,41 @@ export class AuthService {
 
   // Change password method
   changePassword(passwordData: { currentPassword: string; newPassword: string }): Observable<{ success: boolean, message: string }> {
-    return this.http.put<{ success: boolean, message: string }>(`${environment.apiUrl}/auth/change-password`, passwordData, {
+    return this.http.post<{ success: boolean, message: string }>(`${environment.apiUrl}/auth/change-password`, passwordData, {
       withCredentials: true
+    });
+  }
+
+  // Forgot password - send OTP
+  forgotPassword(email: string): Observable<{ success: boolean, message: string }> {
+    return this.http.post<{ success: boolean, message: string }>(`${environment.apiUrl}/auth/forgot-password`, {
+      email
+    });
+  }
+
+  // Verify OTP
+  verifyOTP(email: string, otp: string, type: 'registration' | 'password-reset'): Observable<{ success: boolean, message: string }> {
+    return this.http.post<{ success: boolean, message: string }>(`${environment.apiUrl}/auth/verify-otp`, {
+      email,
+      otp,
+      type
+    });
+  }
+
+  // Resend OTP
+  resendOTP(email: string, type: 'registration' | 'password-reset'): Observable<{ success: boolean, message: string }> {
+    return this.http.post<{ success: boolean, message: string }>(`${environment.apiUrl}/auth/resend-otp`, {
+      email,
+      type
+    });
+  }
+
+  // Reset password using OTP
+  resetPassword(email: string, otp: string, newPassword: string): Observable<{ success: boolean, message: string }> {
+    return this.http.post<{ success: boolean, message: string }>(`${environment.apiUrl}/auth/reset-password`, {
+      email,
+      otp,
+      newPassword
     });
   }
 }

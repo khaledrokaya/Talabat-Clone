@@ -1,20 +1,38 @@
 <div class="profile-container">
   <div class="container">
-    <h1>Profile</h1>
+    <div class="page-header">
+      <h1>
+        <i class="fas fa-user-circle"></i>
+        My Profile
+      </h1>
+      <p class="page-subtitle">Manage your account settings and preferences</p>
+    </div>
 
     <div class="profile-content" *ngIf="currentUser$ | async as user">
       <!-- User Info Card -->
       <div class="user-info-card">
         <div class="user-avatar">
           <div class="avatar-placeholder">
-            {{ (user.firstName || user.name || user.email).charAt(0).toUpperCase() }}
+            <i class="fas fa-user"></i>
           </div>
         </div>
         <div class="user-details">
           <h2>{{ user.firstName && user.lastName ? user.firstName + ' ' + user.lastName : user.name || user.email }}
           </h2>
-          <p class="user-email">{{ user.email }}</p>
-          <p class="user-role">{{ getRoleText(user.role) }}</p>
+          <p class="user-email">
+            <i class="fas fa-envelope"></i>
+            {{ user.email }}
+          </p>
+          <p class="user-role">
+            <i class="fas fa-shield-alt"></i>
+            {{ getRoleText(user.role) }}
+          </p>
+        </div>
+        <div class="user-actions">
+          <button class="btn btn-outline" (click)="logout()">
+            <i class="fas fa-sign-out-alt"></i>
+            Logout
+          </button>
         </div>
       </div>
 
@@ -22,16 +40,16 @@
       <div class="profile-navigation">
         <nav class="nav nav-tabs">
           <a routerLink="/profile/personal-data" routerLinkActive="active" class="nav-link">
-            <i class="bi bi-info-circle-fill"></i> Personal Data
+            <i class="fas fa-user-edit"></i>
+            <span>Personal Info</span>
           </a>
           <a routerLink="/profile/password" routerLinkActive="active" class="nav-link">
-            <i class="bi bi-lock-fill"></i> Password
+            <i class="fas fa-lock"></i>
+            <span>Security</span>
           </a>
           <a routerLink="/profile/favorites" routerLinkActive="active" class="nav-link">
-            <i class="bi bi-heart-fill"></i> Favorites
-          </a>
-          <a routerLink="/profile/orders" routerLinkActive="active" class="nav-link">
-            <i class="bi bi-archive-fill"></i> My Orders
+            <i class="fas fa-heart"></i>
+            <span>Favorites</span>
           </a>
         </nav>
       </div>

@@ -54,10 +54,28 @@
     cursor: pointer;
     font-weight: 500;
     font-size: 14px;
+    position: relative;
 
     &:hover {
       background-color: rgba(255, 255, 255, 0.15);
       transform: translateY(-1px);
+    }
+
+    &.active {
+      background-color: rgba(255, 255, 255, 0.2);
+      font-weight: 600;
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        height: 3px;
+        background-color: white;
+        border-radius: 2px;
+      }
     }
   }
 
