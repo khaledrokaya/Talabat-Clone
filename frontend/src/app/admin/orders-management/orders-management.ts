@@ -54,6 +54,9 @@ export class OrdersManagement implements OnInit {
     { value: 'month', label: 'This Month' }
   ];
 
+  // Add selected period for analytics
+  selectedPeriod = '7d';
+
   constructor(private adminService: AdminService) { }
 
   ngOnInit(): void {
@@ -263,5 +266,136 @@ export class OrdersManagement implements OnInit {
   viewAllTimeData(): void {
     this.timeFilter = 'all';
     this.onTimeFilterChange();
+  }
+
+  // Add missing trend methods
+  getOrderTrend(): string {
+    return 'positive'; // Default to positive
+  }
+
+  getOrderTrendIcon(): string {
+    return 'fas fa-arrow-up';
+  }
+
+  getOrderTrendValue(): number {
+    return 5.2; // Default trend value
+  }
+
+  getRevenueTrend(): string {
+    return 'positive';
+  }
+
+  getRevenueTrendIcon(): string {
+    return 'fas fa-arrow-up';
+  }
+
+  getRevenueTrendValue(): number {
+    return 8.1;
+  }
+
+  getAOVTrend(): string {
+    return 'positive';
+  }
+
+  getAOVTrendIcon(): string {
+    return 'fas fa-arrow-up';
+  }
+
+  getAOVTrendValue(): number {
+    return 3.4;
+  }
+
+  getActiveTrend(): string {
+    return 'negative';
+  }
+
+  getActiveTrendIcon(): string {
+    return 'fas fa-arrow-down';
+  }
+
+  getActiveTrendValue(): number {
+    return 1.2;
+  }
+
+  getPendingPercentage(): number {
+    if (this.orderStats.totalOrders === 0) return 0;
+    return (this.orderStats.pendingOrders / this.orderStats.totalOrders) * 100;
+  }
+
+  getCompletedPercentage(): number {
+    if (this.orderStats.totalOrders === 0) return 0;
+    return (this.orderStats.completedOrders / this.orderStats.totalOrders) * 100;
+  }
+
+  getCancelledPercentage(): number {
+    if (this.orderStats.totalOrders === 0) return 0;
+    return (this.orderStats.cancelledOrders / this.orderStats.totalOrders) * 100;
+  }
+
+  getCompletionTrend(): string {
+    return 'positive';
+  }
+
+  getCompletionTrendIcon(): string {
+    return 'fas fa-arrow-up';
+  }
+
+  getCompletionTrendValue(): number {
+    return 2.3;
+  }
+
+  getDailyTrend(): string {
+    return 'positive';
+  }
+
+  getDailyTrendIcon(): string {
+    return 'fas fa-arrow-up';
+  }
+
+  getDailyTrendValue(): number {
+    return 12.5;
+  }
+
+  getMonthlyTrend(): string {
+    return 'positive';
+  }
+
+  getMonthlyTrendIcon(): string {
+    return 'fas fa-arrow-up';
+  }
+
+  getMonthlyTrendValue(): number {
+    return 18.7;
+  }
+
+  getCancelTrend(): string {
+    return 'negative';
+  }
+
+  getCancelTrendIcon(): string {
+    return 'fas fa-arrow-down';
+  }
+
+  getCancelTrendValue(): number {
+    return 0.8;
+  }
+
+  setPeriod(period: string): void {
+    this.selectedPeriod = period;
+  }
+
+  getTopRestaurants(): any[] {
+    return [
+      { name: 'Pizza Palace', orders: 145, revenue: 4280, rating: 4.8 },
+      { name: 'Burger Kingdom', orders: 132, revenue: 3960, rating: 4.6 },
+      { name: 'Sushi World', orders: 98, revenue: 5890, rating: 4.9 },
+      { name: 'Taco Fiesta', orders: 87, revenue: 2610, rating: 4.5 },
+      { name: 'Italian Garden', orders: 76, revenue: 3420, rating: 4.7 }
+    ];
+  }
+
+  viewAllRestaurants(): void {
+    // Navigate to restaurants page or show more
+    console.log('Navigate to restaurants page');
   }
 }

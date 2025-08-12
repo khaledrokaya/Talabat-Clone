@@ -1,20 +1,34 @@
 <div class="users-management">
-  <!-- Page Header -->
+  <!-- Enhanced Page Header -->
   <div class="page-header">
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
-        <h1 class="page-title">
+    <div class="header-content">
+      <div class="header-info">
+        <h1>
           <i class="fas fa-users"></i>
           Users Management
         </h1>
-        <p class="page-subtitle">Manage and monitor all platform users</p>
+        <p>Manage and monitor all platform users with comprehensive controls</p>
+        <div class="quick-stats">
+          <div class="stat-item">
+            <span class="stat-value">{{ totalItems }}</span>
+            <span class="stat-label">Total Users</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ filteredUsers.length }}</span>
+            <span class="stat-label">Filtered Results</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ currentPage }}</span>
+            <span class="stat-label">Current Page</span>
+          </div>
+        </div>
       </div>
       <div class="header-actions">
-        <button class="btn btn-outline-light" (click)="exportUsers()" [disabled]="loading">
+        <button class="btn btn-outline-primary" (click)="exportUsers()" [disabled]="loading">
           <i class="fas fa-download"></i>
           Export Users
         </button>
-        <button class="btn btn-outline-light" (click)="loadUsers()" [disabled]="loading">
+        <button class="btn btn-primary" (click)="loadUsers()" [disabled]="loading">
           <i class="fas fa-sync" [class.fa-spin]="loading"></i>
           Refresh
         </button>
@@ -22,75 +36,129 @@
     </div>
   </div>
 
-  <!-- Filters Section -->
+  <!-- Enhanced Filters Section -->
   <div class="filters-section">
-    <div class="card">
-      <div class="card-body">
-        <div class="row g-3">
-          <div class="col-md-6">
-            <div class="search-box">
+    <div class="filters-card">
+      <div class="filters-header">
+        <h3><i class="fas fa-filter"></i> Search & Filter Users</h3>
+        <button class="btn btn-sm btn-outline-secondary" (click)="clearFilters()">
+          <i class="fas fa-times"></i>
+          Clear All
+        </button>
+      </div>
+
+      <div class="filters-content">
+        <div class="filters-grid">
+          <div class="filter-group">
+            <label class="filter-label">Search Users</label>
+            <div class="search-input">
               <i class="fas fa-search"></i>
-              <input type="text" class="form-control" placeholder="Search by name or email..." [(ngModel)]="searchTerm"
+              <input type="text" placeholder="Search by name, email, or ID..." [(ngModel)]="searchTerm"
                 (input)="onSearchChange()" />
             </div>
           </div>
-          <div class="col-md-3">
-            <select class="form-select" [(ngModel)]="selectedRole" (change)="onRoleChange()">
+
+          <div class="filter-group">
+            <label class="filter-label">User Type</label>
+            <select class="filter-select" [(ngModel)]="selectedRole" (change)="onRoleChange()">
               <option value="">All User Types</option>
               <option value="customer">Customers</option>
               <option value="restaurant">Restaurant Owners</option>
               <option value="delivery">Delivery Personnel</option>
             </select>
           </div>
-          <div class="col-md-3">
-            <select class="form-select" [(ngModel)]="selectedStatus" (change)="onStatusChange()">
+
+          <div class="filter-group">
+            <label class="filter-label">Account Status</label>
+            <select class="filter-select" [(ngModel)]="selectedStatus" (change)="onStatusChange()">
               <option value="">All Statuses</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
+              <option value="pending">Pending Verification</option>
+              <option value="verified">Verified</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Items Per Page</label>
+            <select class="filter-select" [(ngModel)]="pageSize" (change)="onPageSizeChange()">
+              <option value="10">10 per page</option>
+              <option value="25">25 per page</option>
+              <option value="50">50 per page</option>
+              <option value="100">100 per page</option>
             </select>
           </div>
         </div>
-        <div class="results-count mt-3">
-          <small class="text-muted">
-            <i class="fas fa-info-circle me-1"></i>
-            Showing {{ filteredUsers.length }} of {{ totalItems }} users
-            <span *ngIf="currentPage > 1"> • Page {{ currentPage }} of {{ totalPages }}</span>
-          </small>
+
+        <div class="filters-summary">
+          <div class="summary-item">
+            <i class="fas fa-info-circle"></i>
+            <span>Showing {{ filteredUsers.length }} of {{ totalItems }} users</span>
+            <span *ngIf="currentPage > 1" class="page-info">• Page {{ currentPage }} of {{ totalPages }}</span>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Loading State -->
-  <div *ngIf="loading" class="loading-container">
-    <div class="loading-spinner"></div>
-    <p class="mt-3">Loading users...</p>
+  <div *ngIf="loading" class="loading-state">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <h3>Loading users...</h3>
+      <p>Please wait while we fetch the user data</p>
+    </div>
   </div>
 
   <!-- Error State -->
-  <div *ngIf="error" class="alert alert-danger" role="alert">
-    <i class="fas fa-exclamation-triangle me-2"></i>
-    {{ error }}
+  <div *ngIf="error" class="error-state">
+    <div class="error-content">
+      <i class="fas fa-exclamation-triangle"></i>
+      <h3>Oops! Something went wrong</h3>
+      <p>{{ error }}</p>
+      <button class="btn btn-primary" (click)="loadUsers()">
+        <i class="fas fa-redo"></i>
+        Try Again
+      </button>
+    </div>
   </div>
 
   <!-- Users Table -->
   <div *ngIf="!loading && filteredUsers.length > 0" class="users-table-section">
-    <div class="card">
+    <div class="table-card">
+      <div class="table-header">
+        <h3><i class="fas fa-table"></i> Users List</h3>
+        <div class="table-actions">
+          <button class="btn btn-sm btn-outline-danger" (click)="bulkDelete()" [disabled]="selectedUsers.length === 0">
+            <i class="fas fa-trash"></i>
+            Delete Selected ({{ selectedUsers.length }})
+          </button>
+        </div>
+      </div>
+
       <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="users-table">
           <thead>
             <tr>
+              <th class="checkbox-column">
+                <input type="checkbox" [checked]="isAllSelected()" (change)="toggleSelectAll()" />
+              </th>
               <th>User</th>
-              <th>Email</th>
-              <th>Verification</th>
+              <th>Contact</th>
               <th>Role</th>
               <th>Status</th>
+              <th>Verification</th>
               <th>Joined</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let user of filteredUsers">
+            <tr *ngFor="let user of filteredUsers" [class.selected]="selectedUsers.includes(user.id)">
+              <td class="checkbox-column">
+                <input type="checkbox" [checked]="selectedUsers.includes(user.id)"
+                  (change)="toggleUserSelection(user.id)" />
+              </td>
               <td>
                 <div class="user-info">
                   <div class="user-avatar">
@@ -98,39 +166,53 @@
                   </div>
                   <div class="user-details">
                     <div class="user-name">{{ user.firstName }} {{ user.lastName }}</div>
-                    <div class="user-id">#{{ user.id.slice(-6) }}</div>
+                    <div class="user-id">#{{ user.id.slice(-8) }}</div>
                   </div>
                 </div>
               </td>
               <td>
-                <span class="email-text">{{ user.email }}</span>
-              </td>
-              <td>
-                <span class="verification-badge" [ngClass]="user.isEmailVerified ? 'bg-success' : 'bg-warning'">
-                  {{ user.isEmailVerified ? 'Verified' : 'Pending' }}
-                </span>
+                <div class="contact-info">
+                  <div class="email">
+                    <i class="fas fa-envelope"></i>
+                    <span>{{ user.email }}</span>
+                  </div>
+                </div>
               </td>
               <td>
                 <span class="role-badge" [ngClass]="getRoleClass(user.role)">
+                  <i [class]="getRoleIcon(user.role)"></i>
                   {{ user.role | titlecase }}
                 </span>
               </td>
               <td>
-                <span class="status-badge" [ngClass]="user.isActive ? 'bg-success' : 'bg-danger'">
+                <span class="status-badge" [ngClass]="user.isActive ? 'active' : 'inactive'">
+                  <i [class]="user.isActive ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
                   {{ user.isActive ? 'Active' : 'Inactive' }}
                 </span>
               </td>
               <td>
-                <span class="join-date">{{ formatDate(user.createdAt) }}</span>
+                <span class="verification-badge" [ngClass]="user.isEmailVerified ? 'verified' : 'pending'">
+                  <i [class]="user.isEmailVerified ? 'fas fa-check' : 'fas fa-clock'"></i>
+                  {{ user.isEmailVerified ? 'Verified' : 'Pending' }}
+                </span>
+              </td>
+              <td>
+                <div class="join-date">
+                  <div class="date">{{ formatDate(user.createdAt) }}</div>
+                  <div class="time">{{ formatTime(user.createdAt) }}</div>
+                </div>
               </td>
               <td>
                 <div class="action-buttons">
-                  <button class="btn btn-outline-warning btn-sm"
+                  <button class="btn btn-sm" [ngClass]="user.isActive ? 'btn-warning' : 'btn-success'"
                     [title]="user.isActive ? 'Deactivate User' : 'Activate User'"
                     (click)="updateUserStatus(user.id, user.isActive ? 'inactive' : 'active')">
                     <i [class]="user.isActive ? 'fas fa-user-slash' : 'fas fa-user-check'"></i>
                   </button>
-                  <button class="btn btn-outline-danger btn-sm" title="Delete User" (click)="deleteUser(user.id)">
+                  <button class="btn btn-sm btn-outline-primary" title="View Details" (click)="viewUserDetails(user)">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" title="Delete User" (click)="deleteUser(user.id)">
                     <i class="fas fa-trash"></i>
                   </button>
                 </div>
@@ -139,28 +221,176 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination -->
+      <div class="pagination-section" *ngIf="totalPages > 1">
+        <div class="pagination-info">
+          <span>Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalItems) }} of
+            {{ totalItems }} users</span>
+        </div>
+        <nav class="pagination">
+          <button class="page-btn" [disabled]="currentPage === 1" (click)="onPageChange(currentPage - 1)">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+
+          <button *ngFor="let page of getPageNumbers()" class="page-btn" [class.active]="page === currentPage"
+            (click)="onPageChange(page)">
+            {{ page }}
+          </button>
+
+          <button class="page-btn" [disabled]="currentPage === totalPages" (click)="onPageChange(currentPage + 1)">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </nav>
+      </div>
     </div>
   </div>
 
   <!-- Empty States -->
-  <!-- Empty State -->
   <div *ngIf="!loading && filteredUsers.length === 0 && users.length === 0" class="empty-state">
-    <div class="empty-state-content">
+    <div class="empty-content">
       <i class="fas fa-users empty-icon"></i>
-      <h4>No Users Found</h4>
+      <h3>No Users Found</h3>
       <p>There are no users in the system yet.</p>
+      <button class="btn btn-primary" (click)="loadUsers()">
+        <i class="fas fa-sync"></i>
+        Refresh Data
+      </button>
     </div>
   </div>
 
-  <!-- No Search Results -->
   <div *ngIf="!loading && filteredUsers.length === 0 && users.length > 0" class="empty-state">
-    <div class="empty-state-content">
+    <div class="empty-content">
       <i class="fas fa-search empty-icon"></i>
-      <h4>No Results Found</h4>
-      <p>Try adjusting your search criteria.</p>
-      <button class="btn btn-primary" (click)="searchTerm = ''; selectedRole = ''; selectedStatus = ''; loadUsers()">
+      <h3>No Results Found</h3>
+      <p>Try adjusting your search criteria to find users.</p>
+      <button class="btn btn-primary" (click)="clearFilters()">
+        <i class="fas fa-times"></i>
         Clear Filters
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- User Details Modal -->
+<div class="modal" [class.show]="showUserModal" [style.display]="showUserModal ? 'block' : 'none'">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-user"></i>
+          User Details
+        </h5>
+        <button type="button" class="btn-close" (click)="closeUserModal()"></button>
+      </div>
+      <div class="modal-body" *ngIf="selectedUser">
+        <div class="user-profile">
+          <div class="profile-header">
+            <div class="user-avatar-large">
+              <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="profile-info">
+              <h3>{{ selectedUser.firstName }} {{ selectedUser.lastName }}</h3>
+              <p class="user-email">{{ selectedUser.email }}</p>
+              <div class="user-badges">
+                <span class="role-badge" [ngClass]="getRoleClass(selectedUser.role)">
+                  {{ selectedUser.role | titlecase }}
+                </span>
+                <span class="status-badge" [ngClass]="selectedUser.isActive ? 'active' : 'inactive'">
+                  {{ selectedUser.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-details">
+            <div class="row">
+              <div class="col-md-6">
+                <h6>Account Information</h6>
+                <div class="detail-group">
+                  <div class="detail-item">
+                    <span class="detail-label">User ID:</span>
+                    <span class="detail-value">{{ selectedUser.id }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Email Verified:</span>
+                    <span class="detail-value">
+                      <i
+                        [class]="selectedUser.isEmailVerified ? 'fas fa-check text-success' : 'fas fa-times text-warning'"></i>
+                      {{ selectedUser.isEmailVerified ? 'Yes' : 'No' }}
+                    </span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Account Status:</span>
+                    <span class="detail-value">
+                      <i
+                        [class]="selectedUser.isActive ? 'fas fa-check-circle text-success' : 'fas fa-times-circle text-danger'"></i>
+                      {{ selectedUser.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <h6>Registration Details</h6>
+                <div class="detail-group">
+                  <div class="detail-item">
+                    <span class="detail-label">Joined:</span>
+                    <span class="detail-value">{{ formatDateTime(selectedUser.createdAt) }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Last Login:</span>
+                    <span class="detail-value">{{ selectedUser.lastLogin ? formatDateTime(selectedUser.lastLogin) :
+                      'Never' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeUserModal()">Close</button>
+        <button type="button" class="btn" [ngClass]="selectedUser?.isActive ? 'btn-warning' : 'btn-success'"
+          (click)="updateUserStatus(selectedUser?.id || '', selectedUser?.isActive ? 'inactive' : 'active')">
+          <i [class]="selectedUser?.isActive ? 'fas fa-user-slash' : 'fas fa-user-check'"></i>
+          {{ selectedUser?.isActive ? 'Deactivate' : 'Activate' }} User
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" [class.show]="showDeleteModal" [style.display]="showDeleteModal ? 'block' : 'none'">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-exclamation-triangle text-warning"></i>
+          Confirm Deletion
+        </h5>
+        <button type="button" class="btn-close" (click)="closeDeleteModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center">
+          <i class="fas fa-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+          <h4 class="mt-3">Are you sure?</h4>
+          <p class="text-muted">
+            This action cannot be undone. This will permanently delete the user and all associated data.
+          </p>
+          <div class="alert alert-warning">
+            <i class="fas fa-info-circle"></i>
+            <strong>Warning:</strong> Deleting a user will remove all their orders, reviews, and account data.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">Cancel</button>
+        <button type="button" class="btn btn-danger" (click)="confirmDelete()">
+          <i class="fas fa-trash"></i>
+          Delete User
+        </button>
+      </div>
     </div>
   </div>
 </div>

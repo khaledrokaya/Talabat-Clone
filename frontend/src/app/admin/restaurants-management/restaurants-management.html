@@ -1,15 +1,33 @@
 <div class="restaurants-management">
-  <!-- Enhanced Header -->
+  <!-- Enhanced Page Header -->
   <div class="page-header">
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
-        <h2 class="page-title">
-          <i class="fas fa-clock"></i>
-          Pending Restaurant Approvals
-        </h2>
-        <p class="page-subtitle">Review and approve pending restaurant applications</p>
+    <div class="header-content">
+      <div class="header-info">
+        <h1>
+          <i class="fas fa-utensils"></i>
+          Restaurants Management
+        </h1>
+        <p>Review and manage restaurant applications and existing establishments</p>
+        <div class="quick-stats">
+          <div class="stat-item">
+            <span class="stat-value">{{ getRestaurantStats().total }}</span>
+            <span class="stat-label">Total Restaurants</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ getRestaurantStats().pending }}</span>
+            <span class="stat-label">Pending Approval</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ getRestaurantStats().approved }}</span>
+            <span class="stat-label">Approved Restaurants</span>
+          </div>
+        </div>
       </div>
       <div class="header-actions">
+        <button class="btn btn-outline-primary" (click)="loadPendingRestaurants()" [disabled]="isLoading">
+          <i class="fas fa-download"></i>
+          Export Data
+        </button>
         <button class="btn btn-primary" (click)="loadPendingRestaurants()" [disabled]="isLoading">
           <i class="fas fa-sync" [class.fa-spin]="isLoading"></i>
           Refresh Data
@@ -31,87 +49,83 @@
     <button type="button" class="btn-close" (click)="clearMessages()"></button>
   </div>
 
-  <!-- Statistics Cards -->
-  <div class="restaurants-stats">
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon pending">
-            <i class="fas fa-clock"></i>
-          </div>
-        </div>
-        <div class="stat-value">{{ getRestaurantStats().total }}</div>
-        <div class="stat-label">Pending Applications</div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon total">
-            <i class="fas fa-filter"></i>
-          </div>
-        </div>
-        <div class="stat-value">{{ filteredRestaurants.length }}</div>
-        <div class="stat-label">Filtered Results</div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon active">
-            <i class="fas fa-check-circle"></i>
-          </div>
-        </div>
-        <div class="stat-value">{{ currentPage }}</div>
-        <div class="stat-label">Current Page</div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon verified">
-            <i class="fas fa-list"></i>
-          </div>
-        </div>
-        <div class="stat-value">{{ totalPages }}</div>
-        <div class="stat-label">Total Pages</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Enhanced Filters and View Toggle -->
+  <!-- Enhanced Filters Section -->
   <div class="filters-section">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title mb-4">
-          <i class="fas fa-search"></i>
-          Search Pending Applications
-        </h5>
+    <div class="filters-card">
+      <div class="filters-header">
+        <h3><i class="fas fa-filter"></i> Search & Filter Restaurants</h3>
+        <button class="btn btn-sm btn-outline-secondary" (click)="onSearchChange()">
+          <i class="fas fa-times"></i>
+          Clear All
+        </button>
+      </div>
 
-        <!-- Search Bar -->
-        <div class="row g-3">
-          <div class="col-md-6">
-            <div class="input-group">
-              <span class="input-group-text">
-                <i class="fas fa-search"></i>
-              </span>
-              <input type="text" class="form-control" placeholder="Search by name, email, or restaurant name..."
-                [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()">
+      <div class="filters-content">
+        <div class="filters-grid">
+          <div class="filter-group">
+            <label class="filter-label">Search Restaurants</label>
+            <div class="search-input">
+              <i class="fas fa-search"></i>
+              <input type="text" placeholder="Search by name, email, or restaurant name..." [(ngModel)]="searchTerm"
+                (ngModelChange)="onSearchChange()" />
             </div>
           </div>
-          <div class="col-md-6">
-            <div class="d-flex gap-2">
-              <button class="btn btn-outline-secondary" (click)="searchTerm = ''; onSearchChange()">
-                <i class="fas fa-times"></i> Clear
-              </button>
-            </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Status Filter</label>
+            <select class="filter-select" [(ngModel)]="searchTerm" (change)="onSearchChange()">
+              <option value="">All Statuses</option>
+              <option value="pending">Pending Approval</option>
+              <option value="verified">Verified</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Items Per Page</label>
+            <select class="filter-select" [(ngModel)]="pageSize" (change)="onSearchChange()">
+              <option value="10">10 per page</option>
+              <option value="25">25 per page</option>
+              <option value="50">50 per page</option>
+              <option value="100">100 per page</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Sort By</label>
+            <select class="filter-select" [(ngModel)]="searchTerm" (change)="onSearchChange()">
+              <option value="createdAt">Application Date</option>
+              <option value="name">Restaurant Name</option>
+              <option value="owner">Owner Name</option>
+              <option value="status">Status</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filters-summary">
+          <div class="summary-item">
+            <i class="fas fa-info-circle"></i>
+            <span>Showing {{ filteredRestaurants.length }} of {{ getRestaurantStats().total }} restaurants</span>
+            <span *ngIf="currentPage > 1" class="page-info">• Page {{ currentPage }} of {{ totalPages }}</span>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Enhanced Restaurant Cards -->
-  <div class="restaurants-grid" *ngIf="!isLoading">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <h3>Loading restaurants...</h3>
+      <p>Please wait while we fetch the restaurant data</p>
+    </div>
+  </div>
+
+  <!-- Restaurants Grid -->
+  <div class="restaurants-grid" *ngIf="!isLoading && filteredRestaurants.length > 0">
     <div class="grid-container">
-      <div class="restaurant-card" *ngFor="let restaurant of filteredRestaurants; trackBy: trackByRestaurant">
+      <div class="restaurant-card" *ngFor="let restaurant of getPaginatedRestaurants(); trackBy: trackByRestaurant">
         <!-- Restaurant Header -->
         <div class="restaurant-header">
           <div class="restaurant-avatar">
@@ -121,8 +135,9 @@
             <h5 class="restaurant-name">{{ getRestaurantName(restaurant) }}</h5>
             <p class="owner-name">{{ getOwnerName(restaurant) }}</p>
             <div class="status-badges">
-              <span class="badge bg-warning">
-                Pending Approval
+              <span class="status-badge" [ngClass]="'badge bg-' + (restaurant.status === 'pending' ? 'warning' : restaurant.status === 'verified' ? 'success' : 'danger')">
+                <i [class]="'fas fa-' + (restaurant.status === 'pending' ? 'clock' : restaurant.status === 'verified' ? 'check' : 'times')"></i>
+                {{ restaurant.status | titlecase }}
               </span>
             </div>
           </div>
@@ -149,7 +164,7 @@
         </div>
 
         <!-- Business License -->
-        <div class="business-info">
+        <div class="business-info" *ngIf="getBusinessLicense(restaurant)">
           <div class="detail-item">
             <i class="fas fa-certificate"></i>
             <span>License: {{ getBusinessLicense(restaurant) }}</span>
@@ -158,62 +173,77 @@
 
         <!-- Action Buttons -->
         <div class="restaurant-actions">
-          <!-- Pending Restaurant Actions -->
-          <button class="btn btn-success btn-sm" (click)="approveRestaurant(restaurant)">
-            <i class="fas fa-check"></i> Approve
+          <button class="btn btn-sm btn-outline-primary" (click)="viewRestaurant(restaurant)" title="View Details">
+            <i class="fas fa-eye"></i>
+            View
           </button>
-          <button class="btn btn-warning btn-sm" (click)="rejectRestaurant(restaurant)">
-            <i class="fas fa-times"></i> Reject
+
+          <button *ngIf="restaurant.status === 'pending'" class="btn btn-sm btn-success"
+            (click)="approveRestaurant(restaurant)" title="Approve Restaurant">
+            <i class="fas fa-check"></i>
+            Approve
           </button>
-          <button class="btn btn-outline-primary btn-sm" (click)="viewRestaurant(restaurant)">
-            <i class="fas fa-eye"></i> View
+
+          <button *ngIf="restaurant.status === 'pending'" class="btn btn-sm btn-warning"
+            (click)="rejectRestaurant(restaurant)" title="Reject Restaurant">
+            <i class="fas fa-times"></i>
+            Reject
           </button>
-          <button class="btn btn-outline-danger btn-sm" (click)="deleteRestaurant(restaurant)">
-            <i class="fas fa-trash"></i> Delete
+
+          <button *ngIf="restaurant.status === 'verified'" class="btn btn-sm btn-secondary"
+            (click)="viewRestaurant(restaurant)" title="Deactivate Restaurant">
+            <i class="fas fa-pause"></i>
+            Deactivate
+          </button>
+
+          <button *ngIf="restaurant.status === 'rejected'" class="btn btn-sm btn-success"
+            (click)="viewRestaurant(restaurant)" title="Activate Restaurant">
+            <i class="fas fa-play"></i>
+            Activate
+          </button>
+
+          <button class="btn btn-sm btn-outline-danger" (click)="deleteRestaurant(restaurant)"
+            title="Delete Restaurant">
+            <i class="fas fa-trash"></i>
+            Delete
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Empty State -->
-    <div class="empty-state" *ngIf="filteredRestaurants.length === 0">
-      <div class="empty-icon">
-        <i class="fas fa-utensils"></i>
+    <!-- Pagination -->
+    <div class="pagination-section" *ngIf="totalPages > 1">
+      <div class="pagination-info">
+        <span>Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ currentPage * pageSize > filteredRestaurants.length ? filteredRestaurants.length : currentPage * pageSize }} of {{ filteredRestaurants.length }} restaurants</span>
       </div>
-      <h3 class="empty-title">No Restaurants Found</h3>
-      <p class="empty-description">
-        There are no pending restaurant applications at the moment.
-      </p>
+      <nav class="pagination">
+        <button class="page-btn" [disabled]="currentPage === 1" (click)="onPageChange(currentPage - 1)">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+
+        <button *ngFor="let page of generatePageNumbers()" class="page-btn" [class.active]="page === currentPage"
+          (click)="onPageChange(page)">
+          {{ page }}
+        </button>
+
+        <button class="page-btn" [disabled]="currentPage === totalPages" (click)="onPageChange(currentPage + 1)">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </nav>
     </div>
   </div>
 
-  <!-- Loading State -->
-  <div class="loading-state" *ngIf="isLoading">
-    <div class="spinner-border" role="status"></div>
-    <div class="loading-text">Loading restaurants...</div>
-  </div>
-
-  <!-- Pagination -->
-  <div class="pagination-wrapper" *ngIf="totalPages > 1">
-    <nav>
-      <ul class="pagination justify-content-center">
-        <li class="page-item" [class.disabled]="currentPage === 1">
-          <button class="page-link" (click)="onPageChange(currentPage - 1)">
-            <i class="fas fa-chevron-left"></i>
-          </button>
-        </li>
-
-        <li class="page-item" *ngFor="let page of generatePageNumbers()" [class.active]="page === currentPage">
-          <button class="page-link" (click)="onPageChange(page)">{{ page }}</button>
-        </li>
-
-        <li class="page-item" [class.disabled]="currentPage === totalPages">
-          <button class="page-link" (click)="onPageChange(currentPage + 1)">
-            <i class="fas fa-chevron-right"></i>
-          </button>
-        </li>
-      </ul>
-    </nav>
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredRestaurants.length === 0" class="empty-state">
+    <div class="empty-content">
+      <i class="fas fa-utensils empty-icon"></i>
+      <h3>No Restaurants Found</h3>
+      <p>There are no restaurants matching your current filters.</p>
+      <button class="btn btn-primary" (click)="onSearchChange()">
+        <i class="fas fa-times"></i>
+        Clear Filters
+      </button>
+    </div>
   </div>
 </div>
 
@@ -222,7 +252,10 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Restaurant Details</h5>
+        <h5 class="modal-title">
+          <i class="fas fa-utensils"></i>
+          Restaurant Details
+        </h5>
         <button type="button" class="btn-close" (click)="closeModal()"></button>
       </div>
       <div class="modal-body" *ngIf="currentRestaurant">
@@ -235,7 +268,10 @@
               <h3>{{ getRestaurantName(currentRestaurant) }}</h3>
               <p class="owner-info">Owner: {{ getOwnerName(currentRestaurant) }}</p>
               <div class="status-badges">
-                <span class="badge bg-warning">Pending Approval</span>
+                <span class="status-badge" [ngClass]="'badge bg-' + (currentRestaurant.status === 'pending' ? 'warning' : currentRestaurant.status === 'verified' ? 'success' : 'danger')">
+                  <i [class]="'fas fa-' + (currentRestaurant.status === 'pending' ? 'clock' : currentRestaurant.status === 'verified' ? 'check' : 'times')"></i>
+                  {{ currentRestaurant.status | titlecase }}
+                </span>
               </div>
             </div>
           </div>
@@ -246,29 +282,37 @@
                 <h6>Contact Information</h6>
                 <div class="detail-group">
                   <div class="detail-item">
-                    <i class="fas fa-envelope"></i>
-                    <span>{{ currentRestaurant.email }}</span>
+                    <span class="detail-label">Email:</span>
+                    <span class="detail-value">{{ currentRestaurant.email }}</span>
                   </div>
                   <div class="detail-item">
-                    <i class="fas fa-phone"></i>
-                    <span>{{ currentRestaurant.phone }}</span>
+                    <span class="detail-label">Phone:</span>
+                    <span class="detail-value">{{ currentRestaurant.phone }}</span>
                   </div>
                   <div class="detail-item">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span>{{ getRestaurantAddress(currentRestaurant) }}</span>
+                    <span class="detail-label">Address:</span>
+                    <span class="detail-value">{{ getRestaurantAddress(currentRestaurant) }}</span>
                   </div>
                 </div>
               </div>
               <div class="col-md-6">
                 <h6>Business Information</h6>
                 <div class="detail-group">
-                  <div class="detail-item">
-                    <i class="fas fa-certificate"></i>
-                    <span>License: {{ getBusinessLicense(currentRestaurant) }}</span>
+                  <div class="detail-item" *ngIf="getBusinessLicense(currentRestaurant)">
+                    <span class="detail-label">License:</span>
+                    <span class="detail-value">{{ getBusinessLicense(currentRestaurant) }}</span>
                   </div>
                   <div class="detail-item">
-                    <i class="fas fa-clock"></i>
-                    <span>Applied: {{ formatDate(getCreatedDate(currentRestaurant)) }}</span>
+                    <span class="detail-label">Applied:</span>
+                    <span class="detail-value">{{ formatDate(getCreatedDate(currentRestaurant)) }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value">
+                      <span class="status-badge" [ngClass]="'badge bg-' + (currentRestaurant.status === 'pending' ? 'warning' : currentRestaurant.status === 'verified' ? 'success' : 'danger')">
+                        {{ currentRestaurant.status | titlecase }}
+                      </span>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -278,6 +322,16 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModal()">Close</button>
+        <button *ngIf="currentRestaurant?.status === 'pending'" type="button" class="btn btn-success"
+          (click)="approveRestaurant(currentRestaurant)">
+          <i class="fas fa-check"></i>
+          Approve
+        </button>
+        <button *ngIf="currentRestaurant?.status === 'pending'" type="button" class="btn btn-warning"
+          (click)="rejectRestaurant(currentRestaurant)">
+          <i class="fas fa-times"></i>
+          Reject
+        </button>
       </div>
     </div>
   </div>
@@ -288,7 +342,10 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Restaurant Approval</h5>
+        <h5 class="modal-title">
+          <i class="fas fa-user-check"></i>
+          Restaurant Approval
+        </h5>
         <button type="button" class="btn-close" (click)="closeModal()"></button>
       </div>
       <form [formGroup]="approvalForm" (ngSubmit)="submitApproval()">
@@ -316,12 +373,16 @@
     </div>
   </div>
 </div>
+
 <!-- Delete Confirmation Modal -->
 <div class="modal" [class.show]="showDeleteModal" [style.display]="showDeleteModal ? 'block' : 'none'">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Confirm Deletion</h5>
+        <h5 class="modal-title">
+          <i class="fas fa-exclamation-triangle text-warning"></i>
+          Confirm Deletion
+        </h5>
         <button type="button" class="btn-close" (click)="closeModal()"></button>
       </div>
       <div class="modal-body">
@@ -330,12 +391,17 @@
           <h4 class="mt-3">Are you sure?</h4>
           <p class="text-muted">This action cannot be undone. This will permanently delete the restaurant and all
             associated data.</p>
+          <div class="alert alert-warning">
+            <i class="fas fa-info-circle"></i>
+            <strong>Warning:</strong> Deleting a restaurant will remove all their meals, orders, and reviews.
+          </div>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
         <button type="button" class="btn btn-danger" (click)="confirmDelete()">
-          <i class="fas fa-trash"></i> Delete Restaurant
+          <i class="fas fa-trash"></i>
+          Delete Restaurant
         </button>
       </div>
     </div>

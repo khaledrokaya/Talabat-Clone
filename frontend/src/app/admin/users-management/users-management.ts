@@ -18,6 +18,12 @@ export class UsersManagementComponent implements OnInit {
   selectedStatus: string = '';
   loading: boolean = false;
   error: string = '';
+  selectedUsers: string[] = [];
+  showUserModal: boolean = false;
+  showDeleteModal: boolean = false;
+  selectedUser: AdminUser | null = null;
+  userToDelete: string | null = null;
+  pageSize: number = 10;
 
   // Filters
   filters: UserFilters = {};
@@ -27,6 +33,9 @@ export class UsersManagementComponent implements OnInit {
   itemsPerPage: number = 10;
   totalItems: number = 0;
   totalPages: number = 0;
+
+  // Math object for template
+  Math = Math;
 
   constructor(private adminService: AdminService) { }
 
@@ -86,25 +95,133 @@ export class UsersManagementComponent implements OnInit {
     this.loadUsers();
   }
 
+  onPageSizeChange(): void {
+    this.filters.limit = this.pageSize;
+    this.itemsPerPage = this.pageSize;
+    this.filters.page = 1;
+    this.currentPage = 1;
+    this.loadUsers();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.selectedRole = '';
+    this.selectedStatus = '';
+    this.filters = {};
+    this.currentPage = 1;
+    this.loadUsers();
+  }
+
   filterUsers(): void {
     this.filters.page = this.currentPage;
     this.filters.limit = this.itemsPerPage;
     this.loadUsers();
   }
 
+  // Bulk selection methods
+  toggleSelectAll(): void {
+    if (this.isAllSelected()) {
+      this.selectedUsers = [];
+    } else {
+      this.selectedUsers = this.filteredUsers.map(user => user.id);
+    }
+  }
+
+  toggleUserSelection(userId: string): void {
+    const index = this.selectedUsers.indexOf(userId);
+    if (index > -1) {
+      this.selectedUsers.splice(index, 1);
+    } else {
+      this.selectedUsers.push(userId);
+    }
+  }
+
+  isAllSelected(): boolean {
+    return this.filteredUsers.length > 0 && this.selectedUsers.length === this.filteredUsers.length;
+  }
+
+  bulkDelete(): void {
+    if (this.selectedUsers.length === 0) return;
+
+    if (confirm(`Are you sure you want to delete ${this.selectedUsers.length} selected users? This action cannot be undone.`)) {
+      this.loading = true;
+      // Implement bulk delete logic here
+      console.log('Bulk deleting users:', this.selectedUsers);
+      this.selectedUsers = [];
+      this.loadUsers();
+    }
+  }
+
+  // User details modal methods
+  viewUserDetails(user: AdminUser): void {
+    this.selectedUser = user;
+    this.showUserModal = true;
+  }
+
+  closeUserModal(): void {
+    this.showUserModal = false;
+    this.selectedUser = null;
+  }
+
+  // Delete confirmation modal methods
+  deleteUser(userId: string): void {
+    this.userToDelete = userId;
+    this.showDeleteModal = true;
+  }
+
+  closeDeleteModal(): void {
+    this.showDeleteModal = false;
+    this.userToDelete = null;
+  }
+
+  confirmDelete(): void {
+    if (!this.userToDelete) return;
+
+    this.loading = true;
+    this.adminService.deleteUser(this.userToDelete).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.closeDeleteModal();
+          this.loadUsers();
+        }
+      },
+      error: (error) => {
+        console.error('Error deleting user:', error);
+        this.error = 'Failed to delete user. Please try again.';
+        this.loading = false;
+      }
+    });
+  }
+
   getRoleClass(role: string): string {
     switch (role) {
       case 'admin':
-        return 'badge bg-danger';
+        return 'role-badge admin';
       case 'restaurant':
       case 'restaurant_owner':
-        return 'badge bg-primary';
+        return 'role-badge restaurant';
       case 'delivery':
-        return 'badge bg-warning';
+        return 'role-badge delivery';
       case 'customer':
-        return 'badge bg-success';
+        return 'role-badge customer';
       default:
-        return 'badge bg-secondary';
+        return 'role-badge default';
+    }
+  }
+
+  getRoleIcon(role: string): string {
+    switch (role) {
+      case 'admin':
+        return 'fas fa-shield-alt';
+      case 'restaurant':
+      case 'restaurant_owner':
+        return 'fas fa-utensils';
+      case 'delivery':
+        return 'fas fa-motorcycle';
+      case 'customer':
+        return 'fas fa-user';
+      default:
+        return 'fas fa-user';
     }
   }
 
@@ -146,25 +263,6 @@ export class UsersManagementComponent implements OnInit {
     });
   }
 
-  deleteUser(userId: string): void {
-    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      this.loading = true;
-
-      this.adminService.deleteUser(userId).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.loadUsers();
-          }
-        },
-        error: (error) => {
-          console.error('Error deleting user:', error);
-          this.error = 'Failed to delete user. Please try again.';
-          this.loading = false;
-        }
-      });
-    }
-  }
-
   exportUsers(): void {
     const headers = ['Name', 'Email', 'Role', 'Status', 'Created At', 'Last Login'];
     const csvContent = [
@@ -188,7 +286,7 @@ export class UsersManagementComponent implements OnInit {
     window.URL.revokeObjectURL(url);
   }
 
-  goToPage(page: number): void {
+  onPageChange(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
       this.filters.page = page;
@@ -196,23 +294,7 @@ export class UsersManagementComponent implements OnInit {
     }
   }
 
-  previousPage(): void {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      this.filters.page = this.currentPage;
-      this.loadUsers();
-    }
-  }
-
-  nextPage(): void {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      this.filters.page = this.currentPage;
-      this.loadUsers();
-    }
-  }
-
-  getPaginationPages(): number[] {
+  getPageNumbers(): number[] {
     const pages: number[] = [];
     const startPage = Math.max(1, this.currentPage - 2);
     const endPage = Math.min(this.totalPages, this.currentPage + 2);
@@ -226,6 +308,16 @@ export class UsersManagementComponent implements OnInit {
   formatDate(date: string | Date): string {
     if (!date) return 'N/A';
     return new Date(date).toLocaleDateString();
+  }
+
+  formatTime(date: string | Date): string {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleTimeString();
+  }
+
+  formatDateTime(date: string | Date): string {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleString();
   }
 }
 

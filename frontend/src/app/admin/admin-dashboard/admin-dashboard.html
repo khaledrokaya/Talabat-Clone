@@ -1,20 +1,30 @@
 <div class="admin-dashboard">
-  <!-- Dashboard Header -->
+  <!-- Enhanced Dashboard Header -->
   <div class="dashboard-header">
     <div class="header-content">
       <div class="welcome-section">
         <h1>
           <i class="fas fa-tachometer-alt"></i>
-          Welcome to Talabat Admin
+          Welcome back, {{ currentAdmin?.firstName || 'Admin' }}!
         </h1>
-        <p>Monitor and manage your food delivery platform with powerful insights</p>
+        <p>Here's what's happening with your Talabat platform today</p>
+        <div class="quick-stats">
+          <div class="quick-stat">
+            <i class="fas fa-clock"></i>
+            <span>{{ getCurrentTime() }}</span>
+          </div>
+          <div class="quick-stat">
+            <i class="fas fa-calendar"></i>
+            <span>{{ getCurrentDate() }}</span>
+          </div>
+        </div>
       </div>
       <div class="quick-actions">
         <button class="btn btn-primary" (click)="refreshData()" [disabled]="isLoading">
           <i class="fas fa-sync" [class.fa-spin]="isLoading"></i>
           Refresh Data
         </button>
-        <button class="btn btn-outline-primary" (click)="refreshData()">
+        <button class="btn btn-outline-light" (click)="exportDashboardReport()" [disabled]="isLoading">
           <i class="fas fa-download"></i>
           Export Report
         </button>
@@ -24,184 +34,299 @@
 
   <!-- Loading State -->
   <div *ngIf="isLoading" class="loading-state">
-    <div class="text-center">
+    <div class="loading-content">
       <div class="loading-spinner"></div>
-      <p class="mt-3">Loading dashboard data...</p>
+      <h3>Loading dashboard data...</h3>
+      <p>Please wait while we fetch the latest statistics</p>
     </div>
   </div>
 
   <!-- Error State -->
-  <div *ngIf="errorMessage && !isLoading" class="alert alert-danger">
-    <i class="fas fa-exclamation-triangle"></i>
-    {{ errorMessage }}
-  </div>
-
-  <!-- Stats Grid -->
-  <div class="stats-grid" *ngIf="dashboardData && !isLoading">
-    <!-- Total Orders -->
-    <div class="stat-card">
-      <div class="stat-header">
-        <div class="stat-info">
-          <div class="stat-label">Total Orders</div>
-          <div class="stat-value">{{ formatNumber(dashboardData.orders.total) }}</div>
-        </div>
-        <div class="stat-icon orders">
-          <i class="fas fa-shopping-cart"></i>
-        </div>
-      </div>
-      <div class="stat-footer">
-        <div class="stat-change positive">
-          <i class="fas fa-arrow-up"></i>
-          <span class="change-value">+12%</span>
-          vs last month
-        </div>
-        <div class="stat-period">This month</div>
-      </div>
-    </div>
-
-    <!-- Total Restaurants -->
-    <div class="stat-card">
-      <div class="stat-header">
-        <div class="stat-info">
-          <div class="stat-label">Restaurants</div>
-          <div class="stat-value">{{ formatNumber(dashboardData.restaurants.total) }}</div>
-        </div>
-        <div class="stat-icon restaurants">
-          <i class="fas fa-utensils"></i>
-        </div>
-      </div>
-      <div class="stat-footer">
-        <div class="stat-change positive">
-          <i class="fas fa-arrow-up"></i>
-          <span class="change-value">+8%</span>
-          vs last month
-        </div>
-        <div class="stat-period">Active now</div>
-      </div>
-    </div>
-
-    <!-- Total Users -->
-    <div class="stat-card">
-      <div class="stat-header">
-        <div class="stat-info">
-          <div class="stat-label">Total Users</div>
-          <div class="stat-value">{{ formatNumber(dashboardData.users.total) }}</div>
-        </div>
-        <div class="stat-icon customers">
-          <i class="fas fa-users"></i>
-        </div>
-      </div>
-      <div class="stat-footer">
-        <div class="stat-change positive">
-          <i class="fas fa-arrow-up"></i>
-          <span class="change-value">+15%</span>
-          vs last month
-        </div>
-        <div class="stat-period">Registered</div>
-      </div>
-    </div>
-
-    <!-- Platform Revenue -->
-    <div class="stat-card">
-      <div class="stat-header">
-        <div class="stat-info">
-          <div class="stat-label">Platform Revenue</div>
-          <div class="stat-value">{{ formatCurrency(dashboardData.revenue.totalPlatformRevenue) }}</div>
-        </div>
-        <div class="stat-icon revenue">
-          <i class="fas fa-dollar-sign"></i>
-        </div>
-      </div>
-      <div class="stat-footer">
-        <div class="stat-change positive">
-          <i class="fas fa-arrow-up"></i>
-          <span class="change-value">+23%</span>
-          vs last month
-        </div>
-        <div class="stat-period">Total earned</div>
-      </div>
+  <div *ngIf="errorMessage && !isLoading" class="error-state">
+    <div class="error-content">
+      <i class="fas fa-exclamation-triangle"></i>
+      <h3>Oops! Something went wrong</h3>
+      <p>{{ errorMessage }}</p>
+      <button class="btn btn-primary" (click)="refreshData()">
+        <i class="fas fa-redo"></i>
+        Try Again
+      </button>
     </div>
   </div>
 
-  <!-- Dashboard Content -->
-  <div class="dashboard-content" *ngIf="!isLoading && !errorMessage">
-    <!-- Main Chart Area -->
-    <div class="main-chart">
-      <div class="chart-header">
-        <h3><i class="fas fa-chart-line"></i> Orders Overview</h3>
-        <div class="chart-filters">
-          <button class="filter-btn active">7 Days</button>
-          <button class="filter-btn">30 Days</button>
-          <button class="filter-btn">90 Days</button>
-        </div>
+  <!-- Main Dashboard Content -->
+  <div class="dashboard-content" *ngIf="dashboardData && !isLoading">
+
+    <!-- Key Metrics Cards -->
+    <div class="metrics-section">
+      <div class="section-header">
+        <h2><i class="fas fa-chart-line"></i> Platform Overview</h2>
+        <p>Real-time metrics and performance indicators</p>
       </div>
-      <div class="chart-placeholder">
-        <i class="fas fa-chart-area fa-2x"></i>
-        <p>Orders chart will be displayed here</p>
+
+      <div class="metrics-grid">
+        <!-- Total Orders -->
+        <div class="metric-card orders">
+          <div class="metric-icon">
+            <i class="fas fa-shopping-cart"></i>
+          </div>
+          <div class="metric-content">
+            <div class="metric-value">{{ formatNumber(dashboardData.orders.total) }}</div>
+            <div class="metric-label">Total Orders</div>
+            <div class="metric-trend positive">
+              <i class="fas fa-arrow-up"></i>
+              <span>+12.5% vs last month</span>
+            </div>
+          </div>
+          <div class="metric-chart">
+            <div class="mini-chart">
+              <div class="chart-bar" style="height: 60%"></div>
+              <div class="chart-bar" style="height: 80%"></div>
+              <div class="chart-bar" style="height: 45%"></div>
+              <div class="chart-bar" style="height: 90%"></div>
+              <div class="chart-bar" style="height: 70%"></div>
+              <div class="chart-bar" style="height: 85%"></div>
+              <div class="chart-bar" style="height: 95%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Revenue -->
+        <div class="metric-card revenue">
+          <div class="metric-icon">
+            <i class="fas fa-dollar-sign"></i>
+          </div>
+          <div class="metric-content">
+            <div class="metric-value">{{ formatCurrency(dashboardData.revenue.totalPlatformRevenue) }}</div>
+            <div class="metric-label">Platform Revenue</div>
+            <div class="metric-trend positive">
+              <i class="fas fa-arrow-up"></i>
+              <span>+18.2% vs last month</span>
+            </div>
+          </div>
+          <div class="metric-chart">
+            <div class="mini-chart">
+              <div class="chart-bar" style="height: 50%"></div>
+              <div class="chart-bar" style="height: 75%"></div>
+              <div class="chart-bar" style="height: 65%"></div>
+              <div class="chart-bar" style="height: 88%"></div>
+              <div class="chart-bar" style="height: 72%"></div>
+              <div class="chart-bar" style="height: 92%"></div>
+              <div class="chart-bar" style="height: 98%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Users -->
+        <div class="metric-card users">
+          <div class="metric-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <div class="metric-content">
+            <div class="metric-value">{{ formatNumber(dashboardData.users.total) }}</div>
+            <div class="metric-label">Total Users</div>
+            <div class="metric-trend positive">
+              <i class="fas fa-arrow-up"></i>
+              <span>+8.7% vs last month</span>
+            </div>
+          </div>
+          <div class="metric-chart">
+            <div class="mini-chart">
+              <div class="chart-bar" style="height: 40%"></div>
+              <div class="chart-bar" style="height: 55%"></div>
+              <div class="chart-bar" style="height: 70%"></div>
+              <div class="chart-bar" style="height: 65%"></div>
+              <div class="chart-bar" style="height: 80%"></div>
+              <div class="chart-bar" style="height: 75%"></div>
+              <div class="chart-bar" style="height: 85%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Restaurants -->
+        <div class="metric-card restaurants">
+          <div class="metric-icon">
+            <i class="fas fa-utensils"></i>
+          </div>
+          <div class="metric-content">
+            <div class="metric-value">{{ formatNumber(dashboardData.restaurants.active) }}</div>
+            <div class="metric-label">Active Restaurants</div>
+            <div class="metric-trend positive">
+              <i class="fas fa-arrow-up"></i>
+              <span>+5.3% vs last month</span>
+            </div>
+          </div>
+          <div class="metric-chart">
+            <div class="mini-chart">
+              <div class="chart-bar" style="height: 30%"></div>
+              <div class="chart-bar" style="height: 45%"></div>
+              <div class="chart-bar" style="height: 60%"></div>
+              <div class="chart-bar" style="height: 55%"></div>
+              <div class="chart-bar" style="height: 70%"></div>
+              <div class="chart-bar" style="height: 65%"></div>
+              <div class="chart-bar" style="height: 75%"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Sidebar Widgets -->
-    <div class="sidebar-widgets">
-      <!-- Recent Activity Widget -->
-      <div class="widget">
-        <div class="widget-header">
-          <h4><i class="fas fa-bell"></i> Recent Activity</h4>
-          <a href="#" class="widget-action">View All</a>
+    <!-- Detailed Analytics Section -->
+    <div class="analytics-section">
+      <div class="analytics-grid">
+
+        <!-- Orders Chart -->
+        <div class="analytics-card orders-chart">
+          <div class="card-header">
+            <h3><i class="fas fa-chart-area"></i> Orders Trend</h3>
+            <div class="chart-controls">
+              <button class="chart-btn active" (click)="setChartPeriod('7d')">7D</button>
+              <button class="chart-btn" (click)="setChartPeriod('30d')">30D</button>
+              <button class="chart-btn" (click)="setChartPeriod('90d')">90D</button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <div class="chart-placeholder">
+              <i class="fas fa-chart-line"></i>
+              <p>Orders trend chart will be displayed here</p>
+              <small>Showing last {{ chartPeriod }} days</small>
+            </div>
+          </div>
         </div>
-        <div class="widget-content">
-          <div class="activity-item">
-            <div class="activity-icon">
-              <i class="fas fa-plus"></i>
-            </div>
-            <div class="activity-details">
-              <div class="activity-title">New restaurant approved</div>
-              <div class="activity-time">2 minutes ago</div>
-            </div>
+
+        <!-- Recent Activity -->
+        <div class="analytics-card recent-activity">
+          <div class="card-header">
+            <h3><i class="fas fa-bell"></i> Recent Activity</h3>
+            <a href="#" class="view-all">View All</a>
           </div>
-          <div class="activity-item">
-            <div class="activity-icon">
-              <i class="fas fa-shopping-cart"></i>
+          <div class="activity-list">
+            <div class="activity-item">
+              <div class="activity-icon new-order">
+                <i class="fas fa-plus"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-title">New restaurant approved</div>
+                <div class="activity-details">McDonald's Cairo branch has been approved</div>
+                <div class="activity-time">2 minutes ago</div>
+              </div>
             </div>
-            <div class="activity-details">
-              <div class="activity-title">Large order completed</div>
-              <div class="activity-time">5 minutes ago</div>
+
+            <div class="activity-item">
+              <div class="activity-icon order-completed">
+                <i class="fas fa-check"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-title">Large order completed</div>
+                <div class="activity-details">Order #12345 worth EGP 450 delivered successfully</div>
+                <div class="activity-time">5 minutes ago</div>
+              </div>
             </div>
-          </div>
-          <div class="activity-item">
-            <div class="activity-icon">
-              <i class="fas fa-user-plus"></i>
+
+            <div class="activity-item">
+              <div class="activity-icon new-user">
+                <i class="fas fa-user-plus"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-title">New user registered</div>
+                <div class="activity-details">Ahmed Mohamed joined as a customer</div>
+                <div class="activity-time">12 minutes ago</div>
+              </div>
             </div>
-            <div class="activity-details">
-              <div class="activity-title">New user registered</div>
-              <div class="activity-time">12 minutes ago</div>
+
+            <div class="activity-item">
+              <div class="activity-icon delivery">
+                <i class="fas fa-motorcycle"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-title">Delivery partner online</div>
+                <div class="activity-details">15 new delivery partners are now available</div>
+                <div class="activity-time">18 minutes ago</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Quick Stats Widget -->
-      <div class="widget">
-        <div class="widget-header">
-          <h4><i class="fas fa-tachometer-alt"></i> Quick Stats</h4>
-        </div>
-        <div class="widget-content">
-          <div class="activity-item">
-            <div class="activity-icon">
-              <i class="fas fa-motorcycle"></i>
+    <!-- Quick Actions & Stats -->
+    <div class="quick-section">
+      <div class="quick-grid">
+
+        <!-- Pending Approvals -->
+        <div class="quick-card approvals">
+          <div class="card-header">
+            <h3><i class="fas fa-clock"></i> Pending Approvals</h3>
+            <span class="badge">{{ dashboardData.restaurants.pending + dashboardData.delivery.pending }}</span>
+          </div>
+          <div class="card-content">
+            <div class="approval-item">
+              <div class="approval-icon">
+                <i class="fas fa-utensils"></i>
+              </div>
+              <div class="approval-info">
+                <div class="approval-count">{{ dashboardData.restaurants.pending }}</div>
+                <div class="approval-label">Restaurants</div>
+              </div>
+              <button class="btn btn-sm btn-primary" (click)="navigateTo('/admin/restaurants')">
+                Review
+              </button>
             </div>
-            <div class="activity-details">
-              <div class="activity-title">Active Deliveries</div>
-              <div class="activity-time">{{ dashboardData ? dashboardData.orders.pending : '0' }} ongoing</div>
+
+            <div class="approval-item">
+              <div class="approval-icon">
+                <i class="fas fa-motorcycle"></i>
+              </div>
+              <div class="approval-info">
+                <div class="approval-count">{{ dashboardData.delivery.pending }}</div>
+                <div class="approval-label">Delivery Partners</div>
+              </div>
+              <button class="btn btn-sm btn-primary" (click)="navigateTo('/admin/delivery')">
+                Review
+              </button>
             </div>
           </div>
-          <div class="activity-item">
-            <div class="activity-icon">
-              <i class="fas fa-clock"></i>
+        </div>
+
+        <!-- Platform Stats -->
+        <div class="quick-card stats">
+          <div class="card-header">
+            <h3><i class="fas fa-chart-pie"></i> Platform Stats</h3>
+          </div>
+          <div class="card-content">
+            <div class="stat-row">
+              <div class="stat-label">Active Orders</div>
+              <div class="stat-value">{{ dashboardData.orders.pending }}</div>
             </div>
-            <div class="activity-details">
-              <div class="activity-title">Avg Delivery Time</div>
-              <div class="activity-time">32 minutes</div>
+            <div class="stat-row">
+              <div class="stat-label">Online Delivery</div>
+              <div class="stat-value">{{ dashboardData.delivery.online }}</div>
+            </div>
+            <div class="stat-row">
+              <div class="stat-label">Avg Order Value</div>
+              <div class="stat-value">{{ formatCurrency(dashboardData.orders.averageOrderValue) }}</div>
+            </div>
+            <div class="stat-row">
+              <div class="stat-label">Completion Rate</div>
+              <div class="stat-value">{{ getCompletionRate() }}%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Restaurants -->
+        <div class="quick-card top-restaurants">
+          <div class="card-header">
+            <h3><i class="fas fa-crown"></i> Top Restaurants</h3>
+          </div>
+          <div class="card-content">
+            <div class="restaurant-item" *ngFor="let restaurant of dashboardData.revenue.topRestaurants.slice(0, 3)">
+              <div class="restaurant-rank">{{ getRestaurantRank(restaurant) }}</div>
+              <div class="restaurant-info">
+                <div class="restaurant-name">{{ restaurant.name }}</div>
+                <div class="restaurant-stats">
+                  {{ restaurant.orders }} orders • {{ formatCurrency(restaurant.revenue) }}
+                </div>
+              </div>
             </div>
           </div>
         </div>

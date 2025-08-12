@@ -15,51 +15,8 @@ export class AdminDashboard implements OnInit {
   isLoading = true;
   dashboardData: DashboardData | null = null;
   errorMessage = '';
-
-  quickActions = [
-    {
-      title: 'Manage Users',
-      description: 'View and manage all users',
-      icon: 'fas fa-users',
-      route: '/admin/users',
-      color: 'primary'
-    },
-    {
-      title: 'Restaurants',
-      description: 'Manage restaurant approvals',
-      icon: 'fas fa-utensils',
-      route: '/admin/restaurants',
-      color: 'success'
-    },
-    {
-      title: 'Delivery Partners',
-      description: 'Manage delivery personnel',
-      icon: 'fas fa-motorcycle',
-      route: '/admin/delivery',
-      color: 'info'
-    },
-    {
-      title: 'Orders Management',
-      description: 'Track and manage orders',
-      icon: 'fas fa-clipboard-list',
-      route: '/admin/orders',
-      color: 'warning'
-    },
-    {
-      title: 'Pending Approvals',
-      description: 'Review pending requests',
-      icon: 'fas fa-check-circle',
-      route: '/admin/approvals',
-      color: 'danger'
-    },
-    {
-      title: 'Analytics & Reports',
-      description: 'View detailed analytics',
-      icon: 'fas fa-chart-line',
-      route: '/admin/analytics',
-      color: 'dark'
-    }
-  ];
+  currentAdmin: any = null;
+  chartPeriod = '7d';
 
   constructor(
     private adminService: AdminService,
@@ -68,6 +25,7 @@ export class AdminDashboard implements OnInit {
 
   ngOnInit(): void {
     this.loadDashboardData();
+    this.loadCurrentAdmin();
   }
 
   loadDashboardData(): void {
@@ -91,36 +49,59 @@ export class AdminDashboard implements OnInit {
     });
   }
 
+  loadCurrentAdmin(): void {
+    // Load current admin data from localStorage or service
+    const adminData = localStorage.getItem('adminData');
+    if (adminData) {
+      this.currentAdmin = JSON.parse(adminData);
+    }
+  }
+
   refreshData(): void {
     this.loadDashboardData();
   }
 
-  navigateToUsers(): void {
-    this.router.navigate(['/admin/users']);
+  exportDashboardReport(): void {
+    // Implement export functionality
+    console.log('Exporting dashboard report...');
+    // This would typically generate a PDF or Excel report
   }
 
-  navigateToRestaurants(): void {
-    this.router.navigate(['/admin/restaurants']);
+  setChartPeriod(period: string): void {
+    this.chartPeriod = period;
+    // Update chart data based on period
+    console.log('Chart period changed to:', period);
   }
 
-  navigateToDelivery(): void {
-    this.router.navigate(['/admin/delivery']);
+  getCurrentTime(): string {
+    return new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
   }
 
-  navigateToOrders(): void {
-    this.router.navigate(['/admin/orders']);
+  getCurrentDate(): string {
+    return new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   }
 
-  navigateToApprovals(): void {
-    this.router.navigate(['/admin/approvals']);
+  getCompletionRate(): number {
+    if (!this.dashboardData) return 0;
+    const total = this.dashboardData.orders.total;
+    const completed = this.dashboardData.orders.completed;
+    return total > 0 ? Math.round((completed / total) * 100) : 0;
   }
 
-  navigateToAnalytics(): void {
-    this.router.navigate(['/admin/analytics']);
-  }
-
-  navigateToSettings(): void {
-    this.router.navigate(['/admin/settings']);
+  getRestaurantRank(restaurant: any): string {
+    // This would be calculated based on the restaurant's position in the top restaurants list
+    const topRestaurants = this.dashboardData?.revenue.topRestaurants || [];
+    const index = topRestaurants.findIndex(r => r.id === restaurant.id);
+    return index >= 0 ? `#${index + 1}` : '#N/A';
   }
 
   navigateTo(route: string): void {
