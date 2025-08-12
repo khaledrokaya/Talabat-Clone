@@ -135,8 +135,10 @@
             <h5 class="restaurant-name">{{ getRestaurantName(restaurant) }}</h5>
             <p class="owner-name">{{ getOwnerName(restaurant) }}</p>
             <div class="status-badges">
-              <span class="status-badge" [ngClass]="'badge bg-' + (restaurant.status === 'pending' ? 'warning' : restaurant.status === 'verified' ? 'success' : 'danger')">
-                <i [class]="'fas fa-' + (restaurant.status === 'pending' ? 'clock' : restaurant.status === 'verified' ? 'check' : 'times')"></i>
+              <span class="status-badge"
+                [ngClass]="'badge bg-' + (restaurant.status === 'pending' ? 'warning' : restaurant.status === 'verified' ? 'success' : 'danger')">
+                <i
+                  [class]="'fas fa-' + (restaurant.status === 'pending' ? 'clock' : restaurant.status === 'verified' ? 'check' : 'times')"></i>
                 {{ restaurant.status | titlecase }}
               </span>
             </div>
@@ -214,7 +216,8 @@
     <!-- Pagination -->
     <div class="pagination-section" *ngIf="totalPages > 1">
       <div class="pagination-info">
-        <span>Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ currentPage * pageSize > filteredRestaurants.length ? filteredRestaurants.length : currentPage * pageSize }} of {{ filteredRestaurants.length }} restaurants</span>
+        <span>Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ currentPage * pageSize > filteredRestaurants.length ?
+          filteredRestaurants.length : currentPage * pageSize }} of {{ filteredRestaurants.length }} restaurants</span>
       </div>
       <nav class="pagination">
         <button class="page-btn" [disabled]="currentPage === 1" (click)="onPageChange(currentPage - 1)">
@@ -268,8 +271,10 @@
               <h3>{{ getRestaurantName(currentRestaurant) }}</h3>
               <p class="owner-info">Owner: {{ getOwnerName(currentRestaurant) }}</p>
               <div class="status-badges">
-                <span class="status-badge" [ngClass]="'badge bg-' + (currentRestaurant.status === 'pending' ? 'warning' : currentRestaurant.status === 'verified' ? 'success' : 'danger')">
-                  <i [class]="'fas fa-' + (currentRestaurant.status === 'pending' ? 'clock' : currentRestaurant.status === 'verified' ? 'check' : 'times')"></i>
+                <span class="status-badge"
+                  [ngClass]="'badge bg-' + (currentRestaurant.status === 'pending' ? 'warning' : currentRestaurant.status === 'verified' ? 'success' : 'danger')">
+                  <i
+                    [class]="'fas fa-' + (currentRestaurant.status === 'pending' ? 'clock' : currentRestaurant.status === 'verified' ? 'check' : 'times')"></i>
                   {{ currentRestaurant.status | titlecase }}
                 </span>
               </div>
@@ -309,7 +314,8 @@
                   <div class="detail-item">
                     <span class="detail-label">Status:</span>
                     <span class="detail-value">
-                      <span class="status-badge" [ngClass]="'badge bg-' + (currentRestaurant.status === 'pending' ? 'warning' : currentRestaurant.status === 'verified' ? 'success' : 'danger')">
+                      <span class="status-badge"
+                        [ngClass]="'badge bg-' + (currentRestaurant.status === 'pending' ? 'warning' : currentRestaurant.status === 'verified' ? 'success' : 'danger')">
                         {{ currentRestaurant.status | titlecase }}
                       </span>
                     </span>

@@ -137,7 +137,8 @@
             <p class="delivery-id">ID: {{ delivery.id.substring(0, 8) }}</p>
             <div class="status-badges">
               <span class="status-badge" [ngClass]="getStatusBadgeClass(delivery.verificationStatus)">
-                <i [class]="'fas fa-' + (delivery.verificationStatus === 'pending' ? 'clock' : delivery.verificationStatus === 'verified' ? 'check' : 'times')"></i>
+                <i
+                  [class]="'fas fa-' + (delivery.verificationStatus === 'pending' ? 'clock' : delivery.verificationStatus === 'verified' ? 'check' : 'times')"></i>
                 {{ delivery.verificationStatus | titlecase }}
               </span>
             </div>
@@ -205,14 +206,14 @@
             Reject
           </button>
 
-          <button *ngIf="delivery.verificationStatus === 'verified'" class="btn btn-sm btn-secondary" (click)="viewDelivery(delivery)"
-            title="Deactivate Partner">
+          <button *ngIf="delivery.verificationStatus === 'verified'" class="btn btn-sm btn-secondary"
+            (click)="viewDelivery(delivery)" title="Deactivate Partner">
             <i class="fas fa-pause"></i>
             Deactivate
           </button>
 
-          <button *ngIf="delivery.verificationStatus === 'rejected'" class="btn btn-sm btn-success" (click)="viewDelivery(delivery)"
-            title="Activate Partner">
+          <button *ngIf="delivery.verificationStatus === 'rejected'" class="btn btn-sm btn-success"
+            (click)="viewDelivery(delivery)" title="Activate Partner">
             <i class="fas fa-play"></i>
             Activate
           </button>
@@ -228,7 +229,8 @@
     <!-- Pagination -->
     <div class="pagination-section" *ngIf="totalPages > 1">
       <div class="pagination-info">
-        <span>Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ currentPage * pageSize > filteredDelivery.length ? filteredDelivery.length : currentPage * pageSize }} of {{ filteredDelivery.length }} delivery partners</span>
+        <span>Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ currentPage * pageSize > filteredDelivery.length ?
+          filteredDelivery.length : currentPage * pageSize }} of {{ filteredDelivery.length }} delivery partners</span>
       </div>
       <nav class="pagination">
         <button class="page-btn" [disabled]="currentPage === 1" (click)="onPageChange(currentPage - 1)">
@@ -283,7 +285,8 @@
               <p class="delivery-id">ID: {{ currentDelivery.id }}</p>
               <div class="status-badges">
                 <span class="status-badge" [ngClass]="getStatusBadgeClass(currentDelivery.verificationStatus)">
-                  <i [class]="'fas fa-' + (currentDelivery.verificationStatus === 'pending' ? 'clock' : currentDelivery.verificationStatus === 'verified' ? 'check' : 'times')"></i>
+                  <i
+                    [class]="'fas fa-' + (currentDelivery.verificationStatus === 'pending' ? 'clock' : currentDelivery.verificationStatus === 'verified' ? 'check' : 'times')"></i>
                   {{ currentDelivery.verificationStatus | titlecase }}
                 </span>
                 <span class="status-badge" [ngClass]="currentDelivery.isVerified ? 'active' : 'inactive'">
@@ -416,7 +419,8 @@
         <div class="text-center">
           <i class="fas fa-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
           <h4 class="mt-3">Are you sure?</h4>
-          <p class="text-muted">This action cannot be undone. This will permanently affect the delivery partner account.</p>
+          <p class="text-muted">This action cannot be undone. This will permanently affect the delivery partner account.
+          </p>
           <div class="alert alert-warning">
             <i class="fas fa-info-circle"></i>
             <strong>Warning:</strong> This action will update the delivery partner status.
