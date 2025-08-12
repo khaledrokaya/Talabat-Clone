@@ -104,10 +104,15 @@ export interface AdminUser {
 }
 
 export interface UsersResponse {
-  users: AdminUser[];
-  totalUsers: number;
-  totalPages: number;
-  currentPage: number;
+  users?: AdminUser[];
+  totalUsers?: number;
+  totalPages?: number;
+  currentPage?: number;
+  meta?: {
+    totalUsers: number;
+    totalPages: number;
+    currentPage: string;
+  };
 }
 
 export interface UserFilters {
@@ -352,7 +357,7 @@ export class AdminService {
   }
 
   // User Management
-  getAllUsers(filters?: UserFilters): Observable<{ success: boolean; data: UsersResponse }> {
+  getAllUsers(filters?: UserFilters): Observable<{ success: boolean; data: AdminUser[]; meta?: { totalUsers: number; totalPages: number; currentPage: number; } }> {
     let params = new HttpParams();
 
     if (filters) {
@@ -363,7 +368,7 @@ export class AdminService {
       if (filters.search) params = params.set('search', filters.search);
     }
 
-    return this.http.get<{ success: boolean; data: UsersResponse }>(`${this.apiUrl}/admin/users`, {
+    return this.http.get<{ success: boolean; data: AdminUser[]; meta?: { totalUsers: number; totalPages: number; currentPage: number; } }>(`${this.apiUrl}/admin/users`, {
       params,
       withCredentials: true
     });
@@ -407,7 +412,7 @@ export class AdminService {
   }
 
   // Restaurant Management
-  getAllRestaurants(filters?: RestaurantFilters): Observable<{ success: boolean; data: RestaurantsResponse }> {
+  getAllRestaurants(filters?: RestaurantFilters): Observable<{ success: boolean; data: AdminRestaurant[]; meta?: { totalRestaurants: number; totalPages: number; currentPage: number; } }> {
     let params = new HttpParams();
 
     if (filters) {
@@ -418,8 +423,15 @@ export class AdminService {
       if (filters.search) params = params.set('search', filters.search);
     }
 
-    return this.http.get<{ success: boolean; data: RestaurantsResponse }>(`${this.apiUrl}/admin/restaurants`, {
+    return this.http.get<{ success: boolean; data: AdminRestaurant[]; meta?: { totalRestaurants: number; totalPages: number; currentPage: number; } }>(`${this.apiUrl}/admin/restaurants`, {
       params,
+      withCredentials: true
+    });
+  }
+
+  // Get public restaurants (approved/active restaurants)
+  getPublicRestaurants(): Observable<{ success: boolean; data: any[] }> {
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/restaurants`, {
       withCredentials: true
     });
   }
@@ -432,6 +444,12 @@ export class AdminService {
 
   approveRestaurant(restaurantId: string, request: ApprovalRequest): Observable<{ success: boolean; message: string }> {
     return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/admin/restaurants/${restaurantId}/approve`, request, {
+      withCredentials: true
+    });
+  }
+
+  rejectRestaurant(restaurantId: string, request: ApprovalRequest): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/admin/restaurants/${restaurantId}/reject`, request, {
       withCredentials: true
     });
   }
@@ -449,7 +467,7 @@ export class AdminService {
   }
 
   // Delivery Management
-  getAllDeliveryPersonnel(filters?: DeliveryFilters): Observable<{ success: boolean; data: DeliveryResponse }> {
+  getAllDeliveryPersonnel(filters?: DeliveryFilters): Observable<{ success: boolean; data: AdminDelivery[] }> {
     let params = new HttpParams();
 
     if (filters) {
@@ -461,7 +479,7 @@ export class AdminService {
       if (filters.search) params = params.set('search', filters.search);
     }
 
-    return this.http.get<{ success: boolean; data: DeliveryResponse }>(`${this.apiUrl}/admin/delivery`, {
+    return this.http.get<{ success: boolean; data: AdminDelivery[] }>(`${this.apiUrl}/admin/delivery`, {
       params,
       withCredentials: true
     });
@@ -479,6 +497,12 @@ export class AdminService {
     });
   }
 
+  rejectDelivery(deliveryId: string, request: ApprovalRequest): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/admin/delivery/${deliveryId}/reject`, request, {
+      withCredentials: true
+    });
+  }
+
   updateDeliveryStatus(deliveryId: string, request: StatusUpdateRequest): Observable<{ success: boolean; message: string }> {
     return this.http.patch<{ success: boolean; message: string }>(`${this.apiUrl}/admin/delivery/${deliveryId}/status`, request, {
       withCredentials: true
@@ -492,7 +516,7 @@ export class AdminService {
   }
 
   // Order Management
-  getAllOrders(filters?: OrderFilters): Observable<{ success: boolean; data: OrdersResponse }> {
+  getAllOrders(filters?: OrderFilters): Observable<{ success: boolean; data: AdminOrder[] }> {
     let params = new HttpParams();
 
     if (filters) {
@@ -508,7 +532,21 @@ export class AdminService {
       if (filters.search) params = params.set('search', filters.search);
     }
 
-    return this.http.get<{ success: boolean; data: OrdersResponse }>(`${this.apiUrl}/admin/orders`, {
+    return this.http.get<{ success: boolean; data: AdminOrder[] }>(`${this.apiUrl}/admin/orders`, {
+      params,
+      withCredentials: true
+    });
+  }
+
+  getOrderStats(startDate: string, endDate: string, groupBy?: string, restaurantId?: string): Observable<any> {
+    let params = new HttpParams()
+      .set('startDate', startDate)
+      .set('endDate', endDate);
+
+    if (groupBy) params = params.set('groupBy', groupBy);
+    if (restaurantId) params = params.set('restaurantId', restaurantId);
+
+    return this.http.get<any>(`${this.apiUrl}/orders/stats`, {
       params,
       withCredentials: true
     });

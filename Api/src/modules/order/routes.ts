@@ -508,14 +508,22 @@ router.post('/', authenticate, orderController.createOrder);
  *             schema:
  *               $ref: '#/components/schemas/ApiError'
  */
+// Admin Stats Route (MUST come before /:id route)
+router.get(
+  '/stats',
+  authenticate,
+  authorize('admin'),
+  orderController.getOrderStats,
+);
+
 router.get('/:id', authenticate, orderController.getOrderById);
 
 /**
  * @swagger
  * /api/orders:
  *   get:
- *     summary: Get user orders with pagination
- *     description: Retrieve a paginated list of orders for the authenticated user with optional status filtering
+ *     summary: Get orders with pagination (Smart routing based on user role)
+ *     description: Retrieve a paginated list of orders. Routes to user orders for customers or restaurant orders for restaurant owners.
  *     tags: [Orders]
  *     security:
  *       - bearerAuth: []
@@ -617,7 +625,32 @@ router.get('/:id', authenticate, orderController.getOrderById);
  *             schema:
  *               $ref: '#/components/schemas/ApiError'
  */
-router.get('/', authenticate, orderController.getUserOrders);
+// Smart Orders Route - returns orders based on user role
+router.get(
+  '/',
+  authenticate,
+  async (req: any, res: any, next: any) => {
+    console.log('=== ORDER ROUTE DEBUG ===');
+    console.log('User ID:', req.user._id);
+    console.log('User Role:', req.user.role);
+    console.log('User Email:', req.user.email);
+
+    // Determine which controller method to call based on user role
+    if (req.user.role === 'restaurant_owner') {
+      console.log('Calling getRestaurantOrders for restaurant_owner');
+      return orderController.getRestaurantOrders(req, res, next);
+    } else if (req.user.role === 'customer') {
+      console.log('Calling getUserOrders for customer');
+      return orderController.getUserOrders(req, res, next);
+    } else {
+      console.log('Access denied for role:', req.user.role);
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only customers and restaurant owners can view orders.',
+      });
+    }
+  }
+);
 
 /**
  * @swagger
@@ -1145,11 +1178,12 @@ router.get('/:id/track', authenticate, orderController.trackOrder);
  *               success: false
  *               message: "Admin access required to view order statistics"
  */
+// Explicit Restaurant Orders Route (alternative endpoint)
 router.get(
-  '/stats',
+  '/restaurant',
   authenticate,
-  authorize('admin'),
-  orderController.getOrderStats,
+  authorize('restaurant_owner'),
+  orderController.getRestaurantOrders,
 );
 
 export default router;

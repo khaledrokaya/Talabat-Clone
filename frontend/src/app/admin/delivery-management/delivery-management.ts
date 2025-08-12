@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
-import { Router } from '@angular/router';
-import { AdminService, AdminDelivery, DeliveryFilters, ApprovalRequest, StatusUpdateRequest } from '../../shared/services/admin.service';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AdminService, AdminDelivery, ApprovalRequest } from '../../shared/services/admin.service';
 
 @Component({
   selector: 'app-delivery-management',
@@ -12,7 +11,7 @@ import { AdminService, AdminDelivery, DeliveryFilters, ApprovalRequest, StatusUp
   styleUrls: ['./delivery-management.scss']
 })
 export class DeliveryManagement implements OnInit {
-  deliveryPersonnel: AdminDelivery[] = [];
+  pendingDelivery: AdminDelivery[] = [];
   filteredDelivery: AdminDelivery[] = [];
 
   isLoading = true;
@@ -22,127 +21,97 @@ export class DeliveryManagement implements OnInit {
   // Pagination
   currentPage = 1;
   totalPages = 0;
-  totalDelivery = 0;
   pageSize = 10;
 
-  // Filters
-  filters: DeliveryFilters = {
-    status: undefined,
-    isOnline: undefined,
-    verified: undefined,
-    page: 1,
-    limit: 10,
-    search: ''
-  };
-
-  // Selected items for bulk actions
-  selectedDelivery: string[] = [];
+  // Search
+  searchTerm = '';
 
   // Modal states
   showDeliveryModal = false;
   showApprovalModal = false;
-  showStatusModal = false;
-  showDeleteModal = false;
 
   // Current delivery being processed
   currentDelivery: AdminDelivery | null = null;
   currentDeliveryId = '';
 
-  // Forms
+  // Approval form
   approvalForm: FormGroup;
-  statusForm: FormGroup;
-
-  // Filter options
-  statusOptions = [
-    { value: '', label: 'All Status' },
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'verified', label: 'Verified' },
-    { value: 'rejected', label: 'Rejected' }
-  ];
-
-  onlineOptions = [
-    { value: '', label: 'All' },
-    { value: 'true', label: 'Online' },
-    { value: 'false', label: 'Offline' }
-  ];
-
-  verifiedOptions = [
-    { value: '', label: 'All' },
-    { value: 'true', label: 'Verified' },
-    { value: 'false', label: 'Not Verified' }
-  ];
 
   constructor(
     private adminService: AdminService,
-    private router: Router,
     private fb: FormBuilder
   ) {
     this.approvalForm = this.fb.group({
-      status: ['verified'],
-      reason: ['']
-    });
-
-    this.statusForm = this.fb.group({
-      isActive: [true],
-      reason: ['']
+      status: ['verified', Validators.required],
+      reason: ['', Validators.required]
     });
   }
 
   ngOnInit(): void {
-    this.loadDeliveryPersonnel();
+    this.loadPendingDelivery();
   }
 
-  loadDeliveryPersonnel(): void {
+  loadPendingDelivery(): void {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.adminService.getAllDeliveryPersonnel(this.filters).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.deliveryPersonnel = response.data.delivery;
-          this.filteredDelivery = [...this.deliveryPersonnel];
-          this.totalDelivery = response.data.totalDelivery;
-          this.totalPages = response.data.totalPages;
-          this.currentPage = response.data.currentPage;
+    this.adminService.getPendingDeliveryUsers().subscribe({
+      next: (response: any) => {
+        console.log('Pending delivery response:', response);
+        if (response.success && response.data) {
+          this.pendingDelivery = response.data;
+          this.filteredDelivery = [...this.pendingDelivery];
+          this.calculatePagination();
         } else {
-          this.errorMessage = 'Failed to load delivery personnel';
+          this.pendingDelivery = [];
+          this.filteredDelivery = [];
+          this.errorMessage = 'Failed to load pending delivery applications';
         }
+        console.log('Processed pending delivery:', this.pendingDelivery);
         this.isLoading = false;
       },
       error: (error) => {
-        this.errorMessage = 'Error loading delivery personnel: ' + (error.error?.message || 'Unknown error');
+        this.pendingDelivery = [];
+        this.filteredDelivery = [];
+        this.errorMessage = 'Error loading delivery applications: ' + (error.error?.message || 'Unknown error');
         this.isLoading = false;
       }
     });
   }
 
-  onFilterChange(): void {
-    this.filters.page = 1;
-    this.currentPage = 1;
-    this.loadDeliveryPersonnel();
+  calculatePagination(): void {
+    this.totalPages = Math.ceil(this.filteredDelivery.length / this.pageSize);
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = 1;
+    }
   }
 
   onSearchChange(): void {
-    if (this.filters.search && this.filters.search.length > 0) {
-      this.filteredDelivery = this.deliveryPersonnel.filter(delivery =>
-        delivery.firstName.toLowerCase().includes(this.filters.search!.toLowerCase()) ||
-        delivery.lastName.toLowerCase().includes(this.filters.search!.toLowerCase()) ||
-        delivery.email.toLowerCase().includes(this.filters.search!.toLowerCase()) ||
-        delivery.phone.toLowerCase().includes(this.filters.search!.toLowerCase())
+    if (this.searchTerm && this.searchTerm.length > 0) {
+      this.filteredDelivery = this.pendingDelivery.filter(delivery =>
+        delivery.firstName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        delivery.lastName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        delivery.email.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        delivery.phone.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        delivery.vehicleInfo.type.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
     } else {
-      this.filteredDelivery = [...this.deliveryPersonnel];
+      this.filteredDelivery = [...this.pendingDelivery];
     }
+    this.currentPage = 1;
+    this.calculatePagination();
   }
 
   onPageChange(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-      this.filters.page = page;
-      this.loadDeliveryPersonnel();
     }
+  }
+
+  getPaginatedDelivery(): AdminDelivery[] {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.filteredDelivery.slice(startIndex, endIndex);
   }
 
   // Delivery Actions
@@ -151,33 +120,20 @@ export class DeliveryManagement implements OnInit {
     this.showDeliveryModal = true;
   }
 
-  approveDelivery(delivery: AdminDelivery): void {
+  approveDelivery(delivery: AdminDelivery, status: 'verified' | 'rejected'): void {
     this.currentDelivery = delivery;
     this.currentDeliveryId = delivery.id;
-    this.showApprovalModal = true;
-  }
-
-  changeStatus(delivery: AdminDelivery): void {
-    this.currentDelivery = delivery;
-    this.currentDeliveryId = delivery.id;
-    this.statusForm.patchValue({
-      isActive: !delivery.isActive
+    this.approvalForm.patchValue({
+      status: status,
+      reason: status === 'verified' ? 'Application approved by admin' : ''
     });
-    this.showStatusModal = true;
-  }
-
-  deleteDelivery(delivery: AdminDelivery): void {
-    this.currentDelivery = delivery;
-    this.currentDeliveryId = delivery.id;
-    this.showDeleteModal = true;
+    this.showApprovalModal = true;
   }
 
   // Modal Actions
   closeModal(): void {
     this.showDeliveryModal = false;
     this.showApprovalModal = false;
-    this.showStatusModal = false;
-    this.showDeleteModal = false;
     this.currentDelivery = null;
     this.currentDeliveryId = '';
     this.clearMessages();
@@ -187,124 +143,76 @@ export class DeliveryManagement implements OnInit {
     if (this.approvalForm.valid && this.currentDeliveryId) {
       const request: ApprovalRequest = this.approvalForm.value;
 
-      this.adminService.approveDelivery(this.currentDeliveryId, request).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.successMessage = response.message;
-            this.loadDeliveryPersonnel();
-            this.closeModal();
-          } else {
-            this.errorMessage = 'Failed to update delivery approval status';
+      if (request.status === 'verified') {
+        this.adminService.approveDelivery(this.currentDeliveryId, request).subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.successMessage = 'Delivery partner approved successfully';
+              this.loadPendingDelivery();
+              this.closeModal();
+            } else {
+              this.errorMessage = 'Failed to approve delivery partner';
+            }
+          },
+          error: (error) => {
+            this.errorMessage = 'Error approving delivery: ' + (error.error?.message || 'Unknown error');
           }
-        },
-        error: (error) => {
-          this.errorMessage = 'Error updating delivery: ' + (error.error?.message || 'Unknown error');
-        }
-      });
-    }
-  }
-
-  submitStatusUpdate(): void {
-    if (this.statusForm.valid && this.currentDeliveryId) {
-      const request: StatusUpdateRequest = this.statusForm.value;
-
-      this.adminService.updateDeliveryStatus(this.currentDeliveryId, request).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.successMessage = response.message;
-            this.loadDeliveryPersonnel();
-            this.closeModal();
-          } else {
-            this.errorMessage = 'Failed to update delivery status';
+        });
+      } else {
+        this.adminService.rejectDelivery(this.currentDeliveryId, request).subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.successMessage = 'Delivery partner rejected successfully';
+              this.loadPendingDelivery();
+              this.closeModal();
+            } else {
+              this.errorMessage = 'Failed to reject delivery partner';
+            }
+          },
+          error: (error) => {
+            this.errorMessage = 'Error rejecting delivery: ' + (error.error?.message || 'Unknown error');
           }
-        },
-        error: (error) => {
-          this.errorMessage = 'Error updating delivery status: ' + (error.error?.message || 'Unknown error');
-        }
-      });
+        });
+      }
     }
-  }
-
-  confirmDelete(): void {
-    if (this.currentDeliveryId) {
-      this.adminService.deleteDelivery(this.currentDeliveryId).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.successMessage = response.message;
-            this.loadDeliveryPersonnel();
-            this.closeModal();
-          } else {
-            this.errorMessage = 'Failed to delete delivery personnel';
-          }
-        },
-        error: (error) => {
-          this.errorMessage = 'Error deleting delivery personnel: ' + (error.error?.message || 'Unknown error');
-        }
-      });
-    }
-  }
-
-  // Selection Management
-  toggleSelection(deliveryId: string): void {
-    const index = this.selectedDelivery.indexOf(deliveryId);
-    if (index > -1) {
-      this.selectedDelivery.splice(index, 1);
-    } else {
-      this.selectedDelivery.push(deliveryId);
-    }
-  }
-
-  toggleSelectAll(): void {
-    if (this.selectedDelivery.length === this.filteredDelivery.length) {
-      this.selectedDelivery = [];
-    } else {
-      this.selectedDelivery = this.filteredDelivery.map(d => d.id);
-    }
-  }
-
-  isSelected(deliveryId: string): boolean {
-    return this.selectedDelivery.includes(deliveryId);
-  }
-
-  isAllSelected(): boolean {
-    return this.filteredDelivery.length > 0 && this.selectedDelivery.length === this.filteredDelivery.length;
-  }
-
-  isIndeterminate(): boolean {
-    return this.selectedDelivery.length > 0 && this.selectedDelivery.length < this.filteredDelivery.length;
   }
 
   // Utility Methods
   getStatusBadgeClass(status: string): string {
     switch (status) {
-      case 'active': return 'badge bg-success';
-      case 'inactive': return 'badge bg-secondary';
       case 'pending': return 'badge bg-warning';
-      case 'verified': return 'badge bg-primary';
+      case 'verified': return 'badge bg-success';
       case 'rejected': return 'badge bg-danger';
-      default: return 'badge bg-light text-dark';
+      default: return 'badge bg-secondary';
     }
   }
 
-  getOnlineBadgeClass(isOnline: boolean): string {
-    return isOnline ? 'badge bg-success' : 'badge bg-secondary';
-  }
-
-  getVerificationBadgeClass(isVerified: boolean): string {
-    return isVerified ? 'badge bg-success' : 'badge bg-warning';
-  }
-
   getVehicleIcon(vehicleType: string): string {
-    switch (vehicleType) {
+    switch (vehicleType?.toLowerCase()) {
       case 'car': return 'fas fa-car';
       case 'motorcycle': return 'fas fa-motorcycle';
       case 'bicycle': return 'fas fa-bicycle';
-      default: return 'fas fa-question';
+      case 'scooter': return 'fas fa-motorcycle';
+      default: return 'fas fa-truck';
+    }
+  }
+
+  getVehicleBadgeClass(vehicleType: string): string {
+    switch (vehicleType?.toLowerCase()) {
+      case 'car': return 'badge bg-primary';
+      case 'motorcycle': return 'badge bg-warning';
+      case 'bicycle': return 'badge bg-success';
+      case 'scooter': return 'badge bg-info';
+      default: return 'badge bg-secondary';
     }
   }
 
   formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString();
+  }
+
+  formatDateTime(dateString: string): string {
+    return new Date(dateString).toLocaleString();
   }
 
   clearMessages(): void {
@@ -322,5 +230,17 @@ export class DeliveryManagement implements OnInit {
     }
 
     return pages;
+  }
+
+  getDeliveryStats() {
+    return {
+      total: this.filteredDelivery.length,
+      pending: this.filteredDelivery.filter(d => d.verificationStatus === 'pending').length,
+      unverified: this.filteredDelivery.filter(d => !d.isVerified).length
+    };
+  }
+
+  refreshData(): void {
+    this.loadPendingDelivery();
   }
 }

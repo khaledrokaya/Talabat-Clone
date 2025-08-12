@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AdminService, AdminUser, UserFilters } from '../../shared/services/admin.service';
+import { AdminService, AdminUser, UserFilters, UsersResponse } from '../../shared/services/admin.service';
 
 @Component({
   selector: 'app-users-management',
@@ -19,6 +19,9 @@ export class UsersManagementComponent implements OnInit {
   loading: boolean = false;
   error: string = '';
 
+  // Filters
+  filters: UserFilters = {};
+
   // Pagination
   currentPage: number = 1;
   itemsPerPage: number = 10;
@@ -31,62 +34,61 @@ export class UsersManagementComponent implements OnInit {
     this.loadUsers();
   }
 
-  loadUsers(): void {
+  loadUsers() {
     this.loading = true;
-    this.error = '';
-
-    const filters: UserFilters = {
-      page: this.currentPage,
-      limit: this.itemsPerPage
-    };
-
-    if (this.selectedRole) {
-      filters.role = this.selectedRole as any;
-    }
-    if (this.selectedStatus) {
-      filters.status = this.selectedStatus as any;
-    }
-    if (this.searchTerm.trim()) {
-      filters.search = this.searchTerm.trim();
-    }
-
-    this.adminService.getAllUsers(filters).subscribe({
+    this.adminService.getAllUsers(this.filters).subscribe({
       next: (response) => {
         if (response.success) {
-          this.users = response.data.users;
-          this.filteredUsers = [...this.users];
-          this.totalItems = response.data.totalUsers;
-          this.totalPages = response.data.totalPages;
-          this.currentPage = response.data.currentPage;
+          // Handle the actual API response structure where data is directly an array
+          this.users = response.data;
+
+          // Check if response has meta object
+          if (response.meta) {
+            this.totalItems = response.meta.totalUsers;
+            this.totalPages = response.meta.totalPages;
+            this.currentPage = response.meta.currentPage;
+          } else {
+            // Fallback for simple array response
+            this.totalItems = response.data.length;
+            this.totalPages = 1;
+            this.currentPage = 1;
+          }
         }
         this.loading = false;
+        this.filteredUsers = this.users;
       },
       error: (error) => {
         console.error('Error loading users:', error);
-        this.error = 'Failed to load users. Please try again.';
         this.loading = false;
-        this.users = [];
-        this.filteredUsers = [];
+        return [];
       }
     });
   }
 
   onSearchChange(): void {
+    this.filters.search = this.searchTerm;
+    this.filters.page = 1;
     this.currentPage = 1;
     this.loadUsers();
   }
 
   onRoleChange(): void {
+    this.filters.role = this.selectedRole ? this.selectedRole as 'customer' | 'delivery' | 'restaurant' : undefined;
+    this.filters.page = 1;
     this.currentPage = 1;
     this.loadUsers();
   }
 
   onStatusChange(): void {
+    this.filters.status = this.selectedStatus ? this.selectedStatus as 'pending' | 'active' | 'inactive' | 'verified' | 'rejected' : undefined;
+    this.filters.page = 1;
     this.currentPage = 1;
     this.loadUsers();
   }
 
   filterUsers(): void {
+    this.filters.page = this.currentPage;
+    this.filters.limit = this.itemsPerPage;
     this.loadUsers();
   }
 
@@ -189,6 +191,7 @@ export class UsersManagementComponent implements OnInit {
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
+      this.filters.page = page;
       this.loadUsers();
     }
   }
@@ -196,6 +199,7 @@ export class UsersManagementComponent implements OnInit {
   previousPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--;
+      this.filters.page = this.currentPage;
       this.loadUsers();
     }
   }
@@ -203,6 +207,7 @@ export class UsersManagementComponent implements OnInit {
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
+      this.filters.page = this.currentPage;
       this.loadUsers();
     }
   }

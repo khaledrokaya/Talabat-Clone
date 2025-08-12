@@ -1,6 +1,6 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../shared/services/auth.service';
 import { RestaurantService } from '../../shared/services/restaurant.service';
@@ -13,6 +13,15 @@ import { Product } from '../../shared/models/product';
 import { Subscription } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
+
+interface RecentMeal {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  image?: string;
+  isActive: boolean;
+}
 
 interface DashboardData {
   totalRevenue: number;
@@ -42,6 +51,7 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
   selectedPeriod = '30days';
   restaurantStatus = true;
   analyticsData: AnalyticsData | null = null;
+  openOrderDropdownId: string | null = null;
 
   dashboardData: DashboardData = {
     totalRevenue: 0,
@@ -50,7 +60,8 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
     totalCustomers: 0
   };
 
-  recentOrders: Order[] = [];
+  recentOrders: any[] = [];
+  recentMeals: RecentMeal[] = [];
   topProducts: TopProduct[] = [];
 
   private subscriptions: Subscription[] = [];
@@ -60,7 +71,8 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
     private restaurantService: RestaurantService,
     private restaurantAnalyticsService: RestaurantAnalyticsService,
     private mockAnalyticsService: MockRestaurantAnalyticsService,
-    private orderService: OrderService
+    private orderService: OrderService,
+    private router: Router
   ) { }
 
   ngOnInit() {
@@ -93,7 +105,7 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
     this.loadStats();
     this.loadAnalytics();
     this.loadRecentOrders();
-    this.loadTopProducts();
+    this.loadRecentMeals();
   }
 
   private loadAnalytics() {
@@ -171,7 +183,7 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
 
             // Update recent orders if available
             if (dashboardData.recentOrders && dashboardData.recentOrders.length > 0) {
-              this.recentOrders = this.mapApiOrdersToLocal(dashboardData.recentOrders);
+              this.recentOrders = dashboardData.recentOrders || [];
             } else {
               this.recentOrders = []; // Empty array if no orders
             }
@@ -196,35 +208,6 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
     this.subscriptions.push(dashboardSub);
   }
 
-  private mapApiOrdersToLocal(apiOrders: any[]): Order[] {
-    if (!apiOrders || !Array.isArray(apiOrders)) {
-      return [];
-    }
-    return apiOrders.map(order => ({
-      id: order.orderId || order.id,
-      orderNumber: order.orderId || order.orderNumber,
-      customer: {
-        id: order.customerId || '1',
-        name: order.customer || 'مستخدم غير معروف',
-        email: order.customerEmail || ''
-      },
-      total: order.total || 0,
-      status: order.status || 'pending',
-      createdAt: order.createdAt ? new Date(order.createdAt) : new Date(),
-      items: order.items || [],
-      deliveryAddress: {
-        street: 'شارع الملك فهد',
-        city: 'الرياض',
-        area: 'العليا',
-        district: 'العليا',
-        building: '123',
-        floor: '2',
-        apartment: '5'
-      },
-      paymentMethod: order.paymentMethod || 'cash'
-    }));
-  }
-
   private mapApiMealsToProducts(apiMeals: any[]): TopProduct[] {
     if (!apiMeals || !Array.isArray(apiMeals)) {
       return [];
@@ -247,92 +230,74 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
     };
 
     const ordersSub = this.orderService.getOrders(orderFilters)
-      .pipe(
-        catchError((error) => {
-          console.log('Orders API not available, using mock data:', error);
-          return of({
-            success: true,
-            message: 'Mock data',
-            data: {
-              orders: [
-                {
-                  id: '1',
-                  orderNumber: 'ORD-001',
-                  customer: { id: '1', name: 'Ahmed Mohamed', email: 'ahmed@example.com' },
-                  total: 85.50,
-                  status: 'pending',
-                  createdAt: new Date(),
-                  items: [],
-                  deliveryAddress: {
-                    street: 'King Fahd Street',
-                    city: 'Riyadh',
-                    area: 'Al Olaya',
-                    district: 'Al Olaya',
-                    building: '123'
-                  },
-                  paymentMethod: 'cash'
-                } as Order,
-                {
-                  id: '2',
-                  orderNumber: 'ORD-002',
-                  customer: { id: '2', name: 'Fatima Ali', email: 'fatima@example.com' },
-                  total: 120.00,
-                  status: 'preparing',
-                  createdAt: new Date(Date.now() - 30 * 60 * 1000),
-                  items: [],
-                  deliveryAddress: {
-                    street: 'King Fahd Street',
-                    city: 'Riyadh',
-                    area: 'Al Olaya',
-                    district: 'Al Olaya',
-                    building: '456'
-                  },
-                  paymentMethod: 'card'
-                } as Order,
-                {
-                  id: '3',
-                  orderNumber: 'ORD-003',
-                  customer: { id: '3', name: 'Mohammed Salem', email: 'mohammed@example.com' },
-                  total: 65.75,
-                  status: 'ready',
-                  createdAt: new Date(Date.now() - 60 * 60 * 1000),
-                  items: [],
-                  deliveryAddress: {
-                    street: 'King Fahd Street',
-                    city: 'Riyadh',
-                    area: 'Al Olaya',
-                    district: 'Al Olaya',
-                    building: '789'
-                  },
-                  paymentMethod: 'cash'
-                } as Order
-              ],
-              pagination: {
-                page: 1,
-                limit: 5,
-                total: 3,
-                pages: 1,
-                hasNext: false,
-                hasPrev: false
-              }
-            }
-          } as ApiResponse<OrdersListResponse>);
-        })
-      )
       .subscribe({
-        next: (response: ApiResponse<OrdersListResponse>) => {
-          if (response.success && response.data && response.data.orders) {
-            this.recentOrders = response.data.orders;
+        next: (response: any) => {
+          console.log('Orders API Response:', response);
+          if (response.success && response.data) {
+            // Handle both response formats: direct array or nested orders
+            if (Array.isArray(response.data)) {
+              this.recentOrders = response.data.slice(0, 5) || [];
+            } else {
+              this.recentOrders = response.data.orders?.slice(0, 5) || [];
+            }
+            console.log('Loaded recent orders:', this.recentOrders.length);
           } else {
             this.recentOrders = [];
+            console.log('No orders found in response');
           }
         },
         error: (error) => {
           console.error('Error loading orders:', error);
-          this.recentOrders = []; // Ensure it's always an array
+          this.recentOrders = [];
         }
       });
     this.subscriptions.push(ordersSub);
+  }
+
+  private loadRecentMeals() {
+    // Mock recent meals data - you can replace this with actual API call
+    this.recentMeals = [
+      {
+        id: '1',
+        name: 'Margherita Pizza',
+        description: 'Fresh tomatoes, mozzarella, basil',
+        price: 150,
+        image: '',
+        isActive: true
+      },
+      {
+        id: '2',
+        name: 'Caesar Salad',
+        description: 'Crispy lettuce, parmesan, croutons',
+        price: 80,
+        image: '',
+        isActive: true
+      },
+      {
+        id: '3',
+        name: 'Beef Burger',
+        description: 'Juicy beef patty with fresh vegetables',
+        price: 120,
+        image: '',
+        isActive: false
+      },
+      {
+        id: '4',
+        name: 'Pasta Carbonara',
+        description: 'Creamy pasta with bacon and parmesan',
+        price: 95,
+        image: '',
+        isActive: true
+      },
+      {
+        id: '5',
+        name: 'Grilled Chicken',
+        description: 'Tender grilled chicken breast',
+        price: 110,
+        image: '',
+        isActive: true
+      }
+    ];
   }
 
   private loadTopProducts() {
@@ -373,26 +338,85 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
   }
 
   updateOrderStatus(orderId: string, newStatus: string) {
-    const orderSub = this.orderService.updateOrderStatusEnhanced(orderId, {
-      status: newStatus as any
-    }).subscribe({
-      next: () => {
-        // Update local order status
-        const order = this.recentOrders.find(o => o.id === orderId);
-        if (order) {
-          order.status = newStatus as any;
-        }
-      },
-      error: (error: any) => {
-        console.error('Error updating order status:', error);
-      }
-    });
-    this.subscriptions.push(orderSub);
+    if (confirm(`Are you sure you want to update this order to ${newStatus}?`)) {
+      // Use the PATCH /api/orders/{id}/status endpoint
+      const updateData = {
+        status: newStatus as any, // Cast to OrderStatus type
+        notes: `Status updated to ${newStatus} by restaurant`
+      };
+
+      // Call the order service with the correct endpoint structure
+      const orderSub = this.orderService.updateOrderStatus(orderId, updateData)
+        .subscribe({
+          next: (response) => {
+            if (response.success) {
+              // Update local order status
+              const order = this.recentOrders.find(o => o._id === orderId);
+              if (order) {
+                order.status = newStatus;
+              }
+              this.closeOrderDropdown();
+              console.log('Order status updated successfully');
+            } else {
+              console.error('Failed to update order status:', response.message);
+              alert('Failed to update order status. Please try again.');
+            }
+          },
+          error: (error: any) => {
+            console.error('Error updating order status:', error);
+            alert('Failed to update order status. Please try again.');
+          }
+        });
+      this.subscriptions.push(orderSub);
+    }
   }
 
   viewOrderDetails(orderId: string) {
-    // Navigate to order details or open modal
-    console.log('Viewing order details for:', orderId);
+    // Navigate to order details page using the order-details component
+    this.router.navigate(['/orders/details', orderId]);
+  }
+
+  // Order dropdown management
+  toggleOrderDropdown(orderId: string) {
+    if (this.openOrderDropdownId === orderId) {
+      this.closeOrderDropdown();
+    } else {
+      this.openOrderDropdownId = orderId;
+    }
+  }
+
+  closeOrderDropdown() {
+    this.openOrderDropdownId = null;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.dropdown')) {
+      this.closeOrderDropdown();
+    }
+  }
+
+  // Order status helpers
+  canUpdateStatus(status: string): boolean {
+    return ['pending', 'confirmed', 'preparing', 'ready'].includes(status);
+  }
+
+  // Meal management methods
+  editMeal(mealId: string) {
+    // Navigate to meal edit page or open edit modal
+    window.open(`/restaurant-dashboard/meals-management/edit/${mealId}`, '_blank');
+  }
+
+  toggleMealStatus(mealId: string, currentStatus: boolean) {
+    if (confirm(`Are you sure you want to ${currentStatus ? 'deactivate' : 'activate'} this meal?`)) {
+      // Update meal status in the array (you can replace with API call)
+      const meal = this.recentMeals.find(m => m.id === mealId);
+      if (meal) {
+        meal.isActive = !currentStatus;
+        console.log(`Meal ${mealId} status updated to ${meal.isActive ? 'active' : 'inactive'}`);
+      }
+    }
   }
 
   toggleRestaurantStatus() {

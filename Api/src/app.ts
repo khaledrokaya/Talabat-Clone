@@ -65,6 +65,7 @@ class App {
       process.env.FRONTEND_URL,
       process.env.CORS_ORIGIN,
       'http://localhost:4200',
+      'http://localhost:3001',
       // Add your frontend Vercel URL here when you get it
     ].filter(Boolean); // Remove undefined values
 

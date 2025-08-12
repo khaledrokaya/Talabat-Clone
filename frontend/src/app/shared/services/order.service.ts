@@ -2,42 +2,193 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Order } from '../models/order';
 
+// Generic API response interface
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
+// Updated interfaces to match the new API
 export interface CreateOrderRequest {
   restaurantId: string;
-  items: any[];
-  deliveryAddress: any;
-  paymentMethod: string;
-  notes?: string;
-}
-
-// Enhanced Order Interfaces
-export interface OrderItem {
-  id: string;
-  mealId: string;
-  name: string;
-  price: number;
-  quantity: number;
-  total: number;
-  image?: string;
-  customizations?: string[];
-  notes?: string;
-}
-
-export interface Address {
-  street: string;
-  city: string;
-  area: string;
-  district: string;
-  building: string;
-  floor?: string;
-  apartment?: string;
-  landmark?: string;
-  coordinates?: {
-    lat: number;
-    lng: number;
+  items: {
+    mealId: string;
+    quantity: number;
+    specialInstructions?: string;
+  }[];
+  deliveryAddress: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    coordinates: {
+      lat: number;
+      lng: number;
+    };
   };
+  paymentMethod: 'cash' | 'card' | 'digital-wallet';
+  couponCode?: string;
+  notes?: string;
+}
+
+export interface OrderResponse {
+  success: boolean;
+  message: string;
+  data: {
+    order: {
+      _id: string;
+      orderNumber: string;
+      status: OrderStatus;
+      pricing: {
+        subtotal: number;
+        deliveryFee: number;
+        serviceFee: number;
+        tax: number;
+        total: number;
+      };
+    };
+    estimatedDeliveryTime: string;
+  };
+}
+
+export interface OrdersListResponse {
+  success: boolean;
+  message: string;
+  data: {
+    orders: OrderSummary[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
+  };
+}
+
+export interface OrderSummary {
+  _id: string;
+  orderNumber: string;
+  customerId?: string;
+  restaurantId?: string;
+  restaurant?: {
+    name: string;
+  };
+  customerInfo?: {
+    name: string;
+    phone: string;
+    email: string;
+  };
+  status: OrderStatus;
+  paymentStatus?: string;
+  paymentMethod?: string;
+  subtotal?: number;
+  deliveryFee?: number;
+  tax?: number;
+  totalAmount?: number;
+  items?: {
+    _id: string;
+    mealId: string;
+    name: string;
+    price: number;
+    quantity: number;
+  }[];
+  pricing?: {
+    total: number;
+  };
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface OrderDetails {
+  success: boolean;
+  message: string;
+  data: {
+    order: {
+      _id: string;
+      orderNumber: string;
+      customer: {
+        name: string;
+        phone: string;
+        email: string;
+      };
+      restaurant: {
+        name: string;
+        address: {
+          street: string;
+          city: string;
+        };
+      };
+      items: {
+        meal: {
+          name: string;
+          price: number;
+        };
+        quantity: number;
+        subtotal: number;
+      }[];
+      status: OrderStatus;
+      pricing: {
+        total: number;
+      };
+      estimatedDeliveryTime: string;
+      deliveryAddress?: any;
+      timeline?: TimelineEvent[];
+    };
+  };
+}
+
+export interface TimelineEvent {
+  status: string;
+  timestamp: string;
+  description: string;
+}
+
+export interface TrackingResponse {
+  success: boolean;
+  message: string;
+  data: {
+    tracking: {
+      orderId: string;
+      status: OrderStatus;
+      estimatedDeliveryTime: string;
+      timeline: TimelineEvent[];
+      deliveryPerson?: {
+        name: string;
+        phone: string;
+        currentLocation?: {
+          lat: number;
+          lng: number;
+        };
+      };
+      restaurant: {
+        name: string;
+        phone: string;
+        preparationTime: number;
+      };
+    };
+  };
+}
+
+export interface UpdateStatusRequest {
+  status: OrderStatus;
+  estimatedTime?: number;
+  notes?: string;
+}
+
+export interface CancelOrderRequest {
+  reason: string;
+  details?: string;
+}
+
+export interface RateOrderRequest {
+  rating: number;
+  review?: string;
+  deliveryRating?: number;
+  foodRating?: number;
 }
 
 export type OrderStatus =
@@ -49,78 +200,14 @@ export type OrderStatus =
   | 'delivered'
   | 'cancelled';
 
-export interface OrdersListResponse {
-  orders: Order[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
-}
-
-export interface OrderTrackingInfo {
-  orderId: string;
-  status: OrderStatus;
-  estimatedDeliveryTime?: string;
-  timeline: OrderTimelineEvent[];
-  deliveryPerson?: {
-    id: string;
-    name: string;
-    phone: string;
-    rating: number;
-    vehicleInfo?: string;
-    location?: {
-      lat: number;
-      lng: number;
-      lastUpdated: string;
-    };
-  };
-  restaurant: {
-    id: string;
-    name: string;
-    phone: string;
-    address: string;
-  };
-}
-
-export interface OrderTimelineEvent {
-  status: OrderStatus;
-  timestamp: string;
-  description: string;
-  estimatedTime?: number;
-  notes?: string;
-}
-
-export interface UpdateOrderStatusRequest {
-  status: OrderStatus;
-  estimatedTime?: number;
-  notes?: string;
-}
-
-export interface CancelOrderRequest {
-  reason: string;
-  details?: string;
-}
-
 export interface OrderFilters {
   page?: number;
   limit?: number;
   status?: OrderStatus;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-  customerId?: string;
-  restaurantId?: string;
   dateFrom?: string;
   dateTo?: string;
-}
-
-export interface ApiResponse<T = any> {
-  success: boolean;
-  message: string;
-  data: T;
 }
 
 @Injectable({
@@ -131,36 +218,19 @@ export class OrderService {
 
   constructor(private http: HttpClient) { }
 
-  // Legacy methods (kept for backward compatibility)
-  createOrder(orderData: CreateOrderRequest): Observable<Order> {
-    return this.http.post<Order>(`${this.API_BASE}/orders`, orderData);
+  /**
+   * Create a new order
+   * POST /api/orders
+   */
+  createOrder(orderData: CreateOrderRequest): Observable<OrderResponse> {
+    return this.http.post<OrderResponse>(`${this.API_BASE}/orders`, orderData);
   }
-
-  getOrderHistory(): Observable<Order[]> {
-    return this.http.get<Order[]>(`${this.API_BASE}/orders`);
-  }
-
-  getOrderById(id: string): Observable<Order> {
-    return this.http.get<Order>(`${this.API_BASE}/orders/${id}`);
-  }
-
-  // Admin functions
-  getAllOrders(): Observable<Order[]> {
-    return this.http.get<Order[]>(`${this.API_BASE}/admin/orders`);
-  }
-
-  // Update order status (legacy)
-  updateOrderStatus(orderId: string, status: string): Observable<Order> {
-    return this.http.patch<Order>(`${this.API_BASE}/orders/${orderId}/status`, { status });
-  }
-
-  // Enhanced Order Management API Methods
 
   /**
-   * Get paginated list of orders with filtering
+   * Get user orders with pagination and filtering
    * GET /api/orders
    */
-  getOrders(filters: OrderFilters = {}): Observable<ApiResponse<OrdersListResponse>> {
+  getUserOrders(filters: OrderFilters = {}): Observable<OrdersListResponse> {
     let params = new HttpParams();
 
     if (filters.page) params = params.set('page', filters.page.toString());
@@ -168,91 +238,69 @@ export class OrderService {
     if (filters.status) params = params.set('status', filters.status);
     if (filters.sortBy) params = params.set('sortBy', filters.sortBy);
     if (filters.sortOrder) params = params.set('sortOrder', filters.sortOrder);
-    if (filters.customerId) params = params.set('customerId', filters.customerId);
-    if (filters.restaurantId) params = params.set('restaurantId', filters.restaurantId);
-    if (filters.dateFrom) params = params.set('dateFrom', filters.dateFrom);
-    if (filters.dateTo) params = params.set('dateTo', filters.dateTo);
 
-    return this.http.get<ApiResponse<OrdersListResponse>>(
-      `${this.API_BASE}/orders`,
-      { params }
-    );
+    return this.http.get<OrdersListResponse>(`${this.API_BASE}/orders`, { params });
   }
 
   /**
-   * Get order by ID with enhanced response
-   * GET /api/orders/:id
+   * Get order by ID
+   * GET /api/orders/{id}
    */
-  getOrderByIdEnhanced(orderId: string): Observable<ApiResponse<{ order: Order }>> {
-    return this.http.get<ApiResponse<{ order: Order }>>(
-      `${this.API_BASE}/orders/${orderId}`
-    );
+  getOrderById(orderId: string): Observable<OrderDetails> {
+    return this.http.get<OrderDetails>(`${this.API_BASE}/orders/${orderId}`);
   }
 
   /**
-   * Update order status with enhanced data
-   * PATCH /api/orders/:id/status
+   * Update order status
+   * PATCH /api/orders/{id}/status
    */
-  updateOrderStatusEnhanced(orderId: string, statusData: UpdateOrderStatusRequest): Observable<ApiResponse<any>> {
-    return this.http.patch<ApiResponse<any>>(
-      `${this.API_BASE}/orders/${orderId}/status`,
-      statusData
-    );
+  updateOrderStatus(orderId: string, statusData: UpdateStatusRequest): Observable<any> {
+    return this.http.patch(`${this.API_BASE}/orders/${orderId}/status`, statusData);
   }
 
   /**
    * Cancel order
-   * PATCH /api/orders/:id/cancel
+   * PATCH /api/orders/{id}/cancel
    */
-  cancelOrder(orderId: string, cancelData: CancelOrderRequest): Observable<ApiResponse<any>> {
-    return this.http.patch<ApiResponse<any>>(
-      `${this.API_BASE}/orders/${orderId}/cancel`,
-      cancelData
-    );
+  cancelOrder(orderId: string, cancelData: CancelOrderRequest): Observable<any> {
+    return this.http.patch(`${this.API_BASE}/orders/${orderId}/cancel`, cancelData);
   }
 
   /**
-   * Track order with real-time info
-   * GET /api/orders/:id/track
+   * Rate and review order
+   * POST /api/orders/{id}/rate
    */
-  trackOrder(orderId: string): Observable<ApiResponse<{ tracking: OrderTrackingInfo }>> {
-    return this.http.get<ApiResponse<{ tracking: OrderTrackingInfo }>>(
-      `${this.API_BASE}/orders/${orderId}/track`
-    );
+  rateOrder(orderId: string, ratingData: RateOrderRequest): Observable<any> {
+    return this.http.post(`${this.API_BASE}/orders/${orderId}/rate`, ratingData);
   }
 
   /**
-   * Get customer orders
+   * Track order in real-time
+   * GET /api/orders/{id}/track
    */
-  getCustomerOrders(customerId: string, filters: OrderFilters = {}): Observable<ApiResponse<OrdersListResponse>> {
-    return this.getOrders({ ...filters, customerId });
+  trackOrder(orderId: string): Observable<TrackingResponse> {
+    return this.http.get<TrackingResponse>(`${this.API_BASE}/orders/${orderId}/track`);
   }
 
   /**
-   * Get restaurant orders
+   * Get restaurant orders (for restaurant dashboard)
    */
-  getRestaurantOrders(restaurantId: string, filters: OrderFilters = {}): Observable<ApiResponse<OrdersListResponse>> {
-    return this.getOrders({ ...filters, restaurantId });
+  getRestaurantOrders(filters: OrderFilters = {}): Observable<OrdersListResponse> {
+    let params = new HttpParams();
+
+    if (filters.page) params = params.set('page', filters.page.toString());
+    if (filters.limit) params = params.set('limit', filters.limit.toString());
+    if (filters.status) params = params.set('status', filters.status);
+    if (filters.sortBy) params = params.set('sortBy', filters.sortBy);
+    if (filters.sortOrder) params = params.set('sortOrder', filters.sortOrder);
+
+    // For restaurant users, use the same /orders endpoint
+    // The backend will automatically filter by restaurant based on the user's role
+    return this.http.get<OrdersListResponse>(`${this.API_BASE}/orders`, { params });
   }
 
   /**
-   * Get orders by status
-   */
-  getOrdersByStatus(status: OrderStatus, filters: OrderFilters = {}): Observable<ApiResponse<OrdersListResponse>> {
-    return this.getOrders({ ...filters, status });
-  }
-
-  /**
-   * Get order status history
-   */
-  getOrderStatusHistory(orderId: string): Observable<ApiResponse<{ timeline: OrderTimelineEvent[] }>> {
-    return this.http.get<ApiResponse<{ timeline: OrderTimelineEvent[] }>>(
-      `${this.API_BASE}/orders/${orderId}/timeline`
-    );
-  }
-
-  /**
-   * Utility methods for order status management
+   * Utility methods for order management
    */
   getStatusColor(status: OrderStatus): string {
     const statusColors: Record<OrderStatus, string> = {
@@ -272,7 +320,7 @@ export class OrderService {
       'pending': 'Pending',
       'confirmed': 'Confirmed',
       'preparing': 'Preparing',
-      'ready': 'Ready',
+      'ready': 'Ready for Pickup',
       'out_for_delivery': 'Out for Delivery',
       'delivered': 'Delivered',
       'cancelled': 'Cancelled'
@@ -280,25 +328,70 @@ export class OrderService {
     return statusTexts[status] || status;
   }
 
-  getNextStatus(currentStatus: OrderStatus): OrderStatus | null {
-    const statusFlow: Record<OrderStatus, OrderStatus | null> = {
-      'pending': 'confirmed',
-      'confirmed': 'preparing',
-      'preparing': 'ready',
-      'ready': 'out_for_delivery',
-      'out_for_delivery': 'delivered',
-      'delivered': null,
-      'cancelled': null
+  getStatusIcon(status: OrderStatus): string {
+    const statusIcons: Record<OrderStatus, string> = {
+      'pending': 'fas fa-clock',
+      'confirmed': 'fas fa-check-circle',
+      'preparing': 'fas fa-utensils',
+      'ready': 'fas fa-box',
+      'out_for_delivery': 'fas fa-shipping-fast',
+      'delivered': 'fas fa-check-double',
+      'cancelled': 'fas fa-times-circle'
     };
-    return statusFlow[currentStatus];
+    return statusIcons[status] || 'fas fa-question-circle';
   }
 
   canCancelOrder(status: OrderStatus): boolean {
-    return ['pending', 'confirmed', 'preparing'].includes(status);
+    return ['pending', 'confirmed'].includes(status);
+  }
+
+  canRateOrder(status: OrderStatus): boolean {
+    return status === 'delivered';
+  }
+
+  // Legacy methods (kept for backward compatibility)
+  getOrderHistory(): Observable<OrdersListResponse> {
+    return this.getUserOrders();
+  }
+
+  getAllOrders(): Observable<OrdersListResponse> {
+    return this.getUserOrders();
+  }
+
+  // Restaurant dashboard specific methods
+  getOrders(filters: OrderFilters = {}): Observable<OrdersListResponse> {
+    return this.getRestaurantOrders(filters);
+  }
+
+  getNextStatus(currentStatus: OrderStatus): OrderStatus | null {
+    const statusFlow: OrderStatus[] = [
+      'pending',
+      'confirmed',
+      'preparing',
+      'ready',
+      'out_for_delivery',
+      'delivered'
+    ];
+
+    const currentIndex = statusFlow.indexOf(currentStatus);
+    return currentIndex >= 0 && currentIndex < statusFlow.length - 1
+      ? statusFlow[currentIndex + 1]
+      : null;
+  }
+
+  updateOrderStatusEnhanced(orderId: string, statusData: UpdateStatusRequest): Observable<any> {
+    return this.updateOrderStatus(orderId, statusData);
   }
 
   canUpdateStatus(status: OrderStatus): boolean {
-    return status !== 'delivered' && status !== 'cancelled';
+    const updateableStatuses: OrderStatus[] = [
+      'pending',
+      'confirmed',
+      'preparing',
+      'ready',
+      'out_for_delivery'
+    ];
+    return updateableStatuses.includes(status);
   }
 }
 

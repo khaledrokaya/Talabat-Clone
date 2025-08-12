@@ -1,18 +1,22 @@
-<div class="admin-dashboard-content">
-  <!-- Header Section -->
+<div class="admin-dashboard">
+  <!-- Dashboard Header -->
   <div class="dashboard-header">
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
-        <h1 class="dashboard-title">
+    <div class="header-content">
+      <div class="welcome-section">
+        <h1>
           <i class="fas fa-tachometer-alt"></i>
-          Dashboard Overview
+          Welcome to Talabat Admin
         </h1>
-        <p class="dashboard-subtitle">Monitor your platform's performance</p>
+        <p>Monitor and manage your food delivery platform with powerful insights</p>
       </div>
-      <div class="header-actions">
-        <button class="btn btn-outline-primary" (click)="refreshData()" [disabled]="isLoading">
+      <div class="quick-actions">
+        <button class="btn btn-primary" (click)="refreshData()" [disabled]="isLoading">
           <i class="fas fa-sync" [class.fa-spin]="isLoading"></i>
-          Refresh
+          Refresh Data
+        </button>
+        <button class="btn btn-outline-primary" (click)="refreshData()">
+          <i class="fas fa-download"></i>
+          Export Report
         </button>
       </div>
     </div>
@@ -21,9 +25,7 @@
   <!-- Loading State -->
   <div *ngIf="isLoading" class="loading-state">
     <div class="text-center">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
+      <div class="loading-spinner"></div>
       <p class="mt-3">Loading dashboard data...</p>
     </div>
   </div>
@@ -34,197 +36,174 @@
     {{ errorMessage }}
   </div>
 
+  <!-- Stats Grid -->
+  <div class="stats-grid" *ngIf="dashboardData && !isLoading">
+    <!-- Total Orders -->
+    <div class="stat-card">
+      <div class="stat-header">
+        <div class="stat-info">
+          <div class="stat-label">Total Orders</div>
+          <div class="stat-value">{{ formatNumber(dashboardData.orders.total) }}</div>
+        </div>
+        <div class="stat-icon orders">
+          <i class="fas fa-shopping-cart"></i>
+        </div>
+      </div>
+      <div class="stat-footer">
+        <div class="stat-change positive">
+          <i class="fas fa-arrow-up"></i>
+          <span class="change-value">+12%</span>
+          vs last month
+        </div>
+        <div class="stat-period">This month</div>
+      </div>
+    </div>
+
+    <!-- Total Restaurants -->
+    <div class="stat-card">
+      <div class="stat-header">
+        <div class="stat-info">
+          <div class="stat-label">Restaurants</div>
+          <div class="stat-value">{{ formatNumber(dashboardData.restaurants.total) }}</div>
+        </div>
+        <div class="stat-icon restaurants">
+          <i class="fas fa-utensils"></i>
+        </div>
+      </div>
+      <div class="stat-footer">
+        <div class="stat-change positive">
+          <i class="fas fa-arrow-up"></i>
+          <span class="change-value">+8%</span>
+          vs last month
+        </div>
+        <div class="stat-period">Active now</div>
+      </div>
+    </div>
+
+    <!-- Total Users -->
+    <div class="stat-card">
+      <div class="stat-header">
+        <div class="stat-info">
+          <div class="stat-label">Total Users</div>
+          <div class="stat-value">{{ formatNumber(dashboardData.users.total) }}</div>
+        </div>
+        <div class="stat-icon customers">
+          <i class="fas fa-users"></i>
+        </div>
+      </div>
+      <div class="stat-footer">
+        <div class="stat-change positive">
+          <i class="fas fa-arrow-up"></i>
+          <span class="change-value">+15%</span>
+          vs last month
+        </div>
+        <div class="stat-period">Registered</div>
+      </div>
+    </div>
+
+    <!-- Platform Revenue -->
+    <div class="stat-card">
+      <div class="stat-header">
+        <div class="stat-info">
+          <div class="stat-label">Platform Revenue</div>
+          <div class="stat-value">{{ formatCurrency(dashboardData.revenue.totalPlatformRevenue) }}</div>
+        </div>
+        <div class="stat-icon revenue">
+          <i class="fas fa-dollar-sign"></i>
+        </div>
+      </div>
+      <div class="stat-footer">
+        <div class="stat-change positive">
+          <i class="fas fa-arrow-up"></i>
+          <span class="change-value">+23%</span>
+          vs last month
+        </div>
+        <div class="stat-period">Total earned</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Dashboard Content -->
-  <div *ngIf="!isLoading && !errorMessage">
-    <!-- Stats Overview -->
-    <div class="stats-section" *ngIf="dashboardData">
-      <div class="row g-3 mb-4">
-        <!-- Users Stats -->
-        <div class="col-lg-3 col-md-6">
-          <div class="stats-card users-card" (click)="navigateToUsers()">
-            <div class="stats-icon">
-              <i class="fas fa-users"></i>
+  <div class="dashboard-content" *ngIf="!isLoading && !errorMessage">
+    <!-- Main Chart Area -->
+    <div class="main-chart">
+      <div class="chart-header">
+        <h3><i class="fas fa-chart-line"></i> Orders Overview</h3>
+        <div class="chart-filters">
+          <button class="filter-btn active">7 Days</button>
+          <button class="filter-btn">30 Days</button>
+          <button class="filter-btn">90 Days</button>
+        </div>
+      </div>
+      <div class="chart-placeholder">
+        <i class="fas fa-chart-area fa-2x"></i>
+        <p>Orders chart will be displayed here</p>
+      </div>
+    </div>
+
+    <!-- Sidebar Widgets -->
+    <div class="sidebar-widgets">
+      <!-- Recent Activity Widget -->
+      <div class="widget">
+        <div class="widget-header">
+          <h4><i class="fas fa-bell"></i> Recent Activity</h4>
+          <a href="#" class="widget-action">View All</a>
+        </div>
+        <div class="widget-content">
+          <div class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-plus"></i>
             </div>
-            <div class="stats-content">
-              <h3>{{ formatNumber(dashboardData.users.total) }}</h3>
-              <p>Total Users</p>
-              <div class="stats-breakdown">
-                <small>Customers: {{ formatNumber(dashboardData.users.customers) }}</small>
-                <small>Restaurants: {{ formatNumber(dashboardData.users.restaurants) }}</small>
-                <small>Delivery: {{ formatNumber(dashboardData.users.delivery) }}</small>
-              </div>
-            </div>
-            <div class="stats-action">
-              <i class="fas fa-arrow-right"></i>
+            <div class="activity-details">
+              <div class="activity-title">New restaurant approved</div>
+              <div class="activity-time">2 minutes ago</div>
             </div>
           </div>
-        </div>
-
-        <!-- Orders Stats -->
-        <div class="col-lg-3 col-md-6">
-          <div class="stats-card orders-card" (click)="navigateToOrders()">
-            <div class="stats-icon">
+          <div class="activity-item">
+            <div class="activity-icon">
               <i class="fas fa-shopping-cart"></i>
             </div>
-            <div class="stats-content">
-              <h3>{{ formatNumber(dashboardData.orders.total) }}</h3>
-              <p>Total Orders</p>
-              <div class="stats-breakdown">
-                <small>Pending: {{ formatNumber(dashboardData.orders.pending) }}</small>
-                <small>Completed: {{ formatNumber(dashboardData.orders.completed) }}</small>
-              </div>
+            <div class="activity-details">
+              <div class="activity-title">Large order completed</div>
+              <div class="activity-time">5 minutes ago</div>
             </div>
-            <div class="stats-action">
-              <i class="fas fa-arrow-right"></i>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-user-plus"></i>
+            </div>
+            <div class="activity-details">
+              <div class="activity-title">New user registered</div>
+              <div class="activity-time">12 minutes ago</div>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Restaurants Stats -->
-        <div class="col-lg-3 col-md-6">
-          <div class="stats-card restaurants-card" (click)="navigateToRestaurants()">
-            <div class="stats-icon">
-              <i class="fas fa-utensils"></i>
+      <!-- Quick Stats Widget -->
+      <div class="widget">
+        <div class="widget-header">
+          <h4><i class="fas fa-tachometer-alt"></i> Quick Stats</h4>
+        </div>
+        <div class="widget-content">
+          <div class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-motorcycle"></i>
             </div>
-            <div class="stats-content">
-              <h3>{{ formatNumber(dashboardData.restaurants.total) }}</h3>
-              <p>Restaurants</p>
-              <div class="stats-breakdown">
-                <small>Active: {{ formatNumber(dashboardData.restaurants.active) }}</small>
-                <small>Pending: {{ formatNumber(dashboardData.restaurants.pending) }}</small>
-              </div>
-            </div>
-            <div class="stats-action">
-              <i class="fas fa-arrow-right"></i>
+            <div class="activity-details">
+              <div class="activity-title">Active Deliveries</div>
+              <div class="activity-time">{{ dashboardData ? dashboardData.orders.pending : '0' }} ongoing</div>
             </div>
           </div>
-        </div>
-
-        <!-- Revenue Stats -->
-        <div class="col-lg-3 col-md-6">
-          <div class="stats-card revenue-card">
-            <div class="stats-icon">
-              <i class="fas fa-dollar-sign"></i>
+          <div class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-clock"></i>
             </div>
-            <div class="stats-content">
-              <h3>{{ formatCurrency(dashboardData.revenue.totalPlatformRevenue) }}</h3>
-              <p>Total Revenue</p>
-              <div class="stats-breakdown">
-                <small>Monthly: {{ formatCurrency(dashboardData.revenue.monthlyRevenue) }}</small>
-                <small>Avg Commission: {{ formatPercentage(dashboardData.revenue.averageCommission) }}</small>
-              </div>
+            <div class="activity-details">
+              <div class="activity-title">Avg Delivery Time</div>
+              <div class="activity-time">32 minutes</div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="quick-actions-section">
-      <div class="section-header">
-        <h4>
-          <i class="fas fa-bolt"></i>
-          Quick Actions
-        </h4>
-        <p>Access frequently used management tools</p>
-      </div>
-      
-      <div class="row g-3">
-        <div class="col-lg-4 col-md-6" *ngFor="let action of quickActions">
-          <div class="action-card" (click)="navigateTo(action.route)">
-            <div class="action-icon" [class]="'bg-' + action.color">
-              <i [class]="action.icon"></i>
-            </div>
-            <div class="action-content">
-              <h5>{{ action.title }}</h5>
-              <p>{{ action.description }}</p>
-            </div>
-            <div class="action-arrow">
-              <i class="fas fa-chevron-right"></i>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Recent Activity Summary -->
-    <div class="activity-section" *ngIf="dashboardData">
-      <div class="section-header">
-        <h4>
-          <i class="fas fa-clock"></i>
-          Recent Activity
-        </h4>
-        <p>Latest platform activity summary</p>
-      </div>
-      
-      <div class="row g-3">
-        <div class="col-lg-6">
-          <div class="activity-card">
-            <div class="activity-header">
-              <h6><i class="fas fa-user-plus text-success"></i> New Users This Month</h6>
-            </div>
-            <div class="activity-content">
-              <div class="activity-number">{{ formatNumber(dashboardData.users.newUsersThisMonth) }}</div>
-              <small class="text-muted">New registrations</small>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-lg-6">
-          <div class="activity-card">
-            <div class="activity-header">
-              <h6><i class="fas fa-chart-line text-primary"></i> Average Order Value</h6>
-            </div>
-            <div class="activity-content">
-              <div class="activity-number">{{ formatCurrency(dashboardData.orders.averageOrderValue) }}</div>
-              <small class="text-muted">Current average</small>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Top Performing Restaurants -->
-    <div class="top-restaurants-section" *ngIf="dashboardData && dashboardData.revenue.topRestaurants.length > 0">
-      <div class="section-header">
-        <h4>
-          <i class="fas fa-trophy"></i>
-          Top Performing Restaurants
-        </h4>
-        <p>Highest revenue generating restaurants</p>
-      </div>
-      
-      <div class="card">
-        <div class="table-responsive">
-          <table class="table table-hover mb-0">
-            <thead>
-              <tr>
-                <th>Restaurant</th>
-                <th>Revenue</th>
-                <th>Orders</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let restaurant of dashboardData.revenue.topRestaurants.slice(0, 5)">
-                <td>
-                  <div class="restaurant-name">{{ restaurant.name }}</div>
-                </td>
-                <td>
-                  <strong>{{ formatCurrency(restaurant.revenue) }}</strong>
-                </td>
-                <td>
-                  <span class="badge bg-primary">{{ formatNumber(restaurant.orders) }}</span>
-                </td>
-                <td>
-                  <button class="btn btn-outline-primary btn-sm" (click)="navigateToRestaurants()">
-                    <i class="fas fa-eye"></i>
-                    View
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

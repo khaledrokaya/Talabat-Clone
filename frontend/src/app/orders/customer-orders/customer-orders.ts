@@ -2,8 +2,16 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
-import { ProfileService, Order, OrdersResponse, OrderFilters } from '../../shared/services/profile.service';
+import { OrderService, OrdersListResponse, OrderSummary } from '../../shared/services/order.service';
 import { Subscription } from 'rxjs';
+
+interface OrderFilters {
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
 
 @Component({
   selector: 'app-customer-orders',
@@ -13,16 +21,16 @@ import { Subscription } from 'rxjs';
   styleUrl: './customer-orders.scss'
 })
 export class CustomerOrders implements OnInit, OnDestroy {
-  orders: Order[] = [];
+  orders: OrderSummary[] = [];
   loading = true;
   errorMessage = '';
   filterForm: FormGroup;
-  ordersData: OrdersResponse | null = null;
+  ordersData: OrdersListResponse | null = null;
   showOrderDetails: { [key: string]: boolean } = {};
   private subscriptions: Subscription[] = [];
 
   constructor(
-    private profileService: ProfileService,
+    private orderService: OrderService,
     private fb: FormBuilder
   ) {
     this.filterForm = this.createFilterForm();
@@ -50,14 +58,39 @@ export class CustomerOrders implements OnInit, OnDestroy {
     this.loading = true;
     this.clearMessages();
 
-    const ordersSub = this.profileService.getOrderHistory(filters).subscribe({
-      next: (ordersData) => {
+    const params: any = {};
+    if (filters?.status) params.status = filters.status;
+    if (filters?.startDate) params.startDate = filters.startDate;
+    if (filters?.endDate) params.endDate = filters.endDate;
+    if (filters?.page) params.page = filters.page;
+    if (filters?.limit) params.limit = filters.limit;
+
+    const ordersSub = this.orderService.getUserOrders(params).subscribe({
+      next: (ordersData: any) => {
+        console.log('✅ Orders API response received:', ordersData);
         this.ordersData = ordersData;
-        this.orders = ordersData.orders;
+
+        // Handle different response structures
+        if (ordersData.data && Array.isArray(ordersData.data)) {
+          // Direct array in data property
+          this.orders = ordersData.data;
+        } else if (ordersData.data && ordersData.data.orders) {
+          // Nested under data.orders
+          this.orders = ordersData.data.orders;
+        } else if (Array.isArray(ordersData)) {
+          // Direct array response
+          this.orders = ordersData;
+        } else {
+          this.orders = [];
+        }
+
+        console.log('📋 Orders array set to:', this.orders);
+        console.log('📊 Orders count:', this.orders?.length || 0);
         this.loading = false;
       },
-      error: (error) => {
-        console.error('Error loading orders:', error);
+      error: (error: any) => {
+        console.error('❌ Error loading orders:', error);
+        console.error('📄 Error details:', error?.error || error?.message || error);
         this.errorMessage = 'Failed to load orders';
         this.loading = false;
         this.hideMessageAfterDelay();
@@ -93,11 +126,29 @@ export class CustomerOrders implements OnInit, OnDestroy {
   }
 
   getStatusText(status: string): string {
-    return this.profileService.getOrderStatusText(status);
+    const statusTexts: { [key: string]: string } = {
+      'pending': 'Pending',
+      'confirmed': 'Confirmed',
+      'preparing': 'Preparing',
+      'ready': 'Ready for Pickup',
+      'out_for_delivery': 'Out for Delivery',
+      'delivered': 'Delivered',
+      'cancelled': 'Cancelled'
+    };
+    return statusTexts[status] || status;
   }
 
   getStatusColor(status: string): string {
-    return this.profileService.getOrderStatusColor(status);
+    const statusColors: { [key: string]: string } = {
+      'pending': '#f39c12',
+      'confirmed': '#3498db',
+      'preparing': '#9b59b6',
+      'ready': '#2ecc71',
+      'out_for_delivery': '#e74c3c',
+      'delivered': '#27ae60',
+      'cancelled': '#95a5a6'
+    };
+    return statusColors[status] || '#95a5a6';
   }
 
   getStatusClass(status: string): string {
@@ -111,6 +162,24 @@ export class CustomerOrders implements OnInit, OnDestroy {
       'cancelled': 'status-cancelled'
     };
     return statusClasses[status] || 'status-default';
+  }
+
+  rateOrder(orderId: string): void {
+    // TODO: Implement rating functionality
+    console.log('Rating order:', orderId);
+  }
+
+  trackByOrderId(index: number, order: OrderSummary): string {
+    return order._id;
+  }
+
+  get pagination() {
+    return this.ordersData?.data?.pagination;
+  }
+
+  trackOrder(orderId: string): void {
+    // TODO: Implement tracking functionality
+    console.log('Tracking order:', orderId);
   }
 
   private clearMessages(): void {
@@ -129,7 +198,20 @@ export class CustomerOrders implements OnInit, OnDestroy {
   }
 
   formatCurrency(amount: number): string {
-    return `$${amount.toFixed(2)}`;
+    return `${amount.toFixed(2)} EGP`;
+  }
+
+  getOrderItemsCount(order: OrderSummary): number {
+    return order.items?.length || 0;
+  }
+
+  hasMoreThanThreeItems(order: OrderSummary): boolean {
+    return this.getOrderItemsCount(order) > 3;
+  }
+
+  getExtraItemsCount(order: OrderSummary): number {
+    const count = this.getOrderItemsCount(order);
+    return count > 3 ? count - 3 : 0;
   }
 
   private hideMessageAfterDelay(): void {

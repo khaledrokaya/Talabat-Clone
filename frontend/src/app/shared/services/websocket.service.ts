@@ -27,8 +27,14 @@ export class WebSocketService {
       return; // Already connected
     }
 
-    const wsUrl = environment.wsUrl || 'ws://localhost:3000';
+    const wsUrl = environment.wsUrl || 'ws://localhost:5000';
     const token = localStorage.getItem('token');
+
+    // Don't attempt to connect if no token is available
+    if (!token) {
+      console.warn('No authentication token available, skipping WebSocket connection');
+      return;
+    }
 
     const fullUrl = channel
       ? `${wsUrl}?channel=${channel}&token=${token}`
@@ -79,6 +85,13 @@ export class WebSocketService {
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error('Max reconnection attempts reached');
+      return;
+    }
+
+    // Don't attempt to reconnect if no token is available
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.warn('No authentication token available, stopping reconnection attempts');
       return;
     }
 

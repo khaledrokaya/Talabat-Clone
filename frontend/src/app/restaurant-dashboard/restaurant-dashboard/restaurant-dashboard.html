@@ -11,6 +11,14 @@
           <p>Welcome {{ currentUser?.name }}, here's an overview of your restaurant performance</p>
         </div>
         <div class="header-actions">
+          <div class="restaurant-status">
+            <span class="status-label">Status:</span>
+            <button class="btn status-btn" [class.btn-success]="restaurantStatus" [class.btn-danger]="!restaurantStatus"
+              (click)="toggleRestaurantStatus()">
+              <i class="fas" [class.fa-store]="restaurantStatus" [class.fa-times-circle]="!restaurantStatus"></i>
+              <span>{{ restaurantStatus ? 'Open' : 'Closed' }}</span>
+            </button>
+          </div>
           <button class="btn btn-primary" routerLink="/restaurant-dashboard/meals-management">
             <i class="fas fa-utensils"></i>
             <span>Manage Meals</span>
@@ -115,15 +123,17 @@
           </div>
           } @else {
           <div class="orders-list">
-            @for (order of recentOrders; track order.id) {
+            @for (order of recentOrders; track order._id) {
             <div class="order-item">
               <div class="order-info">
-                <div class="order-id">#{{ order.orderNumber }}</div>
-                <div class="customer-name">{{ order.customer?.name }}</div>
+                <div class="order-id">#{{ order.orderNumber || order._id?.substring(0, 8) }}</div>
+                <div class="customer-name">{{ order.customerInfo?.name || (order.customerId?.firstName + ' ' +
+                  order.customerId?.lastName) || 'Customer' }}</div>
                 <div class="order-time">{{ formatDate(order.createdAt) }}</div>
+                <div class="order-items">{{ (order.items?.length || 0) }} items</div>
               </div>
               <div class="order-details">
-                <div class="order-total">{{ order.total | currency:'EGP':'symbol':'1.0-0' }}</div>
+                <div class="order-total">{{ order.totalAmount | currency:'EGP':'symbol':'1.0-0' }}</div>
                 <div class="order-status">
                   <span class="status-badge" [class]="'status-' + order.status">
                     {{ getStatusText(order.status) }}
@@ -131,10 +141,7 @@
                 </div>
               </div>
               <div class="order-actions">
-                <button class="btn-icon" (click)="updateOrderStatus(order.id || '', getNextStatus(order.status))">
-                  <i class="fas fa-check"></i>
-                </button>
-                <button class="btn-icon" (click)="viewOrderDetails(order.id || '')">
+                <button class="btn-icon" (click)="viewOrderDetails(order._id)" title="View Details">
                   <i class="fas fa-eye"></i>
                 </button>
               </div>
@@ -219,77 +226,6 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Top Products -->
-    <div class="dashboard-card top-products">
-      <div class="card-header">
-        <h3>
-          <i class="fas fa-trophy"></i>
-          Best Selling Products
-        </h3>
-      </div>
-      <div class="card-body">
-        @if (!topProducts || topProducts.length === 0) {
-        <div class="empty-state">
-          <i class="fas fa-utensils"></i>
-          <p>No products available</p>
-          <small>Add some meals to see your best selling products here</small>
-        </div>
-        } @else {
-        <div class="products-list">
-          @for (product of topProducts; track product.id; let i = $index) {
-          <div class="product-item">
-            <div class="product-rank">{{ i + 1 }}</div>
-            <div class="product-image">
-              @if (product.image) {
-              <img [src]="product.image" [alt]="product.name">
-              } @else {
-              <i class="fas fa-utensils"></i>
-              }
-            </div>
-            <div class="product-info">
-              <h4>{{ product.name }}</h4>
-              <p>{{ product.soldCount }} sold</p>
-            </div>
-            <div class="product-revenue">
-              {{ product.revenue | currency:'EGP':'symbol':'1.0-0' }}
-            </div>
-          </div>
-          }
-        </div>
-        }
-      </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="dashboard-card quick-actions">
-      <div class="card-header">
-        <h3>
-          <i class="fas fa-bolt"></i>
-          Quick Actions
-        </h3>
-      </div>
-      <div class="card-body">
-        <div class="actions-grid">
-          <button class="action-btn" routerLink="/restaurant-dashboard/meals-management">
-            <i class="fas fa-plus"></i>
-            <span>Add Meal</span>
-          </button>
-          <button class="action-btn" routerLink="/restaurant-dashboard/orders-management">
-            <i class="fas fa-list"></i>
-            <span>Manage Orders</span>
-          </button>
-          <button class="action-btn" (click)="toggleRestaurantStatus()">
-            <i class="fas" [class.fa-play]="!restaurantStatus" [class.fa-pause]="restaurantStatus"></i>
-            <span>{{ restaurantStatus ? 'Close' : 'Open' }} Restaurant</span>
-          </button>
-          <button class="action-btn" (click)="downloadReport()">
-            <i class="fas fa-download"></i>
-            <span>Download Report</span>
-          </button>
         </div>
       </div>
     </div>

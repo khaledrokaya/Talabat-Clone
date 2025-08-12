@@ -12,7 +12,7 @@ export class OrderController {
     async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
       const orderData = {
         ...req.body,
-        customer: req.user._id,
+        customerId: req.user._id,
         orderNumber: this.generateOrderNumber(),
       };
 
@@ -98,14 +98,13 @@ export class OrderController {
   getUserOrders = asyncHandler(
     async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
       const { page = 1, limit = 10, status } = req.query;
-
-      const filter: any = { customer: req.user._id };
+      const filter: Record<string, any> = { customerId: req.user._id };
       if (status) filter.status = status;
 
       const skip = (Number(page) - 1) * Number(limit);
       const orders = await Order.find(filter)
-        .populate('restaurant', 'name location')
-        .populate('deliveryPerson', 'firstName lastName phone')
+        .populate('restaurantId', 'name location')
+        .populate('deliveryPersonId', 'firstName lastName phone')
         .skip(skip)
         .limit(Number(limit))
         .sort({ createdAt: -1 });
@@ -129,18 +128,15 @@ export class OrderController {
   getRestaurantOrders = asyncHandler(
     async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
       const { page = 1, limit = 10, status } = req.query;
-
-      const filter: any = { restaurant: req.user._id };
+      const filter: any = { restaurantId: req.user._id };
       if (status) filter.status = status;
-
       const skip = (Number(page) - 1) * Number(limit);
       const orders = await Order.find(filter)
-        .populate('customer', 'firstName lastName phone')
-        .populate('deliveryPerson', 'firstName lastName phone')
+        .populate('customerId', 'firstName lastName phone')
+        .populate('deliveryPersonId', 'firstName lastName phone')
         .skip(skip)
         .limit(Number(limit))
         .sort({ createdAt: -1 });
-
       const totalOrders = await Order.countDocuments(filter);
       const totalPages = Math.ceil(totalOrders / Number(limit));
 
@@ -291,9 +287,9 @@ export class OrderController {
         {
           $match: {
             createdAt: { $gte: startDate },
-            ...(req.user.role === 'restaurant_owner' && { restaurant: req.user._id }),
+            ...(req.user.role === 'restaurant_owner' && { restaurantId: req.user._id }),
             ...(req.user.role === 'delivery' && {
-              deliveryPerson: req.user._id,
+              deliveryPersonId: req.user._id,
             }),
           },
         },

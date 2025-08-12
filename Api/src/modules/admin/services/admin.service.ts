@@ -246,7 +246,11 @@ export class AdminService {
     const query: any = {};
 
     if (role) {
-      query.role = role;
+      if (role === 'restaurant') {
+        query.role = 'restaurant_owner';
+      } else {
+        query.role = role;
+      }
     }
 
     if (status) {
@@ -390,7 +394,7 @@ export class AdminService {
     }
 
     // Soft delete by deactivating
-    user.isActive = false;
+    await User.deleteOne({ _id: user._id });
     await user.save();
 
     console.log(`User ${userId} soft deleted by admin`);

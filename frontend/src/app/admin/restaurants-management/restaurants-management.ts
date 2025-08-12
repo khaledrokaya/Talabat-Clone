@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AdminService, AdminRestaurant, RestaurantFilters, ApprovalRequest, StatusUpdateRequest } from '../../shared/services/admin.service';
+import { AdminService, AdminRestaurant, RestaurantFilters, RestaurantsResponse, ApprovalRequest, StatusUpdateRequest, PendingRestaurant } from '../../shared/services/admin.service';
 
 @Component({
   selector: 'app-restaurants-management',
@@ -12,8 +12,9 @@ import { AdminService, AdminRestaurant, RestaurantFilters, ApprovalRequest, Stat
   styleUrls: ['./restaurants-management.scss']
 })
 export class RestaurantsManagement implements OnInit {
-  restaurants: AdminRestaurant[] = [];
-  filteredRestaurants: AdminRestaurant[] = [];
+  // Only pending restaurants for approval
+  pendingRestaurants: any[] = [];
+  filteredRestaurants: any[] = [];
 
   isLoading = true;
   errorMessage = '';
@@ -23,49 +24,23 @@ export class RestaurantsManagement implements OnInit {
   currentPage = 1;
   totalPages = 0;
   totalRestaurants = 0;
-  pageSize = 10;
+  pageSize = 12;
 
-  // Filters
-  filters: RestaurantFilters = {
-    status: undefined,
-    verified: undefined,
-    page: 1,
-    limit: 10,
-    search: ''
-  };
-
-  // Selected items for bulk actions
-  selectedRestaurants: string[] = [];
+  // Search
+  searchTerm = '';
 
   // Modal states
   showRestaurantModal = false;
   showApprovalModal = false;
-  showStatusModal = false;
   showDeleteModal = false;
 
   // Current restaurant being processed
-  currentRestaurant: AdminRestaurant | null = null;
+  currentRestaurant: any | null = null;
   currentRestaurantId = '';
+  actionType: 'approve' | 'reject' = 'approve';
 
   // Forms
   approvalForm: FormGroup;
-  statusForm: FormGroup;
-
-  // Filter options
-  statusOptions = [
-    { value: '', label: 'All Status' },
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'verified', label: 'Verified' },
-    { value: 'rejected', label: 'Rejected' }
-  ];
-
-  verifiedOptions = [
-    { value: '', label: 'All' },
-    { value: 'true', label: 'Verified' },
-    { value: 'false', label: 'Not Verified' }
-  ];
 
   constructor(
     private adminService: AdminService,
@@ -76,92 +51,107 @@ export class RestaurantsManagement implements OnInit {
       status: ['verified'],
       reason: ['']
     });
-
-    this.statusForm = this.fb.group({
-      isActive: [true],
-      reason: ['']
-    });
   }
 
   ngOnInit(): void {
-    this.loadRestaurants();
+    this.loadPendingRestaurants();
   }
 
-  loadRestaurants(): void {
+  loadPendingRestaurants(): void {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.adminService.getAllRestaurants(this.filters).subscribe({
+    this.adminService.getPendingRestaurants().subscribe({
       next: (response) => {
-        if (response.success) {
-          this.restaurants = response.data.restaurants;
-          this.filteredRestaurants = [...this.restaurants];
-          this.totalRestaurants = response.data.totalRestaurants;
-          this.totalPages = response.data.totalPages;
-          this.currentPage = response.data.currentPage;
+        console.log('Pending restaurants response:', response);
+        if (response.success && response.data) {
+          this.pendingRestaurants = response.data;
+          this.filteredRestaurants = [...this.pendingRestaurants];
+          this.updatePagination();
         } else {
-          this.errorMessage = 'Failed to load restaurants';
+          console.warn('Invalid response format for pending restaurants:', response);
+          this.pendingRestaurants = [];
+          this.filteredRestaurants = [];
         }
         this.isLoading = false;
       },
       error: (error) => {
-        this.errorMessage = 'Error loading restaurants: ' + (error.error?.message || 'Unknown error');
+        console.error('Error loading pending restaurants:', error);
+        this.errorMessage = 'Failed to load pending restaurants';
+        this.pendingRestaurants = [];
+        this.filteredRestaurants = [];
         this.isLoading = false;
       }
     });
   }
 
-  onFilterChange(): void {
-    this.filters.page = 1;
+  onSearchChange(): void {
+    this.applySearchFilter();
     this.currentPage = 1;
-    this.loadRestaurants();
   }
 
-  onSearchChange(): void {
-    if (this.filters.search && this.filters.search.length > 0) {
-      this.filteredRestaurants = this.restaurants.filter(restaurant =>
-        restaurant.firstName.toLowerCase().includes(this.filters.search!.toLowerCase()) ||
-        restaurant.lastName.toLowerCase().includes(this.filters.search!.toLowerCase()) ||
-        restaurant.email.toLowerCase().includes(this.filters.search!.toLowerCase()) ||
-        restaurant.restaurantName.toLowerCase().includes(this.filters.search!.toLowerCase())
-      );
+  private applySearchFilter(): void {
+    if (this.searchTerm && this.pendingRestaurants.length > 0) {
+      this.filteredRestaurants = this.pendingRestaurants.filter(restaurant => {
+        const searchLower = this.searchTerm.toLowerCase();
+        const restaurantName = this.getRestaurantName(restaurant);
+        const ownerName = this.getOwnerName(restaurant);
+        const email = restaurant.email || '';
+
+        return (
+          restaurantName.toLowerCase().includes(searchLower) ||
+          ownerName.toLowerCase().includes(searchLower) ||
+          email.toLowerCase().includes(searchLower)
+        );
+      });
     } else {
-      this.filteredRestaurants = [...this.restaurants];
+      this.filteredRestaurants = this.pendingRestaurants;
     }
+    this.updatePagination();
+  }
+
+  private updatePagination(): void {
+    this.totalRestaurants = this.filteredRestaurants.length;
+    this.totalPages = Math.ceil(this.totalRestaurants / this.pageSize);
   }
 
   onPageChange(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-      this.filters.page = page;
-      this.loadRestaurants();
     }
   }
 
   // Restaurant Actions
-  viewRestaurant(restaurant: AdminRestaurant): void {
+  viewRestaurant(restaurant: any): void {
     this.currentRestaurant = restaurant;
     this.showRestaurantModal = true;
   }
 
-  approveRestaurant(restaurant: AdminRestaurant): void {
+  approveRestaurant(restaurant: any): void {
+    this.actionType = 'approve';
     this.currentRestaurant = restaurant;
-    this.currentRestaurantId = restaurant.id;
+    this.currentRestaurantId = restaurant._id || restaurant.id;
+    this.approvalForm.patchValue({
+      status: 'verified',
+      reason: ''
+    });
     this.showApprovalModal = true;
   }
 
-  changeStatus(restaurant: AdminRestaurant): void {
+  rejectRestaurant(restaurant: any): void {
+    this.actionType = 'reject';
     this.currentRestaurant = restaurant;
-    this.currentRestaurantId = restaurant.id;
-    this.statusForm.patchValue({
-      isActive: !restaurant.isActive
+    this.currentRestaurantId = restaurant._id || restaurant.id;
+    this.approvalForm.patchValue({
+      status: 'rejected',
+      reason: ''
     });
-    this.showStatusModal = true;
+    this.showApprovalModal = true;
   }
 
-  deleteRestaurant(restaurant: AdminRestaurant): void {
+  deleteRestaurant(restaurant: any): void {
     this.currentRestaurant = restaurant;
-    this.currentRestaurantId = restaurant.id;
+    this.currentRestaurantId = restaurant._id || restaurant.id;
     this.showDeleteModal = true;
   }
 
@@ -169,7 +159,6 @@ export class RestaurantsManagement implements OnInit {
   closeModal(): void {
     this.showRestaurantModal = false;
     this.showApprovalModal = false;
-    this.showStatusModal = false;
     this.showDeleteModal = false;
     this.currentRestaurant = null;
     this.currentRestaurantId = '';
@@ -180,41 +169,37 @@ export class RestaurantsManagement implements OnInit {
     if (this.approvalForm.valid && this.currentRestaurantId) {
       const request: ApprovalRequest = this.approvalForm.value;
 
-      this.adminService.approveRestaurant(this.currentRestaurantId, request).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.successMessage = response.message;
-            this.loadRestaurants();
-            this.closeModal();
-          } else {
-            this.errorMessage = 'Failed to update restaurant approval status';
+      if (this.actionType === 'approve') {
+        this.adminService.approveRestaurant(this.currentRestaurantId, request).subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.successMessage = response.message;
+              this.loadPendingRestaurants();
+              this.closeModal();
+            } else {
+              this.errorMessage = 'Failed to approve restaurant';
+            }
+          },
+          error: (error) => {
+            this.errorMessage = 'Error approving restaurant: ' + (error.error?.message || 'Unknown error');
           }
-        },
-        error: (error) => {
-          this.errorMessage = 'Error updating restaurant: ' + (error.error?.message || 'Unknown error');
-        }
-      });
-    }
-  }
-
-  submitStatusUpdate(): void {
-    if (this.statusForm.valid && this.currentRestaurantId) {
-      const request: StatusUpdateRequest = this.statusForm.value;
-
-      this.adminService.updateRestaurantStatus(this.currentRestaurantId, request).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.successMessage = response.message;
-            this.loadRestaurants();
-            this.closeModal();
-          } else {
-            this.errorMessage = 'Failed to update restaurant status';
+        });
+      } else {
+        this.adminService.rejectRestaurant(this.currentRestaurantId, request).subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.successMessage = response.message;
+              this.loadPendingRestaurants();
+              this.closeModal();
+            } else {
+              this.errorMessage = 'Failed to reject restaurant';
+            }
+          },
+          error: (error) => {
+            this.errorMessage = 'Error rejecting restaurant: ' + (error.error?.message || 'Unknown error');
           }
-        },
-        error: (error) => {
-          this.errorMessage = 'Error updating restaurant status: ' + (error.error?.message || 'Unknown error');
-        }
-      });
+        });
+      }
     }
   }
 
@@ -224,7 +209,7 @@ export class RestaurantsManagement implements OnInit {
         next: (response) => {
           if (response.success) {
             this.successMessage = response.message;
-            this.loadRestaurants();
+            this.loadPendingRestaurants();
             this.closeModal();
           } else {
             this.errorMessage = 'Failed to delete restaurant';
@@ -237,61 +222,61 @@ export class RestaurantsManagement implements OnInit {
     }
   }
 
-  // Selection Management
-  toggleSelection(restaurantId: string): void {
-    const index = this.selectedRestaurants.indexOf(restaurantId);
-    if (index > -1) {
-      this.selectedRestaurants.splice(index, 1);
-    } else {
-      this.selectedRestaurants.push(restaurantId);
-    }
-  }
-
-  toggleSelectAll(): void {
-    if (this.selectedRestaurants.length === this.filteredRestaurants.length) {
-      this.selectedRestaurants = [];
-    } else {
-      this.selectedRestaurants = this.filteredRestaurants.map(r => r.id);
-    }
-  }
-
-  isSelected(restaurantId: string): boolean {
-    return this.selectedRestaurants.includes(restaurantId);
-  }
-
-  isAllSelected(): boolean {
-    return this.filteredRestaurants.length > 0 && this.selectedRestaurants.length === this.filteredRestaurants.length;
-  }
-
-  isIndeterminate(): boolean {
-    return this.selectedRestaurants.length > 0 && this.selectedRestaurants.length < this.filteredRestaurants.length;
-  }
-
   // Utility Methods
-  getStatusBadgeClass(status: string): string {
-    switch (status) {
-      case 'active': return 'badge bg-success';
-      case 'inactive': return 'badge bg-secondary';
-      case 'pending': return 'badge bg-warning';
-      case 'verified': return 'badge bg-primary';
-      case 'rejected': return 'badge bg-danger';
-      default: return 'badge bg-light text-dark';
-    }
+  getRestaurantName(restaurant: any): string {
+    return restaurant.name || restaurant.businessName || restaurant.restaurantName || 'Unknown Restaurant';
   }
 
-  getVerificationBadgeClass(isVerified: boolean): string {
-    return isVerified ? 'badge bg-success' : 'badge bg-warning';
+  getOwnerName(restaurant: any): string {
+    return restaurant.ownerName ||
+      restaurant.owner?.name ||
+      (restaurant.firstName && restaurant.lastName ?
+        `${restaurant.firstName} ${restaurant.lastName}` : 'Unknown Owner');
+  }
+
+  getRestaurantAddress(restaurant: any): string {
+    const addr = restaurant.address;
+    if (typeof addr === 'string') {
+      return addr;
+    } else if (addr && typeof addr === 'object') {
+      return `${addr.street || ''}, ${addr.city || ''}`.replace(/^,\s*|,\s*$/g, '') || 'No address';
+    }
+    return 'No address';
+  }
+
+  getBusinessLicense(restaurant: any): string {
+    return restaurant.businessLicense ||
+      restaurant.businessRegistrationNumber ||
+      'N/A';
+  }
+
+  getCreatedDate(restaurant: any): string {
+    return restaurant.createdAt ||
+      restaurant.submittedAt ||
+      new Date().toISOString();
+  }
+
+  getPaginatedRestaurants(): any[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    const end = start + this.pageSize;
+    return this.filteredRestaurants.slice(start, end);
+  }
+
+  getRestaurantStats() {
+    return {
+      total: this.pendingRestaurants.length,
+      pending: this.pendingRestaurants.length,
+      approved: 0,
+      rejected: 0
+    };
   }
 
   formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString();
   }
 
-  formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+  trackByRestaurant(index: number, restaurant: PendingRestaurant): string {
+    return (restaurant as any)._id || (restaurant as any).id || index.toString();
   }
 
   clearMessages(): void {

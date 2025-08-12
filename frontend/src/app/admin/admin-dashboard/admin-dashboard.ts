@@ -2,8 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
-import { AdminService, DashboardData, AnalyticsData } from '../../shared/services/admin.service';
-import { forkJoin } from 'rxjs';
+import { AdminService, DashboardData } from '../../shared/services/admin.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -15,7 +14,6 @@ import { forkJoin } from 'rxjs';
 export class AdminDashboard implements OnInit {
   isLoading = true;
   dashboardData: DashboardData | null = null;
-  analyticsData: AnalyticsData | null = null;
   errorMessage = '';
 
   quickActions = [
@@ -41,7 +39,7 @@ export class AdminDashboard implements OnInit {
       color: 'info'
     },
     {
-      title: 'Orders',
+      title: 'Orders Management',
       description: 'Track and manage orders',
       icon: 'fas fa-clipboard-list',
       route: '/admin/orders',
@@ -55,8 +53,8 @@ export class AdminDashboard implements OnInit {
       color: 'danger'
     },
     {
-      title: 'Analytics',
-      description: 'View detailed reports',
+      title: 'Analytics & Reports',
+      description: 'View detailed analytics',
       icon: 'fas fa-chart-line',
       route: '/admin/analytics',
       color: 'dark'
@@ -76,19 +74,18 @@ export class AdminDashboard implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
-    // Load dashboard and analytics data
-    forkJoin({
-      dashboard: this.adminService.getDashboardData(),
-      analytics: this.adminService.getAnalyticsData()
-    }).subscribe({
+    this.adminService.getDashboardData().subscribe({
       next: (response) => {
-        this.dashboardData = response.dashboard.data;
-        this.analyticsData = response.analytics.data;
+        if (response.success) {
+          this.dashboardData = response.data;
+        } else {
+          this.errorMessage = 'Failed to load dashboard data';
+        }
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading dashboard data:', error);
-        this.errorMessage = 'Failed to load dashboard data';
+        this.errorMessage = error.error?.message || 'Failed to load dashboard data. Please try again.';
         this.isLoading = false;
       }
     });
@@ -131,22 +128,26 @@ export class AdminDashboard implements OnInit {
   }
 
   formatNumber(num: number): string {
+    if (!num) return '0';
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'M';
     } else if (num >= 1000) {
       return (num / 1000).toFixed(1) + 'K';
     }
-    return num.toString();
+    return num.toLocaleString();
   }
 
   formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-US', {
+    if (!amount) return '0.00 EGP';
+    return new Intl.NumberFormat('en-EG', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'EGP',
+      minimumFractionDigits: 2
     }).format(amount);
   }
 
   formatPercentage(percentage: number): string {
+    if (!percentage) return '0.0%';
     return percentage.toFixed(1) + '%';
   }
 }

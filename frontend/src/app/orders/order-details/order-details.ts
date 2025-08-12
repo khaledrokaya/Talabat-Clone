@@ -1,0 +1,225 @@
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { OrderService, OrderDetails as OrderDetailsResponse, OrderStatus, UpdateStatusRequest } from '../../shared/services/order.service';
+import { AuthService } from '../../shared/services/auth.service';
+import { Subscription } from 'rxjs';
+
+@Component({
+  selector: 'app-order-details',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  templateUrl: './order-details.html',
+  styleUrl: './order-details.scss'
+})
+export class OrderDetailsComponent implements OnInit, OnDestroy {
+  order: any = null;
+  loading = true;
+  errorMessage = '';
+  successMessage = '';
+  orderId = '';
+  isRestaurantOwner = false;
+  private subscriptions: Subscription[] = [];
+
+  constructor(
+    private orderService: OrderService,
+    private authService: AuthService,
+    private route: ActivatedRoute,
+    private router: Router
+  ) { }
+
+  ngOnInit(): void {
+    // Check if user is a restaurant owner
+    const userSub = this.authService.getCurrentUser().subscribe(user => {
+      this.isRestaurantOwner = user?.role === 'restaurant_owner';
+    });
+    this.subscriptions.push(userSub);
+
+    this.orderId = this.route.snapshot.params['id'];
+    if (this.orderId) {
+      this.loadOrderDetails();
+    } else {
+      this.router.navigate(['/orders']);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
+  loadOrderDetails(): void {
+    this.loading = true;
+    this.clearMessages();
+
+    const orderSub = this.orderService.getOrderById(this.orderId).subscribe({
+      next: (response: any) => {
+        if (response.success) {
+          this.order = response.data;
+        } else {
+          this.errorMessage = response.message || 'Failed to load order details';
+        }
+        this.loading = false;
+      },
+      error: (error: any) => {
+        console.error('Error loading order details:', error);
+        this.errorMessage = 'Failed to load order details';
+        this.loading = false;
+        this.hideMessageAfterDelay();
+      }
+    });
+    this.subscriptions.push(orderSub);
+  }
+
+  getStatusText(status: string): string {
+    const statusTexts: { [key: string]: string } = {
+      'pending': 'Pending',
+      'confirmed': 'Confirmed',
+      'preparing': 'Preparing',
+      'ready': 'Ready for Pickup',
+      'out_for_delivery': 'Out for Delivery',
+      'delivered': 'Delivered',
+      'cancelled': 'Cancelled'
+    };
+    return statusTexts[status] || status;
+  }
+
+  getStatusClass(status: string): string {
+    const statusClasses: { [key: string]: string } = {
+      'pending': 'status-pending',
+      'confirmed': 'status-confirmed',
+      'preparing': 'status-preparing',
+      'ready': 'status-ready',
+      'out_for_delivery': 'status-delivery',
+      'delivered': 'status-delivered',
+      'cancelled': 'status-cancelled'
+    };
+    return statusClasses[status] || 'status-default';
+  }
+
+  getPaymentStatusClass(status: string): string {
+    const statusClasses: { [key: string]: string } = {
+      'pending': 'payment-pending',
+      'paid': 'payment-paid',
+      'failed': 'payment-failed',
+      'refunded': 'payment-refunded'
+    };
+    return statusClasses[status] || 'payment-default';
+  }
+
+  trackOrder(): void {
+    // Navigate to tracking page or show tracking modal
+    console.log('Tracking order:', this.orderId);
+  }
+
+  cancelOrder(): void {
+    if (confirm('Are you sure you want to cancel this order?')) {
+      const cancelData = {
+        reason: 'Customer requested cancellation',
+        details: 'Order cancelled by customer'
+      };
+
+      const cancelSub = this.orderService.cancelOrder(this.orderId, cancelData).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.loadOrderDetails(); // Reload to get updated status
+          } else {
+            this.errorMessage = response.message || 'Failed to cancel order';
+            this.hideMessageAfterDelay();
+          }
+        },
+        error: (error) => {
+          console.error('Error cancelling order:', error);
+          this.errorMessage = 'Failed to cancel order';
+          this.hideMessageAfterDelay();
+        }
+      });
+      this.subscriptions.push(cancelSub);
+    }
+  }
+
+  rateOrder(): void {
+    // TODO: Implement rating functionality
+    console.log('Rating order:', this.orderId);
+  }
+
+  // Restaurant owner specific methods
+  updateOrderStatus(newStatus: OrderStatus): void {
+    if (!this.isRestaurantOwner) return;
+
+    const statusData: UpdateStatusRequest = {
+      status: newStatus,
+      notes: `Status updated by restaurant to ${this.getStatusText(newStatus)}`
+    };
+
+    const updateSub = this.orderService.updateOrderStatus(this.orderId, statusData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.successMessage = `Order status updated to ${this.getStatusText(newStatus)}`;
+          this.loadOrderDetails(); // Reload to get updated status
+          this.hideMessageAfterDelay();
+        } else {
+          this.errorMessage = response.message || 'Failed to update order status';
+          this.hideMessageAfterDelay();
+        }
+      },
+      error: (error) => {
+        console.error('Error updating order status:', error);
+        this.errorMessage = 'Failed to update order status';
+        this.hideMessageAfterDelay();
+      }
+    });
+    this.subscriptions.push(updateSub);
+  }
+
+  confirmOrder(): void {
+    this.updateOrderStatus('confirmed');
+  }
+
+  startPreparing(): void {
+    this.updateOrderStatus('preparing');
+  }
+
+  markReady(): void {
+    this.updateOrderStatus('ready');
+  }
+
+  markOutForDelivery(): void {
+    this.updateOrderStatus('out_for_delivery');
+  }
+
+  markDelivered(): void {
+    this.updateOrderStatus('delivered');
+  }
+
+  rejectOrder(): void {
+    if (confirm('Are you sure you want to reject this order? This action cannot be undone.')) {
+      this.updateOrderStatus('cancelled');
+    }
+  }
+
+  formatCurrency(amount: number): string {
+    return `${amount.toFixed(2)} EGP`;
+  }
+
+  formatDate(date: Date | string): string {
+    const d = new Date(date);
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  private clearMessages(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
+  private hideMessageAfterDelay(): void {
+    setTimeout(() => {
+      this.clearMessages();
+    }, 5000);
+  }
+}

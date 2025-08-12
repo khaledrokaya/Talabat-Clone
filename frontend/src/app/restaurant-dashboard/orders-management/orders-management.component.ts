@@ -1,8 +1,8 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
-import { OrderService, OrderFilters, OrderStatus, ApiResponse, OrdersListResponse } from '../../shared/services/order.service';
+import { OrderService, OrderFilters, OrderStatus, ApiResponse, OrdersListResponse, OrderSummary } from '../../shared/services/order.service';
 import { Order } from '../../shared/models/order';
 import { WebSocketService } from '../../shared/services/websocket.service';
 
@@ -16,9 +16,10 @@ import { WebSocketService } from '../../shared/services/websocket.service';
 export class OrdersManagementComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
-  orders: Order[] = [];
+  orders: OrderSummary[] = [];
   loading = false;
   pagination: any = null;
+  openDropdownId: string | null = null;
 
   filterForm: FormGroup;
   currentFilters: OrderFilters = {
@@ -35,7 +36,7 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
     total: 0
   };
 
-  selectedOrder: Order | null = null;
+  selectedOrder: any | null = null;
   showOrderModal = false;
 
   constructor(
@@ -53,6 +54,9 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    // Initialize orders array to prevent undefined errors
+    this.orders = [];
+
     this.setupFormSubscriptions();
     this.setupWebSocketConnection();
     this.loadOrders();
@@ -62,6 +66,9 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+
+    // Disconnect WebSocket to prevent connection attempts
+    this.wsService.disconnect();
   }
 
   private setupFormSubscriptions() {
@@ -82,6 +89,13 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
   }
 
   private setupWebSocketConnection() {
+    // Only attempt WebSocket connection if user is authenticated
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.warn('No authentication token available, skipping WebSocket connection');
+      return;
+    }
+
     // Listen for real-time order updates
     this.wsService.connect('orders');
 
@@ -106,15 +120,29 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
     this.orderService.getOrders(this.currentFilters)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (response: ApiResponse<OrdersListResponse>) => {
-          if (response.success) {
-            this.orders = response.data.orders;
-            this.pagination = response.data.pagination;
+        next: (response: any) => {
+          console.log('Orders API Response:', response);
+          if (response.success && response.data) {
+            // Handle both response formats: direct array or nested orders
+            if (Array.isArray(response.data)) {
+              this.orders = response.data || [];
+              this.pagination = response.meta || null;
+            } else {
+              this.orders = response.data.orders || [];
+              this.pagination = response.data.pagination || response.meta || null;
+            }
+          } else {
+            this.orders = [];
+            this.pagination = null;
           }
+          console.log('Processed orders:', this.orders);
+          console.log('Pagination:', this.pagination);
           this.loading = false;
         },
         error: (error) => {
           console.error('Error loading orders:', error);
+          this.orders = [];
+          this.pagination = null;
           this.loading = false;
         }
       });
@@ -131,16 +159,39 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
     this.orderService.getOrders(statsFilters)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (response: ApiResponse<OrdersListResponse>) => {
-          if (response.success) {
-            const orders = response.data.orders;
+        next: (response: any) => {
+          if (response.success && response.data) {
+            // Handle both response formats: direct array or nested orders
+            let orders: any[] = [];
+            if (Array.isArray(response.data)) {
+              orders = response.data;
+            } else if (response.data.orders) {
+              orders = response.data.orders;
+            }
+
             this.orderStats = {
               pending: orders.filter(o => o.status === 'pending').length,
               preparing: orders.filter(o => o.status === 'preparing').length,
               ready: orders.filter(o => o.status === 'ready').length,
               total: orders.length
             };
+          } else {
+            this.orderStats = {
+              pending: 0,
+              preparing: 0,
+              ready: 0,
+              total: 0
+            };
           }
+        },
+        error: (error) => {
+          console.error('Error loading order stats:', error);
+          this.orderStats = {
+            pending: 0,
+            preparing: 0,
+            ready: 0,
+            total: 0
+          };
         }
       });
   }
@@ -179,9 +230,9 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
     return pages;
   }
 
-  viewOrderDetails(order: Order) {
-    this.selectedOrder = order;
-    this.showOrderModal = true;
+  viewOrderDetails(order: OrderSummary) {
+    // Navigate to order details page
+    window.open(`/orders/details/${order._id}`, '_blank');
   }
 
   closeOrderModal() {
@@ -189,27 +240,65 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
     this.selectedOrder = null;
   }
 
-  updateOrderStatus(order: Order) {
+  updateOrderStatus(order: OrderSummary) {
     const nextStatus = this.orderService.getNextStatus(order.status);
     if (nextStatus) {
-      this.orderService.updateOrderStatusEnhanced(order.id!, {
+      this.orderService.updateOrderStatusEnhanced(order._id!, {
         status: nextStatus
       }).subscribe({
         next: () => {
-          this.updateOrderInList(order.id!, nextStatus);
+          this.updateOrderInList(order._id!, nextStatus);
           this.loadOrderStats();
         }
       });
     }
   }
 
-  cancelOrder(order: Order) {
+  updateOrderToStatus(order: OrderSummary, newStatus: OrderStatus) {
+    if (confirm(`Are you sure you want to update this order to ${newStatus}?`)) {
+      this.orderService.updateOrderStatusEnhanced(order._id!, {
+        status: newStatus
+      }).subscribe({
+        next: () => {
+          this.updateOrderInList(order._id!, newStatus);
+          this.loadOrderStats();
+          this.closeDropdown(); // Close dropdown after successful update
+        },
+        error: (error) => {
+          console.error('Error updating order status:', error);
+          alert('Failed to update order status. Please try again.');
+        }
+      });
+    }
+  }
+
+  toggleDropdown(orderId: string) {
+    if (this.openDropdownId === orderId) {
+      this.closeDropdown();
+    } else {
+      this.openDropdownId = orderId;
+    }
+  }
+
+  closeDropdown() {
+    this.openDropdownId = null;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.dropdown')) {
+      this.closeDropdown();
+    }
+  }
+
+  cancelOrder(order: OrderSummary) {
     if (confirm('Are you sure you want to cancel this order?')) {
-      this.orderService.cancelOrder(order.id!, {
+      this.orderService.cancelOrder(order._id!, {
         reason: 'Cancelled by restaurant'
       }).subscribe({
         next: () => {
-          this.updateOrderInList(order.id!, 'cancelled');
+          this.updateOrderInList(order._id!, 'cancelled');
           this.loadOrderStats();
         }
       });
@@ -217,9 +306,11 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
   }
 
   private updateOrderInList(orderId: string, newStatus: OrderStatus) {
-    const order = this.orders.find(o => o.id === orderId);
-    if (order) {
-      order.status = newStatus;
+    if (this.orders && this.orders.length > 0) {
+      const order = this.orders.find(o => o._id === orderId);
+      if (order) {
+        order.status = newStatus;
+      }
     }
   }
 

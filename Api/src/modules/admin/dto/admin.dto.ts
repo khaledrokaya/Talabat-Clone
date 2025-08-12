@@ -11,7 +11,7 @@ export interface UpdateUserStatusDTO {
 }
 
 export interface GetUsersFilterDTO {
-  role?: 'customer' | 'restaurant_owner' | 'delivery';
+  role?: 'customer' | 'restaurant' | 'delivery';
   status?: 'active' | 'inactive' | 'pending' | 'verified' | 'rejected';
   page?: number;
   limit?: number;

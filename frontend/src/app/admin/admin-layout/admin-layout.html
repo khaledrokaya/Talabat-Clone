@@ -8,8 +8,8 @@
         </button>
         <div class="logo-section">
           <h4 class="mb-0">
-            <i class="fas fa-shield-alt text-primary"></i>
-            Admin Panel
+            <i class="fas fa-motorcycle"></i>
+            Talabat Admin
           </h4>
         </div>
       </div>
@@ -21,7 +21,7 @@
             <small class="admin-role">Administrator</small>
           </div>
           <div class="admin-avatar">
-            <i class="fas fa-user-shield"></i>
+            {{ (currentAdmin?.firstName || 'A')[0] }}{{ (currentAdmin?.lastName || 'D')[0] }}
           </div>
         </div>
 
@@ -55,20 +55,8 @@
           </div>
 
           <div class="nav-section">
-            <h6 class="nav-section-title">Management</h6>
-            <div *ngFor="let item of adminNavItems.slice(3, 6)" class="nav-item" [class.active]="activeTab === item.id"
-              (click)="setActiveTab(item.id)">
-              <div class="nav-link">
-                <i [class]="item.icon"></i>
-                <span class="nav-text">{{ item.label }}</span>
-                <small class="nav-description" *ngIf="!isSidebarCollapsed">{{ item.description }}</small>
-              </div>
-            </div>
-          </div>
-
-          <div class="nav-section">
-            <h6 class="nav-section-title">System</h6>
-            <div *ngFor="let item of adminNavItems.slice(6)" class="nav-item" [class.active]="activeTab === item.id"
+            <h6 class="nav-section-title">Approvals</h6>
+            <div *ngFor="let item of adminNavItems.slice(3)" class="nav-item" [class.active]="activeTab === item.id"
               (click)="setActiveTab(item.id)">
               <div class="nav-link">
                 <i [class]="item.icon"></i>

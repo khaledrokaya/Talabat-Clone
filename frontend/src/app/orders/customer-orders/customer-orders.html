@@ -2,24 +2,62 @@
   <div class="container">
     <h1>My Orders</h1>
 
+    <!-- Filters -->
+    <div class="filters-section" [formGroup]="filterForm">
+      <div class="filter-group">
+        <label for="status">Status:</label>
+        <select id="status" formControlName="status" (change)="onFilterChange()">
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="preparing">Preparing</option>
+          <option value="ready">Ready</option>
+          <option value="out_for_delivery">Out for Delivery</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="startDate">From:</label>
+        <input type="date" id="startDate" formControlName="startDate" (change)="onFilterChange()">
+      </div>
+
+      <div class="filter-group">
+        <label for="endDate">To:</label>
+        <input type="date" id="endDate" formControlName="endDate" (change)="onFilterChange()">
+      </div>
+    </div>
+
     <!-- Loading State -->
     <div class="loading" *ngIf="loading">
-      <p>Loading orders...</p>
+      <div class="loading-spinner"></div>
+      <p>Loading your orders...</p>
     </div>
 
     <!-- Error State -->
+    <!-- Error State -->
     <div class="error-message" *ngIf="errorMessage">
+      <span class="error-icon">⚠️</span>
       {{ errorMessage }}
     </div>
 
     <!-- Orders List -->
+
+    <!-- Orders List -->
     <div class="orders-list" *ngIf="!loading && !errorMessage">
-      <div class="order-card" *ngFor="let order of orders">
+      <div *ngIf="orders && orders.length === 0" class="no-orders">
+        <div class="no-orders-icon">📦</div>
+        <h3>No Orders Found</h3>
+        <p>You haven't placed any orders yet. Start browsing restaurants to place your first order!</p>
+      </div>
+
+      <div class="order-card" *ngFor="let order of orders; trackBy: trackByOrderId">
         <div class="order-header">
           <div class="order-info">
-            <h3>Order #{{ order.id.slice(-6) }}</h3>
-            <div class="restaurant-name">{{ order.restaurant.name || 'Restaurant not specified' }}</div>
-            <p class="order-date">{{ order.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+            <h3>Order #{{ order.orderNumber || order._id.slice(-6) || 'N/A' }}</h3>
+            <div class="restaurant-name">Restaurant</div>
+            <p class="order-date">{{ formatDate(order.createdAt) }}</p>
           </div>
           <div class="order-status">
             <span class="status-badge" [ngClass]="getStatusClass(order.status)">
@@ -28,33 +66,89 @@
           </div>
         </div>
 
-        <div class="order-items">
-          <div class="order-item" *ngFor="let item of order.items">
-            <div class="item-name">{{ item.mealName }}</div>
-            <span class="item-quantity">x{{ item.quantity }}</span>
-            <span class="item-price">{{ item.price * item.quantity }} SAR</span>
+        <div class="order-summary">
+          <div class="order-items">
+            <div class="items-grid">
+              @if (order.items && order.items.length > 0) {
+              @for (item of order.items | slice:0:3; track $index) {
+              <div class="item-card">
+                <span class="item-name">{{ item.name }}</span>
+                <span class="item-quantity">x{{ item.quantity }}</span>
+              </div>
+              }
+              } @else {
+              <div class="no-items">
+                <span>No items available</span>
+              </div>
+              }
+            </div>
+            @if (hasMoreThanThreeItems(order)) {
+            <div class="more-items">
+              <span>+{{ getExtraItemsCount(order) }} more items</span>
+            </div>
+            } <div class="pricing-details">
+              <div class="price-row" *ngIf="order.subtotal">
+                <span>Subtotal:</span>
+                <span>{{ formatCurrency(order.subtotal) }}</span>
+              </div>
+              <div class="price-row" *ngIf="order.deliveryFee">
+                <span>Delivery Fee:</span>
+                <span>{{ formatCurrency(order.deliveryFee) }}</span>
+              </div>
+              <div class="price-row" *ngIf="order.tax">
+                <span>Tax:</span>
+                <span>{{ formatCurrency(order.tax) }}</span>
+              </div>
+              <div class="price-row total">
+                <span>Total:</span>
+                <span>{{ formatCurrency(order.totalAmount || order.pricing?.total || 0) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="order-footer">
+            <div class="order-actions">
+              <button class="btn btn-secondary btn-sm" [routerLink]="['/orders/details/', order._id]"
+                title="View order details">
+                View Details
+              </button>
+
+              <button class="btn btn-primary btn-sm"
+                *ngIf="order.status === 'out_for_delivery' || order.status === 'preparing'"
+                (click)="trackOrder(order._id)" title="Track order">
+                Track Order
+              </button>
+
+              <button class="btn btn-success btn-sm" *ngIf="order.status === 'delivered'" (click)="rateOrder(order._id)"
+                title="Rate this order">
+                Rate Order
+              </button>
+            </div>
           </div>
         </div>
 
-        <div class="order-footer">
-          <div class="order-total">
-            <span>Total: {{ order.totalAmount }} SAR</span>
-          </div>
-          <div class="order-actions">
-            <button class="btn btn-secondary btn-sm" [routerLink]="['/orders', order.id]">
-              View Details
-            </button>
-          </div>
-        </div>
-      </div>
+        <!-- Pagination -->
+        <div class="pagination" *ngIf="pagination && pagination.pages > 1">
+          <button class="btn btn-outline" [disabled]="!pagination.hasPrev" (click)="onPageChange(pagination.page - 1)">
+            Previous
+          </button>
 
-      <!-- No Orders -->
-      <div class="no-orders" *ngIf="orders.length === 0">
-        <div class="no-orders-icon">📦</div>
-        <h3>No Orders</h3>
-        <p>You haven't placed any orders yet. Start browsing restaurants and order your favorite meal!</p>
-        <a routerLink="/restaurants" class="btn btn-primary">Browse Restaurants</a>
+          <span class="page-info">
+            Page {{ pagination.page }} of {{ pagination.pages }}
+          </span>
+
+          <button class="btn btn-outline" [disabled]="!pagination.hasNext" (click)="onPageChange(pagination.page + 1)">
+            Next
+          </button>
+        </div>
+
+        <!-- No Orders -->
+        <div class="no-orders" *ngIf="orders.length === 0">
+          <div class="no-orders-icon">🍽️</div>
+          <h3>No Orders Found</h3>
+          <p>You haven't placed any orders yet. Start browsing restaurants and order your favorite meals!</p>
+          <a routerLink="/restaurants" class="btn btn-primary">Browse Restaurants</a>
+        </div>
       </div>
     </div>
   </div>
-</div>

@@ -19,58 +19,37 @@ export class AdminLayout implements OnInit {
     {
       id: 'dashboard',
       label: 'Dashboard',
-      icon: 'fas fa-tachometer-alt',
+      icon: 'fas fa-chart-line',
       route: '/admin/dashboard',
-      description: 'Overview and analytics'
+      description: 'Overview and quick stats'
     },
     {
       id: 'users',
-      label: 'Users Management',
+      label: 'Users',
       icon: 'fas fa-users',
       route: '/admin/users',
-      description: 'Manage customers and users'
-    },
-    {
-      id: 'restaurants',
-      label: 'Restaurants',
-      icon: 'fas fa-utensils',
-      route: '/admin/restaurants',
-      description: 'Manage restaurants and approvals'
-    },
-    {
-      id: 'delivery',
-      label: 'Delivery Partners',
-      icon: 'fas fa-motorcycle',
-      route: '/admin/delivery',
-      description: 'Manage delivery personnel'
+      description: 'Manage users'
     },
     {
       id: 'orders',
-      label: 'Orders Management',
-      icon: 'fas fa-clipboard-list',
+      label: 'Order Statistics',
+      icon: 'fas fa-chart-bar',
       route: '/admin/orders',
-      description: 'Track and manage orders'
+      description: 'View order statistics'
     },
     {
-      id: 'approvals',
-      label: 'Pending Approvals',
-      icon: 'fas fa-check-circle',
-      route: '/admin/approvals',
-      description: 'Review pending requests'
+      id: 'restaurants',
+      label: 'Restaurant Approvals',
+      icon: 'fas fa-store',
+      route: '/admin/restaurants',
+      description: 'Approve pending restaurants'
     },
     {
-      id: 'analytics',
-      label: 'Analytics',
-      icon: 'fas fa-chart-line',
-      route: '/admin/analytics',
-      description: 'Detailed reports and insights'
-    },
-    {
-      id: 'settings',
-      label: 'System Settings',
-      icon: 'fas fa-cog',
-      route: '/admin/settings',
-      description: 'Platform configuration'
+      id: 'delivery',
+      label: 'Delivery Partner Approvals',
+      icon: 'fas fa-truck',
+      route: '/admin/delivery',
+      description: 'Approve delivery partners'
     }
   ];
 
@@ -86,7 +65,6 @@ export class AdminLayout implements OnInit {
   }
 
   loadAdminData(): void {
-    // Get admin data from auth service
     this.currentAdmin = this.authService.getCurrentUser();
   }
 

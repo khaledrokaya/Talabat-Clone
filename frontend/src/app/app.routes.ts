@@ -10,7 +10,7 @@ export const routes: Routes = [
   { path: 'checkout', loadChildren: () => import('./checkout/checkout.routes').then(m => m.CHECKOUT_ROUTES), canActivate: [customerGuard] },
   { path: 'orders', loadChildren: () => import('./orders/orders.routes').then(m => m.ORDERS_ROUTES), canActivate: [authGuard] },
   { path: 'profile', loadChildren: () => import('./profile/profile.routes').then(m => m.PROFILE_ROUTES), canActivate: [authGuard] },
-  { path: 'admin', loadChildren: () => import('./admin/admin.routes').then(m => m.ADMIN_ROUTES), canActivate: [adminGuard] },
+  { path: 'admin', loadChildren: () => import('./admin/admin.routes').then(m => m.AdminRoutes), canActivate: [adminGuard] },
   { path: 'restaurant-dashboard', loadChildren: () => import('./restaurant-dashboard/restaurant-dashboard.routes').then(m => m.RESTAURANT_DASHBOARD_ROUTES), canActivate: [restaurantGuard] },
   { path: 'delivery-dashboard', redirectTo: '/orders', pathMatch: 'full' }, // Delivery users use orders section
   { path: 'unauthorized', component: UnauthorizedComponent },
