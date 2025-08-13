@@ -127,25 +127,64 @@ export class RestaurantsManagement implements OnInit {
     this.showRestaurantModal = true;
   }
 
-  approveRestaurant(restaurant: any): void {
+  approveRestaurant(restaurant: any, reason: string): void {
+    this.isLoading = true;
     this.actionType = 'approve';
     this.currentRestaurant = restaurant;
     this.currentRestaurantId = restaurant._id || restaurant.id;
+    console.log(reason);
     this.approvalForm.patchValue({
       status: 'verified',
-      reason: ''
+      reason: reason
     });
+    this.adminService.approveRestaurant(this.currentRestaurantId, {
+      status: 'verified',
+      reason: reason
+    }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.successMessage = response.message;
+          this.loadPendingRestaurants();
+          this.closeModal();
+        } else {
+          this.errorMessage = 'Failed to approve restaurant';
+        }
+      },
+      error: (error) => {
+        this.errorMessage = 'Error approving restaurant: ' + (error.error?.message || 'Unknown error');
+      }
+    });
+    this.isLoading = false;
     this.showApprovalModal = true;
   }
 
-  rejectRestaurant(restaurant: any): void {
+  rejectRestaurant(restaurant: any, reason: string): void {
+    this.isLoading = true;
     this.actionType = 'reject';
     this.currentRestaurant = restaurant;
     this.currentRestaurantId = restaurant._id || restaurant.id;
     this.approvalForm.patchValue({
       status: 'rejected',
-      reason: ''
+      reason: reason
     });
+    this.adminService.rejectRestaurant(this.currentRestaurantId, {
+      status: 'rejected',
+      reason: reason
+    }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.successMessage = response.message;
+          this.loadPendingRestaurants();
+          this.closeModal();
+        } else {
+          this.errorMessage = 'Failed to reject restaurant';
+        }
+      },
+      error: (error) => {
+        this.errorMessage = 'Error rejecting restaurant: ' + (error.error?.message || 'Unknown error');
+      }
+    });
+    this.isLoading = false;
     this.showApprovalModal = true;
   }
 

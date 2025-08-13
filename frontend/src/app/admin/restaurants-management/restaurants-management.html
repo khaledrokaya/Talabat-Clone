@@ -3,8 +3,8 @@
   <div class="page-header">
     <div class="header-content">
       <div class="header-info">
-        <h1>
-          <i class="fas fa-utensils"></i>
+        <h1 class="text-light">
+          <i class="fas fa-chart-bar"></i>
           Restaurants Management
         </h1>
         <p>Review and manage restaurant applications and existing establishments</p>
@@ -24,11 +24,8 @@
         </div>
       </div>
       <div class="header-actions">
-        <button class="btn btn-outline-primary" (click)="loadPendingRestaurants()" [disabled]="isLoading">
-          <i class="fas fa-download"></i>
-          Export Data
-        </button>
-        <button class="btn btn-primary" (click)="loadPendingRestaurants()" [disabled]="isLoading">
+        <button class="btn btn-outline-light bg-light text-dark " (click)="loadPendingRestaurants()"
+          [disabled]="isLoading">
           <i class="fas fa-sync" [class.fa-spin]="isLoading"></i>
           Refresh Data
         </button>
@@ -129,17 +126,17 @@
         <!-- Restaurant Header -->
         <div class="restaurant-header">
           <div class="restaurant-avatar">
-            {{ getRestaurantName(restaurant).charAt(0).toUpperCase() }}
+            <img src="{{ restaurant.image }}" alt="">
           </div>
           <div class="restaurant-info">
             <h5 class="restaurant-name">{{ getRestaurantName(restaurant) }}</h5>
             <p class="owner-name">{{ getOwnerName(restaurant) }}</p>
             <div class="status-badges">
               <span class="status-badge"
-                [ngClass]="'badge bg-' + (restaurant.status === 'pending' ? 'warning' : restaurant.status === 'verified' ? 'success' : 'danger')">
+                [ngClass]="'badge bg-' + (restaurant.verificationStatus === 'pending' ? 'warning' : restaurant.verificationStatus === 'verified' ? 'success' : 'danger')">
                 <i
-                  [class]="'fas fa-' + (restaurant.status === 'pending' ? 'clock' : restaurant.status === 'verified' ? 'check' : 'times')"></i>
-                {{ restaurant.status | titlecase }}
+                  [class]="'fas fa-' + (restaurant.verificationStatus === 'pending' ? 'clock' : restaurant.verificationStatus === 'verified' ? 'check' : 'times')"></i>
+                {{ restaurant.verificationStatus }}
               </span>
             </div>
           </div>
@@ -165,14 +162,6 @@
           </div>
         </div>
 
-        <!-- Business License -->
-        <div class="business-info" *ngIf="getBusinessLicense(restaurant)">
-          <div class="detail-item">
-            <i class="fas fa-certificate"></i>
-            <span>License: {{ getBusinessLicense(restaurant) }}</span>
-          </div>
-        </div>
-
         <!-- Action Buttons -->
         <div class="restaurant-actions">
           <button class="btn btn-sm btn-outline-primary" (click)="viewRestaurant(restaurant)" title="View Details">
@@ -180,14 +169,14 @@
             View
           </button>
 
-          <button *ngIf="restaurant.status === 'pending'" class="btn btn-sm btn-success"
-            (click)="approveRestaurant(restaurant)" title="Approve Restaurant">
+          <button *ngIf="restaurant.verificationStatus=== 'pending'" class="btn btn-sm btn-success"
+            (click)="showApprovalModal = true; currentRestaurant = restaurant" title="Approve Restaurant">
             <i class="fas fa-check"></i>
             Approve
           </button>
 
-          <button *ngIf="restaurant.status === 'pending'" class="btn btn-sm btn-warning"
-            (click)="rejectRestaurant(restaurant)" title="Reject Restaurant">
+          <button *ngIf="restaurant.verificationStatus=== 'pending'" class="btn btn-sm btn-warning"
+            (click)="showApprovalModal = true; currentRestaurant = restaurant" title="Reject Restaurant">
             <i class="fas fa-times"></i>
             Reject
           </button>
@@ -216,8 +205,10 @@
     <!-- Pagination -->
     <div class="pagination-section" *ngIf="totalPages > 1">
       <div class="pagination-info">
-        <span>Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ currentPage * pageSize > filteredRestaurants.length ?
-          filteredRestaurants.length : currentPage * pageSize }} of {{ filteredRestaurants.length }} restaurants</span>
+        <span>Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ currentPage * pageSize >
+          filteredRestaurants.length ?
+          filteredRestaurants.length : currentPage * pageSize }} of {{ filteredRestaurants.length }}
+          restaurants</span>
       </div>
       <nav class="pagination">
         <button class="page-btn" [disabled]="currentPage === 1" (click)="onPageChange(currentPage - 1)">
@@ -251,8 +242,9 @@
 </div>
 
 <!-- Restaurant Details Modal -->
-<div class="modal" [class.show]="showRestaurantModal" [style.display]="showRestaurantModal ? 'block' : 'none'">
-  <div class="modal-dialog modal-lg">
+<div class="modal fade restaurant-details-modal" [class.show]="showRestaurantModal"
+  [style.display]="showRestaurantModal ? 'block' : 'none'">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">
@@ -265,17 +257,17 @@
         <div class="restaurant-profile">
           <div class="profile-header">
             <div class="restaurant-avatar-large">
-              {{ getRestaurantName(currentRestaurant).charAt(0).toUpperCase() }}
+              <img src="{{ currentRestaurant.image }}" alt="">
             </div>
             <div class="profile-info">
               <h3>{{ getRestaurantName(currentRestaurant) }}</h3>
               <p class="owner-info">Owner: {{ getOwnerName(currentRestaurant) }}</p>
               <div class="status-badges">
                 <span class="status-badge"
-                  [ngClass]="'badge bg-' + (currentRestaurant.status === 'pending' ? 'warning' : currentRestaurant.status === 'verified' ? 'success' : 'danger')">
+                  [ngClass]="'badge bg-' + (currentRestaurant.verificationStatus === 'pending' ? 'warning' : currentRestaurant.verificationStatus === 'verified' ? 'success' : 'danger')">
                   <i
-                    [class]="'fas fa-' + (currentRestaurant.status === 'pending' ? 'clock' : currentRestaurant.status === 'verified' ? 'check' : 'times')"></i>
-                  {{ currentRestaurant.status | titlecase }}
+                    [class]="'fas fa-' + (currentRestaurant.verificationStatus === 'pending' ? 'clock' : currentRestaurant.verificationStatus === 'verified' ? 'check' : 'times')"></i>
+                  {{ currentRestaurant.verificationStatus | titlecase }}
                 </span>
               </div>
             </div>
@@ -303,10 +295,6 @@
               <div class="col-md-6">
                 <h6>Business Information</h6>
                 <div class="detail-group">
-                  <div class="detail-item" *ngIf="getBusinessLicense(currentRestaurant)">
-                    <span class="detail-label">License:</span>
-                    <span class="detail-value">{{ getBusinessLicense(currentRestaurant) }}</span>
-                  </div>
                   <div class="detail-item">
                     <span class="detail-label">Applied:</span>
                     <span class="detail-value">{{ formatDate(getCreatedDate(currentRestaurant)) }}</span>
@@ -315,8 +303,9 @@
                     <span class="detail-label">Status:</span>
                     <span class="detail-value">
                       <span class="status-badge"
-                        [ngClass]="'badge bg-' + (currentRestaurant.status === 'pending' ? 'warning' : currentRestaurant.status === 'verified' ? 'success' : 'danger')">
-                        {{ currentRestaurant.status | titlecase }}
+                        [ngClass]="'badge bg-' + (currentRestaurant.verificationStatus === 'pending' ? 'warning' : currentRestaurant.verificationStatus === 'verified' ? 'success' : 'danger')">
+                        {{ currentRestaurant.verificationStatus
+                        | titlecase }}
                       </span>
                     </span>
                   </div>
@@ -328,13 +317,13 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModal()">Close</button>
-        <button *ngIf="currentRestaurant?.status === 'pending'" type="button" class="btn btn-success"
-          (click)="approveRestaurant(currentRestaurant)">
+        <button *ngIf="currentRestaurant?.verificationStatus=== 'pending'" type="button" class="btn btn-success"
+          (click)="showApprovalModal = true">
           <i class="fas fa-check"></i>
           Approve
         </button>
-        <button *ngIf="currentRestaurant?.status === 'pending'" type="button" class="btn btn-warning"
-          (click)="rejectRestaurant(currentRestaurant)">
+        <button *ngIf="currentRestaurant?.verificationStatus === 'pending'" type="button" class="btn btn-warning"
+          (click)="showApprovalModal = true">
           <i class="fas fa-times"></i>
           Reject
         </button>
@@ -345,7 +334,7 @@
 
 <!-- Approval Modal -->
 <div class="modal" [class.show]="showApprovalModal" [style.display]="showApprovalModal ? 'block' : 'none'">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">
@@ -354,7 +343,7 @@
         </h5>
         <button type="button" class="btn-close" (click)="closeModal()"></button>
       </div>
-      <form [formGroup]="approvalForm" (ngSubmit)="submitApproval()">
+      <form [formGroup]="approvalForm" (ngSubmit)="approveRestaurant(currentRestaurant, reason.value)">
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">Action</label>
@@ -365,13 +354,13 @@
           </div>
           <div class="mb-3">
             <label class="form-label">Reason/Notes</label>
-            <textarea class="form-control" formControlName="reason" rows="3"
+            <textarea class="form-control" formControlName="reason" #reason rows="3"
               placeholder="Optional reason for your decision..."></textarea>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary" [disabled]="!approvalForm.valid">
+          <button type="submit" class="btn btn-primary" [disabled]="isLoading">
             Submit Decision
           </button>
         </div>
@@ -382,7 +371,7 @@
 
 <!-- Delete Confirmation Modal -->
 <div class="modal" [class.show]="showDeleteModal" [style.display]="showDeleteModal ? 'block' : 'none'">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">

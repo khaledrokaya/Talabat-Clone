@@ -201,29 +201,71 @@ export interface RestaurantsResponse {
 
 // Delivery Management Interfaces
 export interface AdminDelivery {
-  id: string;
+  _id: string;
   email: string;
   firstName: string;
   lastName: string;
   phone: string;
-  driverLicense: string;
+  role: string;
+  driverLicense?: string;
   vehicleInfo: {
     type: 'car' | 'motorcycle' | 'bicycle';
-    brand: string;
+    brand?: string;
     model: string;
     plateNumber: string;
+    color?: string;
+    licensePlate?: string;
   };
+  documents?: {
+    licenseNumber?: string;
+    licenseImage?: string;
+    vehicleRegistration?: string;
+    identityProof?: string;
+  };
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+  deliveryZones?: string[];
+  workingHours?: {
+    [key: string]: {
+      start: string;
+      end: string;
+      isWorking: boolean;
+    };
+  };
+  currentLocation?: {
+    latitude?: number;
+    longitude?: number;
+    lastUpdated?: string;
+  };
+  ratings?: {
+    averageRating: number;
+    totalReviews: number;
+    ratingBreakdown?: {
+      [key: string]: number;
+    };
+  };
+  earnings?: {
+    totalEarnings: number;
+    todayEarnings: number;
+    weeklyEarnings?: number;
+    monthlyEarnings?: number;
+  };
+  deliveryHistory?: any[];
   isActive: boolean;
-  isVerified: boolean;
+  isEmailVerified?: boolean;
+  isVerified?: boolean;
   verificationStatus: 'pending' | 'verified' | 'rejected';
   isOnline: boolean;
+  isAvailable?: boolean;
   createdAt: string;
-  totalDeliveries: number;
-  averageRating: number;
-  currentLocation?: {
-    latitude: number;
-    longitude: number;
-  };
+  updatedAt?: string;
+  lastLogin?: string;
+  totalDeliveries?: number;
+  averageRating?: number;
 }
 
 export interface DeliveryResponse {
@@ -443,25 +485,25 @@ export class AdminService {
   }
 
   approveRestaurant(restaurantId: string, request: ApprovalRequest): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/admin/restaurants/${restaurantId}/approve`, request, {
+    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/admin/users/${restaurantId}/approve`, request, {
       withCredentials: true
     });
   }
 
   rejectRestaurant(restaurantId: string, request: ApprovalRequest): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/admin/restaurants/${restaurantId}/reject`, request, {
+    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/admin/users/${restaurantId}/reject`, request, {
       withCredentials: true
     });
   }
 
   updateRestaurantStatus(restaurantId: string, request: StatusUpdateRequest): Observable<{ success: boolean; message: string }> {
-    return this.http.patch<{ success: boolean; message: string }>(`${this.apiUrl}/admin/restaurants/${restaurantId}/status`, request, {
+    return this.http.patch<{ success: boolean; message: string }>(`${this.apiUrl}/admin/users/${restaurantId}/status`, request, {
       withCredentials: true
     });
   }
 
   deleteRestaurant(restaurantId: string): Observable<{ success: boolean; message: string }> {
-    return this.http.delete<{ success: boolean; message: string }>(`${this.apiUrl}/admin/restaurants/${restaurantId}`, {
+    return this.http.delete<{ success: boolean; message: string }>(`${this.apiUrl}/admin/users/${restaurantId}`, {
       withCredentials: true
     });
   }

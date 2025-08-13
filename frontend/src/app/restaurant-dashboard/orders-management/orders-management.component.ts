@@ -232,7 +232,7 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
 
   viewOrderDetails(order: OrderSummary) {
     // Navigate to order details page
-    window.open(`/orders/details/${order._id}`, '_blank');
+    window.open(`/orders/details/${order._id}`, "_self");
   }
 
   closeOrderModal() {

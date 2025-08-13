@@ -3,11 +3,11 @@
   <div class="page-header">
     <div class="header-content">
       <div class="header-info">
-        <h1>
+        <h1 class="text-light">
           <i class="fas fa-motorcycle"></i>
-          Delivery Management
+          Delivery Partner Review
         </h1>
-        <p>Review and manage delivery partner applications and existing personnel</p>
+        <p>Review pending applications and manage existing delivery partners</p>
         <div class="quick-stats">
           <div class="stat-item">
             <span class="stat-value">{{ getDeliveryStats().total }}</span>
@@ -18,17 +18,13 @@
             <span class="stat-label">Pending Approval</span>
           </div>
           <div class="stat-item">
-            <span class="stat-value">{{ getDeliveryStats().unverified }}</span>
-            <span class="stat-label">Unverified Partners</span>
+            <span class="stat-value">{{ getDeliveryStats().verified }}</span>
+            <span class="stat-label">Verified Partners</span>
           </div>
         </div>
       </div>
       <div class="header-actions">
-        <button class="btn btn-outline-primary" (click)="refreshData()" [disabled]="isLoading">
-          <i class="fas fa-download"></i>
-          Export Data
-        </button>
-        <button class="btn btn-primary" (click)="refreshData()" [disabled]="isLoading">
+        <button class="btn btn-outline-light" (click)="refreshData()" [disabled]="isLoading">
           <i class="fas fa-sync" [class.fa-spin]="isLoading"></i>
           Refresh Data
         </button>
@@ -49,71 +45,6 @@
     <button type="button" class="btn-close" (click)="clearMessages()"></button>
   </div>
 
-  <!-- Enhanced Filters Section -->
-  <div class="filters-section">
-    <div class="filters-card">
-      <div class="filters-header">
-        <h3><i class="fas fa-filter"></i> Search & Filter Delivery Partners</h3>
-        <button class="btn btn-sm btn-outline-secondary" (click)="onSearchChange()">
-          <i class="fas fa-times"></i>
-          Clear All
-        </button>
-      </div>
-
-      <div class="filters-content">
-        <div class="filters-grid">
-          <div class="filter-group">
-            <label class="filter-label">Search Partners</label>
-            <div class="search-input">
-              <i class="fas fa-search"></i>
-              <input type="text" placeholder="Search by name, email, phone, or vehicle type..." [(ngModel)]="searchTerm"
-                (ngModelChange)="onSearchChange()" />
-            </div>
-          </div>
-
-          <div class="filter-group">
-            <label class="filter-label">Status Filter</label>
-            <select class="filter-select" [(ngModel)]="searchTerm" (change)="onSearchChange()">
-              <option value="">All Statuses</option>
-              <option value="pending">Pending Approval</option>
-              <option value="verified">Verified</option>
-              <option value="rejected">Rejected</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label class="filter-label">Vehicle Type</label>
-            <select class="filter-select" [(ngModel)]="searchTerm" (change)="onSearchChange()">
-              <option value="">All Vehicles</option>
-              <option value="motorcycle">Motorcycle</option>
-              <option value="car">Car</option>
-              <option value="bicycle">Bicycle</option>
-              <option value="scooter">Scooter</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label class="filter-label">Items Per Page</label>
-            <select class="filter-select" [(ngModel)]="pageSize" (change)="calculatePagination()">
-              <option value="10">10 per page</option>
-              <option value="25">25 per page</option>
-              <option value="50">50 per page</option>
-              <option value="100">100 per page</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="filters-summary">
-          <div class="summary-item">
-            <i class="fas fa-info-circle"></i>
-            <span>Showing {{ filteredDelivery.length }} of {{ getDeliveryStats().total }} delivery partners</span>
-            <span *ngIf="currentPage > 1" class="page-info">• Page {{ currentPage }} of {{ totalPages }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Loading State -->
   <div *ngIf="isLoading" class="loading-state">
     <div class="loading-content">
@@ -130,98 +61,94 @@
         <!-- Delivery Partner Header -->
         <div class="delivery-header">
           <div class="delivery-avatar">
-            {{ delivery.firstName.charAt(0).toUpperCase() }}
+            <img [src]="delivery.documents?.identityProof || 'assets/default-avatar.png'" alt="Delivery Partner"
+              (error)="handleImageError($event)" class="avatar-image">
           </div>
           <div class="delivery-info">
             <h5 class="delivery-name">{{ delivery.firstName }} {{ delivery.lastName }}</h5>
-            <p class="delivery-id">ID: {{ delivery.id.substring(0, 8) }}</p>
+            <p class="delivery-id">ID: {{ delivery._id.substring(0, 8) }}</p>
             <div class="status-badges">
               <span class="status-badge" [ngClass]="getStatusBadgeClass(delivery.verificationStatus)">
                 <i
                   [class]="'fas fa-' + (delivery.verificationStatus === 'pending' ? 'clock' : delivery.verificationStatus === 'verified' ? 'check' : 'times')"></i>
                 {{ delivery.verificationStatus | titlecase }}
               </span>
+              <span class="status-badge" [ngClass]="delivery.isOnline ? 'online' : 'offline'">
+                <i class="fas fa-circle"></i>
+                {{ delivery.isOnline ? 'Online' : 'Offline' }}
+              </span>
             </div>
           </div>
         </div>
 
-        <!-- Contact Information -->
-        <div class="contact-details">
-          <div class="detail-item">
+        <!-- Quick Info Section -->
+        <div class="quick-info-grid">
+          <div class="info-item">
             <i class="fas fa-envelope"></i>
             <span>{{ delivery.email }}</span>
           </div>
-          <div class="detail-item">
+          <div class="info-item">
             <i class="fas fa-phone"></i>
             <span>{{ delivery.phone }}</span>
           </div>
-          <div class="detail-item">
-            <i class="fas fa-id-card"></i>
-            <span>License: {{ delivery.driverLicense }}</span>
+          <div class="info-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>{{ delivery.address?.city }}, {{ delivery.address?.state }}</span>
           </div>
-          <div class="detail-item">
-            <i class="fas fa-clock"></i>
+          <div class="info-item">
+            <i class="fas fa-calendar-day"></i>
             <span>Applied: {{ formatDate(delivery.createdAt) }}</span>
           </div>
         </div>
 
-        <!-- Vehicle Information -->
-        <div class="vehicle-info">
-          <div class="vehicle-header">
-            <i class="fas fa-motorcycle"></i>
-            <span>Vehicle Details</span>
-          </div>
-          <div class="vehicle-details">
-            <div class="vehicle-item">
-              <span class="vehicle-type">
-                <i [class]="getVehicleIcon(delivery.vehicleInfo.type)"></i>
-                {{ delivery.vehicleInfo.type | titlecase }}
-              </span>
+        <!-- Document Verification Section -->
+        <div class="verification-section">
+          <h6 class="section-title">
+            <i class="fas fa-file-alt"></i> Document Verification
+          </h6>
+          <div class="document-grid">
+            <div class="document-item" (click)="openDocument(delivery.documents?.licenseImage)">
+              <i class="fas fa-id-card"></i>
+              <span>Driver License</span>
+              <span class="document-status">{{ delivery.documents?.licenseNumber || 'Not provided' }}</span>
             </div>
-            <div class="vehicle-item">
-              <span class="vehicle-model">{{ delivery.vehicleInfo.brand }} {{ delivery.vehicleInfo.model }}</span>
+            <div class="document-item" (click)="openDocument(delivery.documents?.vehicleRegistration)">
+              <i class="fas fa-car"></i>
+              <span>Vehicle Registration</span>
             </div>
-            <div class="vehicle-item">
-              <span class="vehicle-plate">{{ delivery.vehicleInfo.plateNumber }}</span>
+            <div class="document-item" (click)="openDocument(delivery.documents?.identityProof)">
+              <i class="fas fa-user-tie"></i>
+              <span>ID Proof</span>
             </div>
           </div>
         </div>
 
         <!-- Action Buttons -->
         <div class="delivery-actions">
-          <button class="btn btn-sm btn-outline-primary" (click)="viewDelivery(delivery)" title="View Details">
+          <button class="btn btn-sm btn-view" (click)="viewDeliveryDetails(delivery)" title="View Full Details">
             <i class="fas fa-eye"></i>
-            View
+            View Details
           </button>
 
-          <button *ngIf="delivery.verificationStatus === 'pending'" class="btn btn-sm btn-success"
-            (click)="approveDelivery(delivery, 'verified')" title="Approve Partner">
-            <i class="fas fa-check"></i>
-            Approve
-          </button>
+          <div class="action-group" *ngIf="delivery.verificationStatus === 'pending'">
+            <button class="btn btn-sm btn-approve" (click)="approveDelivery(delivery, 'verified')"
+              title="Approve Partner">
+              <i class="fas fa-check"></i>
+              Approve
+            </button>
+            <button class="btn btn-sm btn-reject" (click)="showRejectionModal(delivery)" title="Reject Partner">
+              <i class="fas fa-times"></i>
+              Reject
+            </button>
+          </div>
 
-          <button *ngIf="delivery.verificationStatus === 'pending'" class="btn btn-sm btn-warning"
-            (click)="approveDelivery(delivery, 'rejected')" title="Reject Partner">
-            <i class="fas fa-times"></i>
-            Reject
-          </button>
-
-          <button *ngIf="delivery.verificationStatus === 'verified'" class="btn btn-sm btn-secondary"
-            (click)="viewDelivery(delivery)" title="Deactivate Partner">
-            <i class="fas fa-pause"></i>
-            Deactivate
-          </button>
-
-          <button *ngIf="delivery.verificationStatus === 'rejected'" class="btn btn-sm btn-success"
-            (click)="viewDelivery(delivery)" title="Activate Partner">
-            <i class="fas fa-play"></i>
-            Activate
-          </button>
-
-          <button class="btn btn-sm btn-outline-danger" (click)="viewDelivery(delivery)" title="Delete Partner">
-            <i class="fas fa-trash"></i>
-            Delete
-          </button>
+          <div class="action-group" *ngIf="delivery.verificationStatus !== 'pending'">
+            <button class="btn btn-sm btn-secondary" (click)="toggleDeliveryStatus(delivery)"
+              [title]="delivery.isActive ? 'Deactivate' : 'Activate'">
+              <i [class]="delivery.isActive ? 'fas fa-pause' : 'fas fa-play'"></i>
+              {{ delivery.isActive ? 'Deactivate' : 'Activate' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -236,12 +163,10 @@
         <button class="page-btn" [disabled]="currentPage === 1" (click)="onPageChange(currentPage - 1)">
           <i class="fas fa-chevron-left"></i>
         </button>
-
         <button *ngFor="let page of generatePageNumbers()" class="page-btn" [class.active]="page === currentPage"
           (click)="onPageChange(page)">
           {{ page }}
         </button>
-
         <button class="page-btn" [disabled]="currentPage === totalPages" (click)="onPageChange(currentPage + 1)">
           <i class="fas fa-chevron-right"></i>
         </button>
@@ -265,84 +190,207 @@
 
 <!-- Delivery Details Modal -->
 <div class="modal" [class.show]="showDeliveryModal" [style.display]="showDeliveryModal ? 'block' : 'none'">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">
           <i class="fas fa-motorcycle"></i>
-          Delivery Partner Details
+          Delivery Partner Full Details
         </h5>
         <button type="button" class="btn-close" (click)="closeModal()"></button>
       </div>
       <div class="modal-body" *ngIf="currentDelivery">
         <div class="delivery-profile">
+          <!-- Profile Header -->
           <div class="profile-header">
             <div class="delivery-avatar-large">
-              {{ currentDelivery.firstName.charAt(0).toUpperCase() }}
+              <img [src]="currentDelivery.documents?.identityProof || 'assets/default-avatar.png'"
+                alt="Delivery Partner" (error)="handleImageError($event)">
             </div>
             <div class="profile-info">
               <h3>{{ currentDelivery.firstName }} {{ currentDelivery.lastName }}</h3>
-              <p class="delivery-id">ID: {{ currentDelivery.id }}</p>
+              <div class="profile-meta">
+                <span class="delivery-id">ID: {{ currentDelivery._id }}</span>
+                <span class="join-date">Joined: {{ formatDateTime(currentDelivery.createdAt) }}</span>
+                <span class="last-login">Last Active: {{ currentDelivery.lastLogin ?
+                  formatDateTime(currentDelivery.lastLogin) : 'Never' }}</span>
+              </div>
               <div class="status-badges">
                 <span class="status-badge" [ngClass]="getStatusBadgeClass(currentDelivery.verificationStatus)">
                   <i
                     [class]="'fas fa-' + (currentDelivery.verificationStatus === 'pending' ? 'clock' : currentDelivery.verificationStatus === 'verified' ? 'check' : 'times')"></i>
                   {{ currentDelivery.verificationStatus | titlecase }}
                 </span>
-                <span class="status-badge" [ngClass]="currentDelivery.isVerified ? 'active' : 'inactive'">
-                  <i [class]="currentDelivery.isVerified ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
-                  {{ currentDelivery.isVerified ? 'Verified' : 'Unverified' }}
+                <span class="status-badge" [ngClass]="currentDelivery.isOnline ? 'online' : 'offline'">
+                  <i class="fas fa-circle"></i>
+                  {{ currentDelivery.isOnline ? 'Online' : 'Offline' }}
+                </span>
+                <span class="status-badge" [ngClass]="currentDelivery.isActive ? 'active' : 'inactive'">
+                  <i class="fas fa-power-off"></i>
+                  {{ currentDelivery.isActive ? 'Active' : 'Inactive' }}
                 </span>
               </div>
             </div>
           </div>
 
-          <div class="profile-details">
-            <div class="row">
-              <div class="col-md-6">
-                <h6>Personal Information</h6>
-                <div class="detail-group">
-                  <div class="detail-item">
-                    <span class="detail-label">Email:</span>
-                    <span class="detail-value">{{ currentDelivery.email }}</span>
+          <!-- Main Details Sections -->
+          <div class="details-sections">
+            <!-- Personal Information -->
+            <div class="details-section">
+              <h6 class="section-title">
+                <i class="fas fa-user"></i> Personal Information
+              </h6>
+              <div class="detail-grid">
+                <div class="detail-item">
+                  <span class="detail-label">Email:</span>
+                  <span class="detail-value">{{ currentDelivery.email }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Phone:</span>
+                  <span class="detail-value">{{ currentDelivery.phone }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Address:</span>
+                  <span class="detail-value">
+                    {{ currentDelivery.address?.street }}, {{ currentDelivery.address?.city }},
+                    {{ currentDelivery.address?.state }} {{ currentDelivery.address?.zipCode }}
+                  </span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Delivery Zones:</span>
+                  <span class="detail-value">
+                    <span class="zone-tag" *ngFor="let zone of currentDelivery.deliveryZones">{{ zone }}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Vehicle Information -->
+            <div class="details-section">
+              <h6 class="section-title">
+                <i class="fas fa-car"></i> Vehicle Information
+              </h6>
+              <div class="detail-grid">
+                <div class="detail-item">
+                  <span class="detail-label">Type:</span>
+                  <span class="detail-value vehicle-type" [ngClass]="currentDelivery.vehicleInfo.type">
+                    <i [class]="getVehicleIcon(currentDelivery.vehicleInfo.type || '')"></i>
+                    {{ currentDelivery.vehicleInfo.type | titlecase }}
+                  </span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Model:</span>
+                  <span class="detail-value">{{ currentDelivery.vehicleInfo.model }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Brand:</span>
+                  <span class="detail-value">{{ currentDelivery.vehicleInfo.brand }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">License Plate:</span>
+                  <span class="detail-value">{{ currentDelivery.vehicleInfo.plateNumber }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Documents -->
+            <div class="details-section">
+              <h6 class="section-title">
+                <i class="fas fa-file-contract"></i> Documents
+              </h6>
+              <div class="document-grid">
+                <div class="document-card" (click)="openDocument(currentDelivery.documents?.licenseImage)">
+                  <div class="document-preview">
+                    <img [src]="currentDelivery.documents?.licenseImage || 'assets/default-document.png'"
+                      alt="Driver License" (error)="handleImageError($event)">
                   </div>
-                  <div class="detail-item">
-                    <span class="detail-label">Phone:</span>
-                    <span class="detail-value">{{ currentDelivery.phone }}</span>
+                  <div class="document-info">
+                    <h6>Driver License</h6>
+                    <p>{{ currentDelivery.documents?.licenseNumber || 'Not provided' }}</p>
                   </div>
-                  <div class="detail-item">
-                    <span class="detail-label">Driver License:</span>
-                    <span class="detail-value">{{ currentDelivery.driverLicense }}</span>
+                </div>
+                <div class="document-card" (click)="openDocument(currentDelivery.documents?.vehicleRegistration)">
+                  <div class="document-preview">
+                    <img [src]="currentDelivery.documents?.vehicleRegistration || 'assets/default-document.png'"
+                      alt="Vehicle Registration" (error)="handleImageError($event)">
                   </div>
-                  <div class="detail-item">
-                    <span class="detail-label">Application Date:</span>
-                    <span class="detail-value">{{ formatDateTime(currentDelivery.createdAt) }}</span>
+                  <div class="document-info">
+                    <h6>Vehicle Registration</h6>
+                  </div>
+                </div>
+                <div class="document-card" (click)="openDocument(currentDelivery.documents?.identityProof)">
+                  <div class="document-preview">
+                    <img [src]="currentDelivery.documents?.identityProof || 'assets/default-document.png'"
+                      alt="ID Proof" (error)="handleImageError($event)">
+                  </div>
+                  <div class="document-info">
+                    <h6>Identity Proof</h6>
                   </div>
                 </div>
               </div>
-              <div class="col-md-6">
-                <h6>Vehicle Information</h6>
-                <div class="detail-group">
-                  <div class="detail-item">
-                    <span class="detail-label">Vehicle Type:</span>
-                    <span class="detail-value">
-                      <span class="vehicle-badge" [ngClass]="getVehicleBadgeClass(currentDelivery.vehicleInfo.type)">
-                        <i [class]="getVehicleIcon(currentDelivery.vehicleInfo.type)"></i>
-                        {{ currentDelivery.vehicleInfo.type | titlecase }}
-                      </span>
-                    </span>
+            </div>
+
+            <!-- Working Hours -->
+            <div class="details-section" *ngIf="currentDelivery.workingHours">
+              <h6 class="section-title">
+                <i class="fas fa-clock"></i> Working Hours
+              </h6>
+              <div class="working-hours-grid">
+                <div class="day-slot" *ngFor="let day of getWeekDays()"
+                  [class.day-off]="!currentDelivery.workingHours![day].isWorking">
+                  <span class="day-name">{{ day | titlecase }}</span>
+                  <span class="day-hours" *ngIf="currentDelivery.workingHours![day].isWorking">
+                    {{ currentDelivery.workingHours![day].start }} - {{ currentDelivery.workingHours![day].end }}
+                  </span>
+                  <span class="day-off" *ngIf="!currentDelivery.workingHours![day].isWorking">
+                    Not working
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="details-section">
+              <h6 class="section-title">
+                <i class="fas fa-chart-line"></i> Performance Metrics
+              </h6>
+              <div class="metrics-grid">
+                <div class="metric-card">
+                  <div class="metric-icon">
+                    <i class="fas fa-star"></i>
                   </div>
-                  <div class="detail-item">
-                    <span class="detail-label">Brand:</span>
-                    <span class="detail-value">{{ currentDelivery.vehicleInfo.brand }}</span>
+                  <div class="metric-info">
+                    <h6>Average Rating</h6>
+                    <p class="metric-value">{{ currentDelivery.ratings?.averageRating || 0 }} <small>/5</small></p>
+                    <p class="metric-detail">{{ currentDelivery.ratings?.totalReviews || 0 }} reviews</p>
                   </div>
-                  <div class="detail-item">
-                    <span class="detail-label">Model:</span>
-                    <span class="detail-value">{{ currentDelivery.vehicleInfo.model }}</span>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-icon">
+                    <i class="fas fa-money-bill-wave"></i>
                   </div>
-                  <div class="detail-item">
-                    <span class="detail-label">Plate Number:</span>
-                    <span class="detail-value">{{ currentDelivery.vehicleInfo.plateNumber }}</span>
+                  <div class="metric-info">
+                    <h6>Total Earnings</h6>
+                    <p class="metric-value">${{ currentDelivery.earnings?.totalEarnings || 0 }}</p>
+                    <p class="metric-detail">Lifetime</p>
+                  </div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-icon">
+                    <i class="fas fa-calendar-day"></i>
+                  </div>
+                  <div class="metric-info">
+                    <h6>Today's Earnings</h6>
+                    <p class="metric-value">${{ currentDelivery.earnings?.todayEarnings || 0 }}</p>
+                  </div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-icon">
+                    <i class="fas fa-truck"></i>
+                  </div>
+                  <div class="metric-info">
+                    <h6>Completed Deliveries</h6>
+                    <p class="metric-value">{{ currentDelivery.deliveryHistory?.length || 0 }}</p>
                   </div>
                 </div>
               </div>
@@ -352,88 +400,64 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="closeModal()">Close</button>
-        <button *ngIf="currentDelivery?.verificationStatus === 'pending'" type="button" class="btn btn-success"
-          (click)="currentDelivery && approveDelivery(currentDelivery, 'verified')">
+        <button *ngIf="currentDelivery && currentDelivery.verificationStatus === 'pending'" type="button"
+          class="btn btn-success" (click)="approveDelivery(currentDelivery, 'verified')">
           <i class="fas fa-check"></i>
           Approve
         </button>
-        <button *ngIf="currentDelivery?.verificationStatus === 'pending'" type="button" class="btn btn-warning"
-          (click)="currentDelivery && approveDelivery(currentDelivery, 'rejected')">
+        <button *ngIf="currentDelivery && currentDelivery.verificationStatus === 'pending'" type="button"
+          class="btn btn-danger" (click)="showRejectionModal(currentDelivery)">
           <i class="fas fa-times"></i>
           Reject
         </button>
+        <button *ngIf="currentDelivery" type="button" class="btn btn-primary"
+          (click)="toggleDeliveryStatus(currentDelivery)">
+          <i [class]="currentDelivery.isActive ? 'fas fa-pause' : 'fas fa-play'"></i>
+          {{ currentDelivery.isActive ? 'Deactivate' : 'Activate' }}
+        </button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Approval Modal -->
-<div class="modal" [class.show]="showApprovalModal" [style.display]="showApprovalModal ? 'block' : 'none'">
-  <div class="modal-dialog">
+<!-- Rejection Modal -->
+<div class="modal" [class.show]="showRejectionReasonModal"
+  [style.display]="showRejectionReasonModal ? 'block' : 'none'">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">
-          <i class="fas fa-user-check"></i>
-          Delivery Partner Approval
+          <i class="fas fa-exclamation-triangle"></i>
+          Rejection Reason
         </h5>
-        <button type="button" class="btn-close" (click)="closeModal()"></button>
+        <button type="button" class="btn-close" (click)="closeRejectionModal()"></button>
       </div>
-      <form [formGroup]="approvalForm" (ngSubmit)="submitApproval()">
+      <form [formGroup]="rejectionForm" (ngSubmit)="submitRejection()">
         <div class="modal-body">
           <div class="mb-3">
-            <label class="form-label">Action</label>
-            <select class="form-select" formControlName="status">
-              <option value="verified">Approve</option>
-              <option value="rejected">Reject</option>
+            <label class="form-label">Reason for Rejection</label>
+            <select class="form-select" formControlName="reason" required>
+              <option value="">Select a reason</option>
+              <option value="documents">Incomplete Documents</option>
+              <option value="quality">Poor Document Quality</option>
+              <option value="information">Incorrect Information</option>
+              <option value="other">Other</option>
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label">Reason/Notes</label>
-            <textarea class="form-control" formControlName="reason" rows="3"
-              placeholder="Optional reason for your decision..."></textarea>
+            <label class="form-label">Additional Notes</label>
+            <textarea class="form-control" formControlName="notes" rows="3"
+              placeholder="Provide specific details for the rejection..."></textarea>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary" [disabled]="!approvalForm.valid">
-            Submit Decision
+          <button type="button" class="btn btn-secondary" (click)="closeRejectionModal()">Cancel</button>
+          <button type="submit" class="btn btn-danger" [disabled]="!rejectionForm.valid">
+            <i class="fas fa-times"></i>
+            Confirm Rejection
           </button>
         </div>
       </form>
-    </div>
-  </div>
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div class="modal" [class.show]="showApprovalModal" [style.display]="showApprovalModal ? 'block' : 'none'">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="fas fa-exclamation-triangle text-warning"></i>
-          Confirm Action
-        </h5>
-        <button type="button" class="btn-close" (click)="closeModal()"></button>
-      </div>
-      <div class="modal-body">
-        <div class="text-center">
-          <i class="fas fa-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
-          <h4 class="mt-3">Are you sure?</h4>
-          <p class="text-muted">This action cannot be undone. This will permanently affect the delivery partner account.
-          </p>
-          <div class="alert alert-warning">
-            <i class="fas fa-info-circle"></i>
-            <strong>Warning:</strong> This action will update the delivery partner status.
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
-        <button type="button" class="btn btn-danger" (click)="closeModal()">
-          <i class="fas fa-check"></i>
-          Confirm Action
-        </button>
-      </div>
     </div>
   </div>
 </div>

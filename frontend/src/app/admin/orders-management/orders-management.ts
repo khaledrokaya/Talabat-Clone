@@ -130,8 +130,6 @@ export class OrdersManagement implements OnInit {
             this.orderStats.monthlyOrders = monthlyData.reduce((sum: number, item: any) => sum + (item.orders || 0), 0);
             this.orderStats.monthlyRevenue = monthlyData.reduce((sum: number, item: any) => sum + (item.revenue || 0), 0);
           }
-        } else {
-          this.errorMessage = 'Failed to load order statistics';
         }
         this.isLoading = false;
       },

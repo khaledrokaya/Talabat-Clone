@@ -1,39 +1,40 @@
 <div class="order-details-container">
   <div class="container">
-    <!-- Header -->
-    <div class="header-section">
-      <button class="back-btn" [routerLink]="!isRestaurantOwner? '/orders' : '/restaurant-dashboard/orders-management'">
-        ← Back to Orders
+    <!-- Header Section -->
+    <header class="header-section">
+      <button class="back-btn"
+        [routerLink]="!isRestaurantOwner ? '/orders' : '/restaurant-dashboard/orders-management'">
+        <i class="fas fa-arrow-left"></i> Back to Orders
       </button>
       <h1>Order Details</h1>
-    </div>
+    </header>
 
     <!-- Loading State -->
-    <div class="loading" *ngIf="loading">
-      <div class="loading-spinner"></div>
+    <section class="loading" *ngIf="loading" aria-live="polite" aria-busy="true">
+      <div class="loading-spinner" aria-hidden="true"></div>
       <p>Loading order details...</p>
-    </div>
+    </section>
 
     <!-- Success Message -->
-    <div class="success-message" *ngIf="successMessage">
-      <span class="success-icon">✅</span>
-      {{ successMessage }}
+    <div class="success-message" *ngIf="successMessage" role="alert">
+      <i class="fas fa-check-circle success-icon"></i>
+      <span>{{ successMessage }}</span>
     </div>
 
     <!-- Error State -->
-    <div class="error-message" *ngIf="errorMessage">
-      <span class="error-icon">⚠️</span>
-      {{ errorMessage }}
+    <div class="error-message" *ngIf="errorMessage" role="alert">
+      <i class="fas fa-exclamation-circle error-icon"></i>
+      <span>{{ errorMessage }}</span>
     </div>
 
-    <!-- Order Details -->
-    <div class="order-details-content" *ngIf="!loading && !errorMessage && order">
-      <!-- Order Header -->
-      <div class="order-header-card">
+    <!-- Main Order Content -->
+    <main class="order-details-content" *ngIf="!loading && !errorMessage && order">
+      <!-- Order Header Card -->
+      <article class="order-card order-header-card">
         <div class="order-info">
           <div class="order-number">
             <h2>Order #{{ order.orderNumber || order._id?.slice(-6) }}</h2>
-            <span class="status-badge" [ngClass]="getStatusClass(order.status)">
+            <span class="status-badge status-{{order.status}}">
               {{ getStatusText(order.status) }}
             </span>
           </div>
@@ -44,40 +45,41 @@
             </p>
           </div>
         </div>
-      </div>
+      </article>
 
       <!-- Customer Info (if restaurant owner) -->
-      <div class="customer-card" *ngIf="order.customerInfo">
+      <article class="order-card customer-card" *ngIf="order.customerInfo && isRestaurantOwner">
         <h3>Customer Information</h3>
-        <div class="customer-details">
-          <div class="customer-info">
+        <div class="details-container">
+          <div class="info-content">
             <h4>{{ order.customerInfo.name }}</h4>
             <p><strong>Phone:</strong> {{ order.customerInfo.phone }}</p>
             <p><strong>Email:</strong> {{ order.customerInfo.email }}</p>
           </div>
         </div>
-      </div>
+      </article>
 
       <!-- Restaurant Info -->
-      <div class="restaurant-card" *ngIf="order.restaurantId">
+      <article class="order-card restaurant-card" *ngIf="order.restaurantId">
         <h3>Restaurant Information</h3>
-        <div class="restaurant-details">
-          <div class="restaurant-info">
-            <p><strong>Restaurant ID:</strong> {{ order.restaurantId._id }}</p>
+        <div class="details-container">
+          <div class="info-content">
+            <h4>{{ order.restaurantId.name }}</h4>
+            <p><strong>Address:</strong> {{ order.restaurantId.address }}</p>
             <p *ngIf="order.restaurantId.phone">
               <strong>Phone:</strong> {{ order.restaurantId.phone }}
             </p>
           </div>
         </div>
-      </div>
+      </article>
 
       <!-- Order Items -->
-      <div class="items-card">
-        <h3>Order Items</h3>
+      <article class="order-card items-card">
+        <h3>Order Items ({{ order.items.length }})</h3>
         <div class="order-items">
-          <div class="order-item" *ngFor="let item of order.items">
+          <section class="order-item" *ngFor="let item of order.items">
             <div class="item-info">
-              <div class="item-name">{{ item.name }}</div>
+              <h4 class="item-name">{{ item.name }}</h4>
               <div class="item-details">
                 <span class="item-quantity">Quantity: {{ item.quantity }}</span>
                 <span class="item-price">{{ formatCurrency(item.price) }} each</span>
@@ -89,55 +91,56 @@
             <div class="item-total">
               {{ formatCurrency(item.price * item.quantity) }}
             </div>
-          </div>
+          </section>
         </div>
-      </div>
+      </article>
 
       <!-- Delivery Address -->
-      <div class="address-card" *ngIf="order.deliveryAddress">
+      <article class="order-card address-card" *ngIf="order.deliveryAddress">
         <h3>Delivery Address</h3>
-        <div class="address-details">
+        <address class="address-details">
           <p>{{ order.deliveryAddress.street }}</p>
           <p>{{ order.deliveryAddress.city }}, {{ order.deliveryAddress.state }} {{ order.deliveryAddress.zipCode }}</p>
-          <p *ngIf="order.deliveryAddress.additionalInfo"><strong>Additional Info:</strong> {{
-            order.deliveryAddress.additionalInfo }}</p>
+          <p *ngIf="order.deliveryAddress.additionalInfo">
+            <strong>Additional Info:</strong> {{ order.deliveryAddress.additionalInfo }}
+          </p>
           <div class="coordinates" *ngIf="order.deliveryAddress.coordinates">
             <small>Coordinates: {{ order.deliveryAddress.coordinates.lat }}, {{ order.deliveryAddress.coordinates.lng
               }}</small>
           </div>
-        </div>
-      </div>
+        </address>
+      </article>
 
       <!-- Order Instructions -->
-      <div class="instructions-card" *ngIf="order.specialInstructions">
+      <article class="order-card instructions-card" *ngIf="order.specialInstructions">
         <h3>Special Instructions</h3>
         <div class="instructions-content">
           <p>{{ order.specialInstructions }}</p>
         </div>
-      </div>
+      </article>
 
       <!-- Payment Information -->
-      <div class="payment-card">
+      <article class="order-card payment-card">
         <h3>Payment Information</h3>
         <div class="payment-details">
           <div class="payment-method">
             <p><strong>Payment Method:</strong> {{ order.paymentMethod | titlecase }}</p>
             <p><strong>Payment Status:</strong>
-              <span class="status-badge" [ngClass]="getPaymentStatusClass(order.paymentStatus)">
+              <span class="status-badge payment-{{order.paymentStatus}}">
                 {{ order.paymentStatus | titlecase }}
               </span>
             </p>
           </div>
         </div>
-      </div>
+      </article>
 
       <!-- Order Timeline -->
-      <div class="timeline-card" *ngIf="order.statusHistory && order.statusHistory.length > 0">
+      <article class="order-card timeline-card" *ngIf="order.statusHistory?.length > 0">
         <h3>Order Timeline</h3>
         <div class="timeline">
           <div class="timeline-item" *ngFor="let event of order.statusHistory"
-            [ngClass]="{ 'active': event.status === order.status }">
-            <div class="timeline-dot"></div>
+            [class.active]="event.status === order.status">
+            <div class="timeline-dot" aria-hidden="true"></div>
             <div class="timeline-content">
               <div class="timeline-status">{{ getStatusText(event.status) }}</div>
               <div class="timeline-time">{{ formatDate(event.timestamp) }}</div>
@@ -145,10 +148,10 @@
             </div>
           </div>
         </div>
-      </div>
+      </article>
 
       <!-- Pricing Summary -->
-      <div class="pricing-card">
+      <article class="order-card pricing-card">
         <h3>Order Summary</h3>
         <div class="pricing-details">
           <div class="price-row">
@@ -172,64 +175,68 @@
             <span>{{ formatCurrency(order.totalAmount) }}</span>
           </div>
         </div>
-      </div>
+      </article>
 
       <!-- Action Buttons -->
-      <div class="actions-card">
+      <article class="order-card actions-card">
         <div class="action-buttons">
           <!-- Customer Actions -->
           <ng-container *ngIf="!isRestaurantOwner">
             <button class="btn btn-primary" *ngIf="order.status === 'out_for_delivery' || order.status === 'preparing'"
               (click)="trackOrder()">
-              Track Order
+              <i class="fas fa-map-marker-alt"></i> Track Order
             </button>
 
             <button class="btn btn-danger" *ngIf="order.status === 'pending' || order.status === 'confirmed'"
               (click)="cancelOrder()">
-              Cancel Order
+              <i class="fas fa-times-circle"></i> Cancel Order
             </button>
 
             <button class="btn btn-success" *ngIf="order.status === 'delivered'" (click)="rateOrder()">
-              Rate Order
+              <i class="fas fa-star"></i> Rate Order
             </button>
           </ng-container>
 
           <!-- Restaurant Owner Actions -->
           <ng-container *ngIf="isRestaurantOwner">
             <button class="btn btn-success" *ngIf="order.status === 'pending'" (click)="confirmOrder()">
-              Confirm Order
+              <i class="fas fa-check"></i> Confirm Order
             </button>
 
             <button class="btn btn-danger" *ngIf="order.status === 'pending'" (click)="rejectOrder()">
-              Reject Order
+              <i class="fas fa-ban"></i> Reject Order
             </button>
 
             <button class="btn btn-primary" *ngIf="order.status === 'confirmed'" (click)="startPreparing()">
-              Start Preparing
+              <i class="fas fa-utensils"></i> Start Preparing
             </button>
 
             <button class="btn btn-warning" *ngIf="order.status === 'preparing'" (click)="markReady()">
-              Mark Ready
+              <i class="fas fa-check-double"></i> Mark Ready
             </button>
 
             <button class="btn btn-info" *ngIf="order.status === 'ready'" (click)="markOutForDelivery()">
-              Out for Delivery
+              <i class="fas fa-truck"></i> Out for Delivery
             </button>
 
             <button class="btn btn-success" *ngIf="order.status === 'out_for_delivery'" (click)="markDelivered()">
-              Mark Delivered
+              <i class="fas fa-clipboard-check"></i> Mark Delivered
             </button>
           </ng-container>
         </div>
-      </div>
-    </div>
+      </article>
+    </main>
 
     <!-- No Order Found -->
-    <div class="no-order" *ngIf="!loading && !errorMessage && !order">
-      <div class="no-order-icon">📦</div>
+    <article class="order-card no-order" *ngIf="!loading && !errorMessage && !order">
+      <div class="no-order-icon">
+        <i class="fas fa-box-open"></i>
+      </div>
       <h3>Order Not Found</h3>
-      <p>The order you're looking for could not be found.</p>
-      <button class="btn btn-primary" routerLink="/orders">Back to Orders</button>
-    </div>
+      <p>The order you're looking for could not be found. It may have been cancelled or the ID might be incorrect.</p>
+      <button class="btn btn-primary" routerLink="/orders">
+        <i class="fas fa-arrow-left"></i> Back to Orders
+      </button>
+    </article>
   </div>
 </div>

@@ -3,8 +3,8 @@
   <div class="dashboard-header">
     <div class="header-content">
       <div class="welcome-section">
-        <h1>
-          <i class="fas fa-tachometer-alt"></i>
+        <h1 class="text-light">
+          <i class="fas fa-tachometer-alt text-light"></i>
           Welcome back, {{ currentAdmin?.firstName || 'Admin' }}!
         </h1>
         <p>Here's what's happening with your Talabat platform today</p>
@@ -20,13 +20,9 @@
         </div>
       </div>
       <div class="quick-actions">
-        <button class="btn btn-primary" (click)="refreshData()" [disabled]="isLoading">
+        <button class="btn btn-outline-light bg-light text-dark " (click)="refreshData()" [disabled]="isLoading">
           <i class="fas fa-sync" [class.fa-spin]="isLoading"></i>
           Refresh Data
-        </button>
-        <button class="btn btn-outline-light" (click)="exportDashboardReport()" [disabled]="isLoading">
-          <i class="fas fa-download"></i>
-          Export Report
         </button>
       </div>
     </div>
@@ -174,78 +170,6 @@
     <!-- Detailed Analytics Section -->
     <div class="analytics-section">
       <div class="analytics-grid">
-
-        <!-- Orders Chart -->
-        <div class="analytics-card orders-chart">
-          <div class="card-header">
-            <h3><i class="fas fa-chart-area"></i> Orders Trend</h3>
-            <div class="chart-controls">
-              <button class="chart-btn active" (click)="setChartPeriod('7d')">7D</button>
-              <button class="chart-btn" (click)="setChartPeriod('30d')">30D</button>
-              <button class="chart-btn" (click)="setChartPeriod('90d')">90D</button>
-            </div>
-          </div>
-          <div class="chart-container">
-            <div class="chart-placeholder">
-              <i class="fas fa-chart-line"></i>
-              <p>Orders trend chart will be displayed here</p>
-              <small>Showing last {{ chartPeriod }} days</small>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recent Activity -->
-        <div class="analytics-card recent-activity">
-          <div class="card-header">
-            <h3><i class="fas fa-bell"></i> Recent Activity</h3>
-            <a href="#" class="view-all">View All</a>
-          </div>
-          <div class="activity-list">
-            <div class="activity-item">
-              <div class="activity-icon new-order">
-                <i class="fas fa-plus"></i>
-              </div>
-              <div class="activity-content">
-                <div class="activity-title">New restaurant approved</div>
-                <div class="activity-details">McDonald's Cairo branch has been approved</div>
-                <div class="activity-time">2 minutes ago</div>
-              </div>
-            </div>
-
-            <div class="activity-item">
-              <div class="activity-icon order-completed">
-                <i class="fas fa-check"></i>
-              </div>
-              <div class="activity-content">
-                <div class="activity-title">Large order completed</div>
-                <div class="activity-details">Order #12345 worth EGP 450 delivered successfully</div>
-                <div class="activity-time">5 minutes ago</div>
-              </div>
-            </div>
-
-            <div class="activity-item">
-              <div class="activity-icon new-user">
-                <i class="fas fa-user-plus"></i>
-              </div>
-              <div class="activity-content">
-                <div class="activity-title">New user registered</div>
-                <div class="activity-details">Ahmed Mohamed joined as a customer</div>
-                <div class="activity-time">12 minutes ago</div>
-              </div>
-            </div>
-
-            <div class="activity-item">
-              <div class="activity-icon delivery">
-                <i class="fas fa-motorcycle"></i>
-              </div>
-              <div class="activity-content">
-                <div class="activity-title">Delivery partner online</div>
-                <div class="activity-details">15 new delivery partners are now available</div>
-                <div class="activity-time">18 minutes ago</div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -309,24 +233,6 @@
             <div class="stat-row">
               <div class="stat-label">Completion Rate</div>
               <div class="stat-value">{{ getCompletionRate() }}%</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Top Restaurants -->
-        <div class="quick-card top-restaurants">
-          <div class="card-header">
-            <h3><i class="fas fa-crown"></i> Top Restaurants</h3>
-          </div>
-          <div class="card-content">
-            <div class="restaurant-item" *ngFor="let restaurant of dashboardData.revenue.topRestaurants.slice(0, 3)">
-              <div class="restaurant-rank">{{ getRestaurantRank(restaurant) }}</div>
-              <div class="restaurant-info">
-                <div class="restaurant-name">{{ restaurant.name }}</div>
-                <div class="restaurant-stats">
-                  {{ restaurant.orders }} orders • {{ formatCurrency(restaurant.revenue) }}
-                </div>
-              </div>
             </div>
           </div>
         </div>

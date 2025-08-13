@@ -3,7 +3,7 @@
   <div class="page-header">
     <div class="header-content">
       <div class="header-info">
-        <h1>
+        <h1 class="text-light">
           <i class="fas fa-users"></i>
           Users Management
         </h1>
@@ -24,13 +24,9 @@
         </div>
       </div>
       <div class="header-actions">
-        <button class="btn btn-outline-primary" (click)="exportUsers()" [disabled]="loading">
-          <i class="fas fa-download"></i>
-          Export Users
-        </button>
-        <button class="btn btn-primary" (click)="loadUsers()" [disabled]="loading">
+        <button class="btn btn-outline-light bg-light text-dark " (click)="loadUsers()" [disabled]="loading">
           <i class="fas fa-sync" [class.fa-spin]="loading"></i>
-          Refresh
+          Refresh Data
         </button>
       </div>
     </div>
@@ -273,8 +269,9 @@
 </div>
 
 <!-- User Details Modal -->
-<div class="modal" [class.show]="showUserModal" [style.display]="showUserModal ? 'block' : 'none'">
-  <div class="modal-dialog modal-lg">
+<div class="modal fade user-details-modal shadow-lg" [class.show]="showUserModal"
+  [style.display]="showUserModal ? 'block' : 'none'">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">
@@ -362,7 +359,7 @@
 
 <!-- Delete Confirmation Modal -->
 <div class="modal" [class.show]="showDeleteModal" [style.display]="showDeleteModal ? 'block' : 'none'">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">

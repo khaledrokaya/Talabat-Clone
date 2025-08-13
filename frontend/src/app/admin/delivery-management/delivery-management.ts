@@ -29,6 +29,7 @@ export class DeliveryManagement implements OnInit {
   // Modal states
   showDeliveryModal = false;
   showApprovalModal = false;
+  showRejectionReasonModal = false;
 
   // Current delivery being processed
   currentDelivery: AdminDelivery | null = null;
@@ -36,6 +37,7 @@ export class DeliveryManagement implements OnInit {
 
   // Approval form
   approvalForm: FormGroup;
+  rejectionForm: FormGroup;
 
   constructor(
     private adminService: AdminService,
@@ -44,6 +46,11 @@ export class DeliveryManagement implements OnInit {
     this.approvalForm = this.fb.group({
       status: ['verified', Validators.required],
       reason: ['', Validators.required]
+    });
+
+    this.rejectionForm = this.fb.group({
+      reason: ['', Validators.required],
+      notes: ['']
     });
   }
 
@@ -122,7 +129,7 @@ export class DeliveryManagement implements OnInit {
 
   approveDelivery(delivery: AdminDelivery, status: 'verified' | 'rejected'): void {
     this.currentDelivery = delivery;
-    this.currentDeliveryId = delivery.id;
+    this.currentDeliveryId = delivery._id;
     this.approvalForm.patchValue({
       status: status,
       reason: status === 'verified' ? 'Application approved by admin' : ''
@@ -236,11 +243,75 @@ export class DeliveryManagement implements OnInit {
     return {
       total: this.filteredDelivery.length,
       pending: this.filteredDelivery.filter(d => d.verificationStatus === 'pending').length,
-      unverified: this.filteredDelivery.filter(d => !d.isVerified).length
+      verified: this.filteredDelivery.filter(d => d.verificationStatus === 'verified').length
     };
   }
 
   refreshData(): void {
     this.loadPendingDelivery();
+  }
+
+  // Additional methods needed by the template
+  viewDeliveryDetails(delivery: AdminDelivery): void {
+    this.currentDelivery = delivery;
+    this.showDeliveryModal = true;
+  }
+
+  openDocument(documentUrl?: string): void {
+    if (documentUrl) {
+      window.open(documentUrl, '_blank');
+    }
+  }
+
+  handleImageError(event: any): void {
+    event.target.src = 'assets/images/default-avatar.png';
+  }
+
+  showRejectionModal(delivery: AdminDelivery): void {
+    this.currentDelivery = delivery;
+    this.showRejectionReasonModal = true;
+  }
+
+  closeRejectionModal(): void {
+    this.showRejectionReasonModal = false;
+    this.rejectionForm.reset();
+  }
+
+  submitRejection(): void {
+    if (this.rejectionForm.valid && this.currentDelivery) {
+      const reason = this.rejectionForm.value.reason;
+      const notes = this.rejectionForm.value.notes;
+      const fullReason = notes ? `${reason}: ${notes}` : reason;
+
+      const request: ApprovalRequest = {
+        status: 'rejected',
+        reason: fullReason
+      };
+
+      this.adminService.rejectDelivery(this.currentDelivery._id, request).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.successMessage = 'Delivery partner rejected successfully';
+            this.loadPendingDelivery();
+            this.closeRejectionModal();
+            this.closeModal();
+          } else {
+            this.errorMessage = 'Failed to reject delivery partner';
+          }
+        },
+        error: (error) => {
+          this.errorMessage = 'Error rejecting delivery: ' + (error.error?.message || 'Unknown error');
+        }
+      });
+    }
+  }
+
+  toggleDeliveryStatus(delivery: AdminDelivery): void {
+    // Implementation for toggling delivery status
+    console.log('Toggle delivery status for:', delivery._id);
+  }
+
+  getWeekDays(): string[] {
+    return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   }
 }

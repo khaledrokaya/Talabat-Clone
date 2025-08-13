@@ -199,10 +199,10 @@ export class OrderController {
    */
   cancelOrder = asyncHandler(
     async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
-      const { orderId } = req.params;
+      const { id } = req.params;
       const { reason } = req.body;
 
-      const order = await Order.findById(orderId);
+      const order = await Order.findById(id);
       if (!order) {
         return res
           .status(404)

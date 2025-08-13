@@ -3,14 +3,14 @@
     <div class="navbar-content">
       <!-- Logo -->
       <div class="navbar-brand">
-        <a routerLink="/" class="brand-link">
-          <app-talabat-logo width="120" height="40" customClass="brand-logo"></app-talabat-logo>
+        <a routerLink="/" class="brand-link" (click)="closeMobileMenu()">
+          <app-talabat-logo width="120" height="45" customClass="brand-logo"></app-talabat-logo>
         </a>
       </div>
 
       <!-- Desktop Navigation -->
-      <div class="navbar-nav desktop-nav">
-        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+      <div class="desktop-nav">
+        <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
           <i class="fas fa-home"></i>
           <span>Home</span>
         </a>
@@ -18,7 +18,7 @@
           <i class="fas fa-store"></i>
           <span>Restaurants</span>
         </a>
-        @if (authService.isLoggedIn() && currentUser?.role === "customer") {
+        @if (authService.isLoggedIn() && currentUser?.role === 'customer') {
         <a routerLink="/orders" routerLinkActive="active" class="nav-link">
           <i class="fas fa-receipt"></i>
           <span>My Orders</span>
@@ -29,51 +29,75 @@
       <!-- User Actions -->
       <div class="navbar-actions">
         @if (authService.isLoggedIn()) {
-        <!-- Cart -->
-        <a routerLink="/cart" class="cart-link">
+        <!-- Cart for customers only -->
+        @if (currentUser?.role === 'customer') {
+        <a routerLink="/cart" class="cart-link" routerLinkActive="active">
           <i class="fas fa-shopping-cart"></i>
           @if (cartService.getItemCount() > 0) {
           <span class="cart-badge">{{ cartService.getItemCount() }}</span>
           }
         </a>
+        }
 
         <!-- User Dropdown -->
-        <div class="user-dropdown" [class.active]="showUserMenu" [class.admin-user]="currentUser?.role === 'admin'">
+        <div class="user-dropdown" [class.show-menu]="showUserMenu" [class.admin-user]="currentUser?.role === 'admin'"
+          [class.owner-user]="currentUser?.role === 'restaurant_owner'"
+          [class.delivery-user]="currentUser?.role === 'delivery'">
           <button class="user-toggle" (click)="toggleUserMenu()">
-            <div class="user-avatar" [class.admin-avatar]="currentUser?.role === 'admin'">
-              <i class="fas" [class.fa-user]="currentUser?.role !== 'admin'"
-                [class.fa-shield-alt]="currentUser?.role === 'admin'"></i>
+            <div class="user-avatar" [class.customer-avatar]="currentUser?.role === 'customer'"
+              [class.admin-avatar]="currentUser?.role === 'admin'"
+              [class.owner-avatar]="currentUser?.role === 'restaurant_owner'"
+              [class.delivery-avatar]="currentUser?.role === 'delivery'">
+              <i class="fas" [class.fa-user]="currentUser?.role === 'customer'"
+                [class.fa-shield-alt]="currentUser?.role === 'admin'"
+                [class.fa-store]="currentUser?.role === 'restaurant_owner'"
+                [class.fa-truck]="currentUser?.role === 'delivery'"></i>
             </div>
             <div class="user-info">
-              <span class="user-name">{{ currentUser?.name || 'User' }}</span>
+              <span class="user-name">{{ currentUser?.firstName || currentUser?.name || 'User' }}</span>
               @if (currentUser?.role === 'admin') {
-              <span class="admin-badge">System Admin</span>
+              <span class="role-badge admin-badge">Admin</span>
+              } @else if (currentUser?.role === 'restaurant_owner') {
+              <span class="role-badge owner-badge">Owner</span>
+              } @else if (currentUser?.role === 'delivery') {
+              <span class="role-badge delivery-badge">Driver</span>
+              } @else {
+              <span class="role-badge customer-badge">Customer</span>
               }
             </div>
             <i class="fas fa-chevron-down dropdown-arrow"></i>
           </button>
 
-          @if (showUserMenu) {
-          <div class="dropdown-menu">
+          <div class="dropdown-menu show">
+            @if (currentUser?.role === 'admin') {
+            <a routerLink="/admin" class="dropdown-item" (click)="closeUserMenu()">
+              <i class="fas fa-shield-alt"></i>
+              <span>Dashboard</span>
+              <span class="role-indicator admin-indicator">ADMIN</span>
+            </a>
+            } @else if (currentUser?.role === 'restaurant_owner') {
+            <a routerLink="/restaurant-dashboard" class="dropdown-item dashboard-item" (click)="closeUserMenu()">
+              <i class="fas fa-chart-line"></i>
+              <span>Restaurant</span>
+              <span class="role-indicator owner-indicator">OWNER</span>
+            </a>
+            } @else if (currentUser?.role === 'delivery') {
+            <a routerLink="/delivery-dashboard" class="dropdown-item dashboard-item" (click)="closeUserMenu()">
+              <i class="fas fa-truck"></i>
+              <span>Delivery Dashboard</span>
+              <span class="role-indicator delivery-indicator">DRIVER</span>
+            </a>
+            }
+
             @if (currentUser?.role === 'customer') {
             <a routerLink="/profile" class="dropdown-item" (click)="closeUserMenu()">
               <i class="fas fa-user-circle"></i>
               <span>Profile</span>
             </a>
-            }
 
-            @if (currentUser?.role === 'restaurant_owner') {
-            <a routerLink="/restaurant-dashboard" class="dropdown-item" (click)="closeUserMenu()">
-              <i class="fas fa-chart-line"></i>
-              <span>Dashboard</span>
-            </a>
-            }
-
-            @if (currentUser?.role === 'admin') {
-            <a routerLink="/admin" class="dropdown-item admin-item" (click)="closeUserMenu()">
-              <i class="fas fa-shield-alt"></i>
-              <span>Admin Panel</span>
-              <span class="admin-indicator">ADMIN</span>
+            <a routerLink="/orders" class="dropdown-item" (click)="closeUserMenu()">
+              <i class="fas fa-receipt"></i>
+              <span>Order History</span>
             </a>
             }
 
@@ -84,10 +108,9 @@
               <span>Logout</span>
             </button>
           </div>
-          }
         </div>
         } @else {
-        <!-- Login/Register Buttons -->
+        <!-- Auth Buttons -->
         <div class="auth-buttons">
           <a routerLink="/auth/login" class="btn btn-outline btn-sm">
             <i class="fas fa-sign-in-alt"></i>
@@ -106,75 +129,91 @@
         </button>
       </div>
     </div>
-
-    <!-- Mobile Navigation -->
-    @if (showMobileMenu) {
-    <div class="mobile-nav">
-      <div class="mobile-nav-content">
-        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="mobile-nav-link"
-          (click)="closeMobileMenu()">
-          <i class="fas fa-home"></i>
-          <span>Home</span>
-        </a>
-        <a routerLink="/restaurants" routerLinkActive="active" class="mobile-nav-link" (click)="closeMobileMenu()">
-          <i class="fas fa-store"></i>
-          <span>Restaurants</span>
-        </a>
-
-        @if (authService.isLoggedIn()) {
-        <a routerLink="/orders" routerLinkActive="active" class="mobile-nav-link" (click)="closeMobileMenu()">
-          <i class="fas fa-receipt"></i>
-          <span>My Orders</span>
-        </a>
-        <a routerLink="/cart" class="mobile-nav-link" (click)="closeMobileMenu()">
-          <i class="fas fa-shopping-cart"></i>
-          <span>Cart</span>
-          @if (cartService.getItemCount() > 0) {
-          <span class="cart-badge">{{ cartService.getItemCount() }}</span>
-          }
-        </a>
-        <a routerLink="/profile" class="mobile-nav-link" (click)="closeMobileMenu()">
-          <i class="fas fa-user-circle"></i>
-          <span>Profile</span>
-        </a>
-
-        @if (currentUser?.role === 'restaurant_owner') {
-        <a routerLink="/restaurant-dashboard" class="mobile-nav-link" (click)="closeMobileMenu()">
-          <i class="fas fa-chart-line"></i>
-          <span>Dashboard</span>
-        </a>
-        }
-
-        @if (currentUser?.role === 'admin') {
-        <a routerLink="/admin" class="mobile-nav-link" (click)="closeMobileMenu()">
-          <i class="fas fa-cog"></i>
-          <span>Admin Panel</span>
-        </a>
-        }
-
-        <div class="mobile-nav-divider"></div>
-
-        <button class="mobile-nav-link logout-btn" (click)="logout()">
-          <i class="fas fa-sign-out-alt"></i>
-          <span>Logout</span>
-        </button>
-        } @else {
-        <a routerLink="/auth/login" class="mobile-nav-link" (click)="closeMobileMenu()">
-          <i class="fas fa-sign-in-alt"></i>
-          <span>Login</span>
-        </a>
-        <a routerLink="/auth/register" class="mobile-nav-link" (click)="closeMobileMenu()">
-          <i class="fas fa-user-plus"></i>
-          <span>Register</span>
-        </a>
-        }
-      </div>
-    </div>
-    }
   </div>
+
+  <!-- Mobile Navigation -->
+  @if (showMobileMenu) {
+  <div class="mobile-nav show top-0">
+    <div class="d-flex justify-content-end w-100 p-2 pe-5">
+      <button class="close-mobile-menu btn btn-primary rounded-circle px-3 position-relative align-items-center"
+        (click)="closeMobileMenu()">
+        <i class="fas fa-times fs-5"></i>
+      </button>
+    </div>
+    <div class="mobile-nav-content pt-0">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="mobile-nav-link"
+        (click)="closeMobileMenu()">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </a>
+      <a routerLink="/restaurants" routerLinkActive="active" class="mobile-nav-link" (click)="closeMobileMenu()">
+        <i class="fas fa-store"></i>
+        <span>Restaurants</span>
+      </a>
+
+      @if (authService.isLoggedIn()) {
+      @if (currentUser?.role === 'customer') {
+      <a routerLink="/orders" routerLinkActive="active" class="mobile-nav-link" (click)="closeMobileMenu()">
+        <i class="fas fa-receipt"></i>
+        <span>My Orders</span>
+      </a>
+      <a routerLink="/cart" routerLinkActive="active" class="mobile-nav-link" (click)="closeMobileMenu()">
+        <i class="fas fa-shopping-cart"></i>
+        <span>Cart</span>
+        @if (cartService.getItemCount() > 0) {
+        <span class="cart-badge">{{ cartService.getItemCount() }}</span>
+        }
+      </a>
+      }
+
+      @if (currentUser?.role === 'admin') {
+      <a routerLink="/admin" routerLinkActive="active" class="mobile-nav-link dashboard-link"
+        (click)="closeMobileMenu()">
+        <i class="fas fa-shield-alt"></i>
+        <span>Admin Panel</span>
+      </a>
+      } @else if (currentUser?.role === 'restaurant_owner') {
+      <a routerLink="/restaurant-dashboard" routerLinkActive="active" class="mobile-nav-link dashboard-link"
+        (click)="closeMobileMenu()">
+        <i class="fas fa-chart-line"></i>
+        <span>Restaurant Dashboard</span>
+      </a>
+      } @else if (currentUser?.role === 'delivery') {
+      <a routerLink="/delivery-dashboard" routerLinkActive="active" class="mobile-nav-link dashboard-link"
+        (click)="closeMobileMenu()">
+        <i class="fas fa-truck"></i>
+        <span>Delivery Dashboard</span>
+      </a>
+      }
+      @if (currentUser?.role === 'customer') {
+      <a routerLink="/profile" routerLinkActive="active" class="mobile-nav-link" (click)="closeMobileMenu()">
+        <i class="fas fa-user-circle"></i>
+        <span>Profile</span>
+      </a>
+      }
+
+      <div class="mobile-nav-divider"></div>
+
+      <button class="mobile-nav-link logout-btn" (click)="logout()">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+      </button>
+      } @else {
+      <a routerLink="/auth/login" class="mobile-nav-link" (click)="closeMobileMenu()">
+        <i class="fas fa-sign-in-alt"></i>
+        <span>Login</span>
+      </a>
+      <a routerLink="/auth/register" class="mobile-nav-link" (click)="closeMobileMenu()">
+        <i class="fas fa-user-plus"></i>
+        <span>Register</span>
+      </a>
+      }
+    </div>
+  </div>
+  }
 </nav>
 
-<!-- Overlay for mobile menu -->
+<!-- Mobile Overlay -->
 @if (showMobileMenu) {
 <div class="mobile-overlay" (click)="closeMobileMenu()"></div>
 }

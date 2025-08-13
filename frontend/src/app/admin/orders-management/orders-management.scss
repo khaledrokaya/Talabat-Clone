@@ -95,7 +95,7 @@
             color: white;
             border-radius: 8px;
             padding: 8px 12px;
-          font-size: 14px;
+            font-size: 14px;
 
             option {
               background: var(--gray-800);
@@ -116,7 +116,7 @@
           font-weight: 600;
           transition: all 0.3s ease;
 
-            &:hover {
+          &:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
           }
@@ -172,17 +172,17 @@
         margin-bottom: 24px;
 
         h3 {
-        font-size: 24px;
+          font-size: 24px;
           font-weight: 700;
           color: var(--gray-800);
           margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
 
-        i {
+          i {
             color: var(--primary-color);
-          font-size: 20px;
+            font-size: 20px;
           }
 
           .time-badge {
@@ -205,32 +205,32 @@
 
       .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 24px;
       }
 
-        .stat-card {
-          background: white;
-          border-radius: 20px;
+      .stat-card {
+        background: white;
+        border-radius: 20px;
         padding: 24px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         border: 1px solid var(--gray-200);
         transition: all 0.3s ease;
-          position: relative;
-          overflow: hidden;
+        position: relative;
+        overflow: hidden;
 
         &:hover {
           transform: translateY(-4px);
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
         }
 
-          &::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 4px;
+          height: 100%;
           transition: all 0.3s ease;
         }
 
@@ -289,13 +289,13 @@
           margin-bottom: 16px;
 
           .stat-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
             font-size: 20px;
             transition: all 0.3s ease;
 
@@ -349,8 +349,8 @@
           }
 
           .stat-trend {
-          display: flex;
-          align-items: center;
+            display: flex;
+            align-items: center;
             gap: 4px;
             padding: 4px 8px;
             border-radius: 12px;
@@ -398,7 +398,7 @@
 
         .stat-value {
           font-size: 32px;
-            font-weight: 700;
+          font-weight: 700;
           color: var(--gray-800);
           margin-bottom: 8px;
           line-height: 1;
@@ -443,14 +443,14 @@
       border: 1px solid var(--gray-200);
 
       .analytics-header {
-          display: flex;
+        display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 20px;
 
         h4 {
           font-size: 18px;
-            font-weight: 700;
+          font-weight: 700;
           color: var(--gray-800);
           margin: 0;
         }
@@ -470,7 +470,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
 
-              &:hover {
+            &:hover {
               border-color: var(--primary-color);
               color: var(--primary-color);
             }
@@ -478,7 +478,7 @@
             &.active {
               background: var(--primary-color);
               border-color: var(--primary-color);
-                color: white;
+              color: white;
             }
           }
         }
@@ -494,7 +494,7 @@
           border-radius: 12px;
 
           .chart-placeholder {
-    text-align: center;
+            text-align: center;
             color: var(--gray-500);
 
             i {
@@ -570,7 +570,7 @@
               gap: 4px;
               color: #F59E0B;
               font-size: 14px;
-    font-weight: 600;
+              font-weight: 600;
             }
           }
         }
@@ -586,10 +586,10 @@
 
     100% {
       transform: rotate(360deg);
+    }
   }
-}
 
-// Responsive Design
+  // Responsive Design
   @media (max-width: 1200px) {
     .stats-grid {
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -597,10 +597,10 @@
 
     .analytics-grid {
       grid-template-columns: 1fr;
+    }
   }
-}
 
-@media (max-width: 768px) {
+  @media (max-width: 768px) {
     padding: 16px;
 
     .page-header {
@@ -612,21 +612,21 @@
         gap: 16px;
 
         .header-info h1 {
-        font-size: 24px;
-      }
+          font-size: 24px;
+        }
 
         .quick-stats {
           flex-direction: column;
           gap: 16px;
         }
 
-      .header-actions {
-        width: 100%;
+        .header-actions {
+          width: 100%;
           justify-content: stretch;
           flex-wrap: wrap;
 
           .btn {
-          flex: 1;
+            flex: 1;
             min-width: 120px;
           }
         }
@@ -635,8 +635,8 @@
 
     .stats-section {
       .stats-grid {
-      grid-template-columns: 1fr;
-      gap: 16px;
+        grid-template-columns: 1fr;
+        gap: 16px;
       }
 
       .section-header h3 {
@@ -661,10 +661,10 @@
 
         .period-selector {
           justify-content: center;
+        }
       }
     }
   }
-}
 
   @media (max-width: 480px) {
     .page-header {
