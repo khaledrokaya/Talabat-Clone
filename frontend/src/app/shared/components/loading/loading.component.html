@@ -1,0 +1,77 @@
+<div class="loading-overlay" *ngIf="isLoading">
+  <!-- Background Hero Icons -->
+  <div class="hero-icons">
+    <i class="icon-floating icon-1 fas fa-utensils"></i>
+    <i class="icon-floating icon-2 fas fa-shipping-fast"></i>
+    <i class="icon-floating icon-3 fas fa-store"></i>
+    <i class="icon-floating icon-4 fas fa-clock"></i>
+    <i class="icon-floating icon-5 fas fa-star"></i>
+    <i class="icon-floating icon-6 fas fa-heart"></i>
+    <i class="icon-floating icon-7 fas fa-credit-card"></i>
+    <i class="icon-floating icon-8 fas fa-mobile-alt"></i>
+    <i class="icon-floating icon-9 fas fa-map-marker-alt"></i>
+    <i class="icon-floating icon-10 fas fa-shield-alt"></i>
+    <i class="icon-floating icon-11 fas fa-trophy"></i>
+    <i class="icon-floating icon-12 fas fa-thumbs-up"></i>
+  </div>
+
+  <!-- Animated Background Shapes -->
+  <div class="bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+
+  <!-- Main Loading Content -->
+  <div class="loading-container">
+    <!-- Logo Section -->
+    <div class="logo-container">
+      <div class="logo-wrapper">
+        <app-talabat-logo [width]="logoSize.width" [height]="logoSize.height" customClass="brand-logo">
+        </app-talabat-logo>
+      </div>
+    </div>
+
+    <!-- Loading Animation -->
+    <div class="loading-animation">
+      <div class="delivery-truck">
+        <i class="fas fa-shipping-fast"></i>
+      </div>
+      <div class="loading-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
+    <!-- Loading Text -->
+    <div class="loading-text">
+      <h2 class="fs-3 fw-bold text-light text-nowrap">{{ displayText }}</h2>
+      <p class="subtitle">Bringing delicious food to your doorstep</p>
+
+      <!-- Progress Bar -->
+      <div class="progress-container" *ngIf="showProgress">
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="progress"></div>
+        </div>
+        <span class="progress-text">{{ progress }}%</span>
+      </div>
+    </div>
+
+    <!-- Features Preview -->
+    <div class="features-preview">
+      <div class="feature">
+        <i class="fas fa-clock"></i>
+        <span>Fast Delivery</span>
+      </div>
+      <div class="feature">
+        <i class="fas fa-utensils"></i>
+        <span>Quality Food</span>
+      </div>
+      <div class="feature">
+        <i class="fas fa-heart"></i>
+        <span>Made with Love</span>
+      </div>
+    </div>
+  </div>
+</div>

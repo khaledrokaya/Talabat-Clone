@@ -1,4 +1,7 @@
+<!-- Global Loading Component -->
+<app-loading [isLoading]="(loadingService.isLoading$ | async) || false"
+  [text]="'Loading delicious food...'"></app-loading>
+
 <app-navbar></app-navbar>
 <router-outlet></router-outlet>
 <app-footer></app-footer>
-
