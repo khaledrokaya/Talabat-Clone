@@ -259,11 +259,20 @@ export class OrderService {
   }
 
   /**
-   * Cancel order
+   * Get order details for tracking
+   * GET /api/orders/{id} - Use the main order endpoint instead of deprecated /details
+   * @deprecated Use getOrderById instead for order details
+   */
+  getOrderDetails(orderId: string): Observable<{ success: boolean; data: any }> {
+    return this.getOrderById(orderId) as any;
+  }
+
+  /**
+   * Cancel order with reason
    * PATCH /api/orders/{id}/cancel
    */
-  cancelOrder(orderId: string, cancelData: CancelOrderRequest): Observable<any> {
-    return this.http.patch(`${this.API_BASE}/orders/${orderId}/cancel`, cancelData);
+  cancelOrder(orderId: string, reason?: string): Observable<any> {
+    return this.http.patch(`${this.API_BASE}/orders/${orderId}/cancel`, { reason: reason || 'Customer requested cancellation' });
   }
 
   /**

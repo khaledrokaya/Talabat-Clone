@@ -51,20 +51,49 @@ export class OrderService {
     updatedBy: string,
     reason?: string,
   ): Promise<any> {
-    // Placeholder implementation
-    return {
-      _id: orderId,
-      status,
-      statusHistory: [
-        {
-          status,
-          timestamp: new Date(),
-          updatedBy,
-          reason,
-        },
-      ],
-      updatedAt: new Date(),
+    const Order = require('../schemas/order.schema').default;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    // Validate status transitions
+    const validTransitions: { [key: string]: string[] } = {
+      'pending': ['confirmed', 'cancelled'],
+      'confirmed': ['preparing', 'cancelled'],
+      'preparing': ['ready', 'cancelled'],
+      'ready': ['assigned', 'cancelled'],
+      'assigned': ['picked_up', 'cancelled'],
+      'picked_up': ['delivered', 'cancelled'],
+      'delivered': [],
+      'cancelled': []
     };
+
+    if (!validTransitions[order.status].includes(status)) {
+      throw new Error(`Invalid status transition from ${order.status} to ${status}`);
+    }
+
+    // Update order status
+    const previousStatus = order.status;
+    order.status = status;
+
+    // Add to timeline
+    if (!order.timeline) {
+      order.timeline = [];
+    }
+
+    order.timeline.push({
+      status,
+      timestamp: new Date(),
+      note: reason || `Status updated from ${previousStatus} to ${status}`,
+      updatedBy
+    });
+
+    order.updatedAt = new Date();
+    await order.save();
+
+    return order;
   }
 
   /**

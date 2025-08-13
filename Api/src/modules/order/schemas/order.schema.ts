@@ -21,8 +21,8 @@ export interface IOrder extends Document {
   | 'preparing'
   | 'ready'
   | 'assigned'
-  | 'picked-up'
-  | 'on-the-way'
+  | 'picked_up'
+  | 'on_the_way'
   | 'delivered'
   | 'cancelled';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
@@ -50,6 +50,9 @@ export interface IOrder extends Document {
   };
   estimatedDeliveryTime?: Date;
   actualDeliveryTime?: Date;
+  pickedUpAt?: Date;
+  onTheWayAt?: Date;
+  deliveredAt?: Date;
   preparationTime: number; // in minutes
   specialInstructions?: string;
   cancellationReason?: string;
@@ -146,8 +149,8 @@ const orderSchema = new Schema(
           'preparing',
           'ready',
           'assigned',
-          'picked-up',
-          'on-the-way',
+          'picked_up',
+          'on_the_way',
           'delivered',
           'cancelled',
         ],
@@ -256,6 +259,15 @@ const orderSchema = new Schema(
       type: Date,
     },
     actualDeliveryTime: {
+      type: Date,
+    },
+    pickedUpAt: {
+      type: Date,
+    },
+    onTheWayAt: {
+      type: Date,
+    },
+    deliveredAt: {
       type: Date,
     },
     preparationTime: {

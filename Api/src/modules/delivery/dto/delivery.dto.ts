@@ -24,17 +24,25 @@ export interface UpdateOrderStatusDTO {
 }
 
 export interface SearchOrdersDTO {
-  status?: 'assigned' | 'picked_up' | 'on_the_way' | 'delivered' | 'cancelled';
+  status?: 'pending' | 'assigned' | 'picked_up' | 'on_the_way' | 'delivered' | 'cancelled';
   dateFrom?: string;
   dateTo?: string;
   page?: number;
   limit?: number;
 }
 
+export interface AvailableOrdersDTO {
+  page?: number;
+  limit?: number;
+  maxDistance?: number; // in kilometers;
+}
+
 export interface DeliveryEarningsDTO {
   dateFrom?: string;
   dateTo?: string;
-  period?: 'daily' | 'weekly' | 'monthly';
+  period?: 'day' | 'week' | 'month' | 'year' | 'daily' | 'weekly' | 'monthly';
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface UpdateVehicleInfoDTO {

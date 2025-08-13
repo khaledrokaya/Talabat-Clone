@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, customerGuard, restaurantGuard, adminGuard } from './shared/guards/auth.guard';
+import { authGuard, customerGuard, restaurantGuard, adminGuard, deliveryGuard } from './shared/guards/auth.guard';
 import { UnauthorizedComponent } from './shared/components/unauthorized.component';
 
 export const routes: Routes = [
@@ -12,7 +12,8 @@ export const routes: Routes = [
   { path: 'profile', loadChildren: () => import('./profile/profile.routes').then(m => m.PROFILE_ROUTES), canActivate: [authGuard] },
   { path: 'admin', loadChildren: () => import('./admin/admin.routes').then(m => m.AdminRoutes), canActivate: [adminGuard] },
   { path: 'restaurant-dashboard', loadChildren: () => import('./restaurant-dashboard/restaurant-dashboard.routes').then(m => m.RESTAURANT_DASHBOARD_ROUTES), canActivate: [restaurantGuard] },
-  { path: 'delivery-dashboard', redirectTo: '/orders', pathMatch: 'full' }, // Delivery users use orders section
+  { path: 'delivery-dashboard', loadChildren: () => import('./delivery-dashboard/delivery-dashboard.routes').then(m => m.deliveryDashboardRoutes), canActivate: [deliveryGuard] },
+  { path: 'order-lifecycle-demo', loadComponent: () => import('./order-lifecycle-demo/order-lifecycle-demo.component').then(m => m.OrderLifecycleDemoComponent) },
   { path: 'unauthorized', component: UnauthorizedComponent },
   { path: '', redirectTo: 'home', pathMatch: 'full' }
 ];

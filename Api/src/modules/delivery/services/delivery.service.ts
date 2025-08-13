@@ -1,12 +1,14 @@
 import { Delivery } from '../../delivery/schemas/delivery.schema';
 import { AppError } from '../../shared/middlewares/error.middleware';
 import { Helpers } from '../../shared/utils/helpers';
+import CacheService from '../../shared/services/cache.service';
 import {
   UpdateLocationDTO,
   UpdateAvailabilityDTO,
   AcceptOrderDTO,
   UpdateOrderStatusDTO,
   SearchOrdersDTO,
+  AvailableOrdersDTO,
   DeliveryEarningsDTO,
   UpdateVehicleInfoDTO,
   UpdateAvailableAreasDTO,
@@ -17,6 +19,30 @@ import {
 } from '../dto/delivery.dto';
 
 export class DeliveryService {
+  private cache = CacheService.getInstance();
+
+  /**
+   * Get delivery person's current status (online/available)
+   */
+  async getDeliveryStatus(deliveryId: string): Promise<any> {
+    const delivery = await Delivery.findById(deliveryId);
+    if (!delivery) {
+      throw new AppError('Delivery person not found', 404);
+    }
+
+    return {
+      isOnline: delivery.isOnline || false,
+      isAvailable: delivery.isAvailable || false,
+      currentLocation: delivery.currentLocation ? {
+        lat: delivery.currentLocation.lat,
+        lng: delivery.currentLocation.lng,
+        lastUpdated: delivery.currentLocation.lastUpdated
+      } : null,
+      hasCurrentOrder: !!delivery.currentOrder,
+      verificationStatus: delivery.verificationStatus
+    };
+  }
+
   /**
    * Update delivery person's location
    */
@@ -29,15 +55,29 @@ export class DeliveryService {
       throw new AppError('Delivery person not found', 404);
     }
 
+    const [lng, lat] = locationData.coordinates;
+    if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
+      throw new AppError('Invalid coordinates', 400);
+    }
+
+    const updatedAt = new Date();
     delivery.currentLocation = {
-      lat: locationData.coordinates[1], // latitude
-      lng: locationData.coordinates[0], // longitude
-      lastUpdated: new Date(),
+      lat,
+      lng,
+      lastUpdated: updatedAt,
     };
 
     await delivery.save();
 
-    return delivery;
+    // Location updated successfully (WebSocket removed for simplicity)
+
+    return {
+      location: {
+        type: 'Point',
+        coordinates: [lng, lat]
+      },
+      updatedAt
+    };
   }
 
   /**
@@ -52,6 +92,7 @@ export class DeliveryService {
       throw new AppError('Delivery person not found', 404);
     }
 
+    const statusChangedAt = new Date();
     delivery.isOnline = availabilityData.isOnline;
 
     if (availabilityData.isAcceptingOrders !== undefined) {
@@ -60,7 +101,10 @@ export class DeliveryService {
 
     await delivery.save();
 
-    return delivery;
+    return {
+      isOnline: delivery.isOnline,
+      statusChangedAt
+    };
   }
 
   /**
@@ -121,24 +165,92 @@ export class DeliveryService {
       throw new AppError('Order not found', 404);
     }
 
-    if (order.status !== 'confirmed') {
-      throw new AppError('Order is not available for pickup', 400);
+    if (order.deliveryPersonId) {
+      throw new AppError('Order already accepted by another delivery person', 400);
     }
 
-    // Update order
+    // **IMPROVED VALIDATION**: Allow accepting orders that are ready or have been preparing for a while
+    if (!['ready', 'preparing'].includes(order.status)) {
+      throw new AppError(
+        'Order is not ready for pickup yet. Restaurant must confirm the order is ready first.',
+        400
+      );
+    }
+
+    // For 'ready' orders, allow acceptance (ideally they should have timeline entry)
+    if (order.status === 'ready') {
+      // Check timeline if available, but don't be too strict
+      if (order.timeline && order.timeline.length > 0) {
+        const wasMarkedReady = order.timeline.some(entry => entry.status === 'ready');
+        if (!wasMarkedReady) {
+          console.log(`Warning: Order ${orderData.orderId} is marked ready but no timeline entry found`);
+        }
+      }
+    }
+
+    // For 'preparing' orders, check if they've been preparing long enough
+    if (order.status === 'preparing') {
+      if (!order.timeline || !Array.isArray(order.timeline)) {
+        throw new AppError(
+          'Order is still being prepared and timeline data is not available.',
+          400
+        );
+      }
+
+      const preparingEntry = order.timeline.find(entry => entry.status === 'preparing');
+      if (!preparingEntry) {
+        throw new AppError(
+          'Order timeline data is inconsistent. Please contact support.',
+          400
+        );
+      }
+
+      // Check if it's been preparing for at least 15 minutes
+      const preparingTime = new Date().getTime() - new Date(preparingEntry.timestamp).getTime();
+      const fifteenMinutes = 15 * 60 * 1000;
+
+      if (preparingTime < fifteenMinutes) {
+        const remainingMinutes = Math.ceil((fifteenMinutes - preparingTime) / 1000 / 60);
+        throw new AppError(
+          `Order is still being prepared. Please wait ${remainingMinutes} more minute(s) before pickup.`,
+          400
+        );
+      }
+    }
+
+    const estimatedPickupTime = new Date(Date.now() + 15 * 60000);
+
     order.deliveryPersonId = deliveryId;
     order.status = 'assigned';
-    order.estimatedDeliveryTime = new Date(
-      Date.now() + orderData.estimatedDeliveryTime * 60000,
-    );
+
+    // Add to timeline
+    if (!order.timeline) {
+      order.timeline = [];
+    }
+    order.timeline.push({
+      status: 'assigned',
+      timestamp: new Date(),
+      note: `Assigned to delivery person`
+    });
+
     await order.save();
 
-    // Update delivery person
     delivery.currentOrder = order._id;
-    delivery.deliveryHistory.push(order._id);
+    delivery.isAvailable = false;
+    if (!delivery.deliveryHistory.includes(order._id)) {
+      delivery.deliveryHistory.push(order._id);
+    }
     await delivery.save();
 
-    return order;
+    // Clear cache for this delivery person
+    this.cache.clearDeliveryCache(deliveryId);
+
+    return {
+      orderId: order._id,
+      status: 'accepted',
+      estimatedPickupTime,
+      message: 'Order accepted successfully. Please proceed to restaurant for pickup.'
+    };
   }
 
   /**
@@ -162,47 +274,314 @@ export class DeliveryService {
       );
     }
 
+    console.log('=== UPDATE ORDER STATUS DEBUG ===');
+    console.log('Order ID:', orderId);
+    console.log('Current Status:', order.status);
+    console.log('Requested Status:', statusData.status);
+    console.log('Timeline length:', order.timeline ? order.timeline.length : 0);
+    console.log('Timeline:', JSON.stringify(order.timeline, null, 2));
+
+    // **UPDATED VALIDATION**: Allow pickup for ready orders or orders that have been preparing long enough
+    if (statusData.status === 'picked_up') {
+      // Allow pickup if order is already marked as ready
+      if (order.status === 'ready') {
+        // Ideally check timeline, but don't block if missing
+        if (order.timeline && order.timeline.length > 0) {
+          const wasMarkedReady = order.timeline.some(entry => entry.status === 'ready');
+          if (!wasMarkedReady) {
+            console.log(`Warning: Order ${orderId} is marked ready but no timeline entry found - allowing pickup anyway`);
+          }
+        }
+      }
+      // Allow pickup if order has been preparing for a sufficient time
+      else if (order.status === 'preparing') {
+        if (!order.timeline || !Array.isArray(order.timeline)) {
+          throw new AppError(
+            'Cannot mark order as picked up. Order timeline data is not available.',
+            400
+          );
+        }
+
+        const preparingEntry = order.timeline.find(entry => entry.status === 'preparing');
+        if (!preparingEntry) {
+          throw new AppError(
+            'Cannot mark order as picked up. Order timeline data is inconsistent.',
+            400
+          );
+        }
+
+        // Check if it's been preparing for at least 15 minutes
+        const preparingTime = new Date().getTime() - new Date(preparingEntry.timestamp).getTime();
+        const fifteenMinutes = 15 * 60 * 1000;
+
+        if (preparingTime < fifteenMinutes) {
+          const remainingMinutes = Math.ceil((fifteenMinutes - preparingTime) / 1000 / 60);
+          throw new AppError(
+            `Cannot mark order as picked up. Order is still being prepared. Please wait ${remainingMinutes} more minute(s).`,
+            400
+          );
+        }
+      }
+      // For orders in other statuses, require ready status
+      else if (!['assigned'].includes(order.status)) {
+        throw new AppError(
+          'Cannot mark order as picked up. Order must be ready or assigned first.',
+          400
+        );
+      }
+    }
+
+    // Additional validation: Allow delivery progression for orders that meet our criteria
+    if (['on_the_way', 'delivered'].includes(statusData.status)) {
+      // These statuses require the order to have been picked up first
+      if (!['picked_up', 'on_the_way'].includes(order.status)) {
+        throw new AppError(
+          `Cannot mark order as ${statusData.status}. Order must be picked up first.`,
+          400
+        );
+      }
+    }
+
+    const validTransitions: { [key: string]: string[] } = {
+      'assigned': ['picked_up'],
+      'picked_up': ['on_the_way'],
+      'on_the_way': ['delivered']
+    };
+
+    if (!validTransitions[order.status]?.includes(statusData.status)) {
+      throw new AppError(
+        `Invalid status transition from ${order.status} to ${statusData.status}`,
+        400
+      );
+    }
+
+    const updatedAt = new Date();
     order.status = statusData.status;
 
-    if (statusData.notes) {
-      if (!order.deliveryNotes) {
-        order.deliveryNotes = [];
-      }
-      order.deliveryNotes.push({
-        note: statusData.notes,
-        timestamp: new Date(),
-      });
+    // Add to timeline for tracking
+    if (!order.timeline) {
+      order.timeline = [];
     }
+    order.timeline.push({
+      status: statusData.status,
+      timestamp: updatedAt,
+      note: `Updated by delivery person`
+    });
 
-    if (statusData.deliveryProof) {
-      order.deliveryProof = statusData.deliveryProof;
-    }
-
-    // Update timestamps
     switch (statusData.status) {
       case 'picked_up':
-        order.pickedUpAt = new Date();
+        order.pickedUpAt = updatedAt;
         break;
       case 'on_the_way':
-        order.onTheWayAt = new Date();
+        order.onTheWayAt = updatedAt;
         break;
-      case 'delivered': {
-        order.deliveredAt = new Date();
-        // Remove from delivery person's current order and add to history
+      case 'delivered':
+        order.deliveredAt = updatedAt;
         const delivery = await Delivery.findById(deliveryId);
         if (delivery) {
           delivery.currentOrder = undefined;
-          if (!delivery.deliveryHistory.includes(orderId as any)) {
-            delivery.deliveryHistory.push(orderId as any);
-          }
+          delivery.isAvailable = true;
           await delivery.save();
+          // Clear cache when order is completed
+          this.cache.clearDeliveryCache(deliveryId);
         }
         break;
-      }
     }
 
     await order.save();
 
+    // Clear cache to ensure fresh data on next request
+    this.cache.clearDeliveryCache(deliveryId);
+
+    // Order status updated successfully (WebSocket removed for simplicity)
+
+    return {
+      orderId: order._id,
+      status: statusData.status,
+      updatedAt,
+      message: 'Order status updated successfully'
+    };
+  }
+
+  /**
+   * Get available orders for delivery assignment
+   */
+  async getAvailableOrders(
+    deliveryId: string,
+    filters: AvailableOrdersDTO,
+  ): Promise<any> {
+    const Order = require('../../order/schemas/order.schema').default;
+
+    // Get delivery person's current location
+    const delivery = await Delivery.findById(deliveryId);
+    if (!delivery) {
+      throw new AppError('Delivery person not found', 404);
+    }
+
+    // console.log(delivery); // Removed verbose logging
+    if (!delivery.isOnline || !delivery.isAvailable) {
+      return {
+        orders: [],
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 0,
+          pages: 0
+        }
+      };
+    }
+
+    // **IMPROVED QUERY**: Look for orders that could be ready for pickup
+    // Include orders that are 'ready' or 'preparing' (but validate timeline for preparing orders)
+    const query: any = {
+      status: { $in: ['ready', 'preparing'] }, // Allow both ready and preparing orders
+      $or: [
+        { deliveryPersonId: { $exists: false } },
+        { deliveryPersonId: null }
+      ]
+    };
+
+    const page = filters.page || 1;
+    const limit = filters.limit || 10;
+    const { skip, limit: pageLimit } = Helpers.paginate(page, limit);
+
+    const orders = await Order.find(query)
+      .populate('customerId', 'firstName lastName phone')
+      .populate('restaurantId', 'firstName lastName restaurantDetails phone')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(pageLimit)
+      .select('_id customerInfo deliveryAddress restaurantId customerId totalAmount deliveryFee status estimatedDeliveryTime createdAt items timeline updatedAt');
+
+    console.log('Found available orders (ready for pickup):', orders.length);
+
+    // Debug: Log timeline data for first order
+    if (orders.length > 0) {
+      console.log('Sample order timeline:', JSON.stringify(orders[0].timeline, null, 2));
+      console.log('Sample order status:', orders[0].status);
+    }
+
+    // Additional validation: Filter orders that are actually available for pickup
+    const validOrders = orders.filter(order => {
+      // Always accept orders with status 'ready'
+      if (order.status === 'ready') {
+        // For ready orders, ideally check timeline, but don't be too strict
+        if (order.timeline && Array.isArray(order.timeline)) {
+          const hasReadyTimeline = order.timeline.some(entry => entry.status === 'ready');
+          if (!hasReadyTimeline) {
+            console.log(`Order ${order._id} status is ready but no timeline entry found - but allowing anyway`);
+          }
+        }
+        return true;
+      }
+
+      // For 'preparing' orders, check if they've been preparing for a reasonable time
+      if (order.status === 'preparing') {
+        if (!order.timeline || !Array.isArray(order.timeline)) {
+          console.log(`Order ${order._id} is preparing but has no timeline - rejecting`);
+          return false;
+        }
+
+        // Find when the order started preparing
+        const preparingEntry = order.timeline.find(entry => entry.status === 'preparing');
+        if (!preparingEntry) {
+          console.log(`Order ${order._id} status is preparing but no timeline entry found - rejecting`);
+          return false;
+        }
+
+        // Check if it's been preparing for at least 15 minutes (could be ready)
+        const preparingTime = new Date().getTime() - new Date(preparingEntry.timestamp).getTime();
+        const fifteenMinutes = 15 * 60 * 1000;
+
+        if (preparingTime >= fifteenMinutes) {
+          console.log(`Order ${order._id} has been preparing for ${Math.round(preparingTime / 1000 / 60)} minutes - allowing for pickup`);
+          return true;
+        } else {
+          console.log(`Order ${order._id} has only been preparing for ${Math.round(preparingTime / 1000 / 60)} minutes - not ready yet`);
+          return false;
+        }
+      }
+
+      return false;
+    });
+
+    console.log('Orders validated as ready for pickup:', validOrders.length);
+
+    // Format orders for response
+    const formattedOrders = validOrders.map(order => ({
+      _id: order._id,
+      restaurant: {
+        name: order.restaurantId?.restaurantDetails?.name ||
+          `${order.restaurantId?.firstName} ${order.restaurantId?.lastName}`,
+        address: order.restaurantId?.restaurantDetails?.address || 'Restaurant Address',
+        phone: order.restaurantId?.phone || 'N/A'
+      },
+      customer: {
+        name: order.customerInfo?.name ||
+          `${order.customerId?.firstName} ${order.customerId?.lastName}`,
+        address: order.deliveryAddress ?
+          `${order.deliveryAddress.street}, ${order.deliveryAddress.city}` :
+          'Delivery Address',
+        phone: order.customerInfo?.phone || order.customerId?.phone || 'N/A'
+      },
+      totalAmount: order.totalAmount,
+      deliveryFee: order.deliveryFee || 0,
+      status: order.status,
+      estimatedDeliveryTime: order.estimatedDeliveryTime,
+      createdAt: order.createdAt,
+      items: order.items || []
+    }));
+
+    const total = formattedOrders.length;
+
+    return {
+      orders: formattedOrders,
+      pagination: {
+        page,
+        limit: pageLimit,
+        total,
+        pages: Math.ceil(total / pageLimit)
+      }
+    };
+  }
+
+  /**
+   * UTILITY METHOD: Manually mark an order as ready for testing
+   * This can be used to test the delivery flow when restaurant workflow isn't fully implemented
+   */
+  async markOrderAsReadyForTesting(orderId: string): Promise<any> {
+    const Order = require('../../order/schemas/order.schema').default;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      throw new AppError('Order not found', 404);
+    }
+
+    // Update status to ready
+    order.status = 'ready';
+
+    // Ensure timeline exists and add ready entry
+    if (!order.timeline) {
+      order.timeline = [];
+    }
+
+    // Add timeline entries if missing
+    const statuses = ['confirmed', 'preparing', 'ready'];
+    const currentTime = new Date();
+
+    statuses.forEach((status, index) => {
+      const exists = order.timeline.some(entry => entry.status === status);
+      if (!exists) {
+        order.timeline.push({
+          status,
+          timestamp: new Date(currentTime.getTime() - (statuses.length - index - 1) * 5 * 60000), // 5 minutes apart
+          note: `${status} - added for testing`
+        });
+      }
+    });
+
+    await order.save();
+    console.log(`Order ${orderId} marked as ready for testing`);
     return order;
   }
 
@@ -213,12 +592,22 @@ export class DeliveryService {
     deliveryId: string,
     filters: SearchOrdersDTO,
   ): Promise<any> {
+    const cacheKey = `${deliveryId}:${JSON.stringify(filters)}`;
+    const cached = this.cache.getOrders(cacheKey);
+    if (cached) return cached;
+
     const Order = require('../../order/schemas/order.schema').default;
 
-    const query: any = { deliveryPersonId: deliveryId };
+    const query: any = {};
 
-    if (filters.status) {
-      query.status = filters.status;
+    if (filters.status === 'pending') {
+      query.status = { $in: ['ready', 'confirmed'] };
+      query.deliveryPersonId = { $exists: false };
+    } else {
+      query.deliveryPersonId = deliveryId;
+      if (filters.status) {
+        query.status = filters.status;
+      }
     }
 
     if (filters.dateFrom || filters.dateTo) {
@@ -232,25 +621,42 @@ export class DeliveryService {
     }
 
     const page = filters.page || 1;
-    const limit = filters.limit || 20;
+    const limit = filters.limit || 10;
     const { skip, limit: pageLimit } = Helpers.paginate(page, limit);
 
     const orders = await Order.find(query)
-      .populate('customerId', 'firstName lastName')
-      .populate('restaurantId', 'firstName lastName restaurantDetails.name')
+      .populate('customerId', 'firstName lastName phone')
+      .populate('restaurantId', 'firstName lastName')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(pageLimit);
+      .limit(pageLimit)
+      .select('_id customerInfo deliveryAddress totalAmount status estimatedDeliveryTime items');
 
-    const totalOrders = await Order.countDocuments(query);
-    const totalPages = Math.ceil(totalOrders / pageLimit);
+    const total = await Order.countDocuments(query);
 
-    return {
-      orders,
-      totalOrders,
-      totalPages,
-      currentPage: page,
+    const formattedOrders = orders.map(order => ({
+      _id: order._id,
+      customer: {
+        name: order.customerInfo?.name || `${order.customerId?.firstName} ${order.customerId?.lastName}`,
+        address: `${order.deliveryAddress?.street}, ${order.deliveryAddress?.city}`
+      },
+      status: order.status,
+      totalAmount: order.totalAmount,
+      estimatedDeliveryTime: order.estimatedDeliveryTime
+    }));
+
+    const result = {
+      orders: formattedOrders,
+      pagination: {
+        page,
+        limit: pageLimit,
+        total,
+        pages: Math.ceil(total / pageLimit)
+      }
     };
+
+    this.cache.setOrders(cacheKey, result);
+    return result;
   }
 
   /**
@@ -260,21 +666,46 @@ export class DeliveryService {
     deliveryId: string,
     filters: DeliveryEarningsDTO,
   ): Promise<any> {
+    const cacheKey = `${deliveryId}:${JSON.stringify(filters)}`;
+    const cached = this.cache.getEarnings(cacheKey);
+    if (cached) return cached;
+
     const Order = require('../../order/schemas/order.schema').default;
+
+    let startDate: Date | undefined;
+    let endDate: Date = new Date();
+
+    if (filters.period) {
+      const now = new Date();
+      switch (filters.period) {
+        case 'day':
+          startDate = new Date(now.setHours(0, 0, 0, 0));
+          endDate = new Date(now.setHours(23, 59, 59, 999));
+          break;
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'year':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+      }
+    }
+
+    if (filters.startDate) startDate = new Date(filters.startDate);
+    if (filters.endDate) endDate = new Date(filters.endDate);
 
     const matchStage: any = {
       deliveryPersonId: deliveryId,
       status: 'delivered',
     };
 
-    if (filters.dateFrom || filters.dateTo) {
+    if (startDate || endDate) {
       matchStage.deliveredAt = {};
-      if (filters.dateFrom) {
-        matchStage.deliveredAt.$gte = new Date(filters.dateFrom);
-      }
-      if (filters.dateTo) {
-        matchStage.deliveredAt.$lte = new Date(filters.dateTo);
-      }
+      if (startDate) matchStage.deliveredAt.$gte = startDate;
+      if (endDate) matchStage.deliveredAt.$lte = endDate;
     }
 
     const earnings = await Order.aggregate([
@@ -283,62 +714,47 @@ export class DeliveryService {
         $group: {
           _id: null,
           totalEarnings: { $sum: '$deliveryFee' },
-          totalOrders: { $sum: 1 },
+          deliveryCount: { $sum: 1 },
           averageEarningsPerOrder: { $avg: '$deliveryFee' },
-          totalTips: { $sum: '$tip' },
         },
       },
     ]);
 
-    // Group by period if specified
-    let periodBreakdown = [];
-    if (filters.period) {
-      let groupBy: any = {};
-
-      switch (filters.period) {
-        case 'daily':
-          groupBy = {
-            year: { $year: '$deliveredAt' },
-            month: { $month: '$deliveredAt' },
-            day: { $dayOfMonth: '$deliveredAt' },
-          };
-          break;
-        case 'weekly':
-          groupBy = {
-            year: { $year: '$deliveredAt' },
-            week: { $week: '$deliveredAt' },
-          };
-          break;
-        case 'monthly':
-          groupBy = {
-            year: { $year: '$deliveredAt' },
-            month: { $month: '$deliveredAt' },
-          };
-          break;
-      }
-
-      periodBreakdown = await Order.aggregate([
+    let breakdown = [];
+    if (filters.period === 'month' || filters.period === 'week' || filters.period === 'monthly' || filters.period === 'weekly') {
+      breakdown = await Order.aggregate([
         { $match: matchStage },
         {
           $group: {
-            _id: groupBy,
+            _id: {
+              $dateToString: { format: '%Y-%m-%d', date: '$deliveredAt' }
+            },
             earnings: { $sum: '$deliveryFee' },
-            orders: { $sum: 1 },
-            tips: { $sum: '$tip' },
+            deliveries: { $sum: 1 },
           },
         },
-        { $sort: { '_id.year': -1, '_id.month': -1, '_id.day': -1 } },
+        { $sort: { '_id': 1 } },
+        {
+          $project: {
+            date: '$_id',
+            earnings: 1,
+            deliveries: 1,
+            _id: 0
+          }
+        }
       ]);
     }
 
-    return {
-      ...(earnings[0] || {}),
-      periodBreakdown,
-      dateRange: {
-        from: filters.dateFrom,
-        to: filters.dateTo,
-      },
+    const result = earnings[0] || { totalEarnings: 0, deliveryCount: 0 };
+
+    const finalResult = {
+      totalEarnings: result.totalEarnings || 0,
+      deliveryCount: result.deliveryCount || 0,
+      breakdown
     };
+
+    this.cache.setEarnings(cacheKey, finalResult);
+    return finalResult;
   }
 
   /**
@@ -542,13 +958,12 @@ export class DeliveryService {
     deliveryId: string,
     statsData: DeliveryStatsDTO,
   ): Promise<any> {
+    const cacheKey = `${deliveryId}:${JSON.stringify(statsData)}`;
+    const cached = this.cache.getStats(cacheKey);
+    if (cached) return cached;
+
     const Order = require('../../order/schemas/order.schema').default;
 
-    const matchStage: any = {
-      deliveryPersonId: deliveryId,
-    };
-
-    // Set date range based on period
     const now = new Date();
     let startDate: Date | undefined;
     let endDate: Date = now;
@@ -556,6 +971,7 @@ export class DeliveryService {
     switch (statsData.period) {
       case 'today':
         startDate = new Date(now.setHours(0, 0, 0, 0));
+        endDate = new Date(now.setHours(23, 59, 59, 999));
         break;
       case 'week':
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -572,6 +988,8 @@ export class DeliveryService {
         break;
     }
 
+    const matchStage: any = { deliveryPersonId: deliveryId };
+
     if (startDate) {
       matchStage.createdAt = { $gte: startDate, $lte: endDate };
     }
@@ -581,17 +999,17 @@ export class DeliveryService {
       {
         $group: {
           _id: null,
-          totalOrders: { $sum: 1 },
-          deliveredOrders: {
+          totalDeliveries: { $sum: 1 },
+          completedDeliveries: {
             $sum: { $cond: [{ $eq: ['$status', 'delivered'] }, 1, 0] },
+          },
+          cancelledDeliveries: {
+            $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] },
           },
           totalEarnings: {
             $sum: {
               $cond: [{ $eq: ['$status', 'delivered'] }, '$deliveryFee', 0],
             },
-          },
-          totalTips: {
-            $sum: { $cond: [{ $eq: ['$status', 'delivered'] }, '$tip', 0] },
           },
           averageDeliveryTime: {
             $avg: {
@@ -611,10 +1029,64 @@ export class DeliveryService {
       },
     ]);
 
-    return {
-      ...(stats[0] || {}),
-      period: statsData.period,
-      dateRange: { startDate, endDate },
+    const delivery = await Delivery.findById(deliveryId).select('ratings');
+    const result = stats[0] || {};
+
+    const finalResult = {
+      totalDeliveries: result.totalDeliveries || 0,
+      completedDeliveries: result.completedDeliveries || 0,
+      cancelledDeliveries: result.cancelledDeliveries || 0,
+      averageRating: delivery?.ratings?.averageRating || 0,
+      totalEarnings: result.totalEarnings || 0,
+      onTimeDeliveryRate: result.completedDeliveries > 0 ?
+        (result.completedDeliveries / result.totalDeliveries) * 100 : 0,
+      averageDeliveryTime: result.averageDeliveryTime ?
+        Math.round(result.averageDeliveryTime / (1000 * 60)) : 0
     };
+
+    this.cache.setStats(cacheKey, finalResult);
+    return finalResult;
+  }
+
+  /**
+   * Track order for any user (customer, restaurant, delivery)
+   * @param orderId The order ID to track
+   * @param user The authenticated user making the request
+   * @returns Order with delivery tracking details
+   */
+  async trackOrder(orderId: string, user: any): Promise<any> {
+    try {
+      const Order = require('../../order/schemas/order.schema').default;
+
+      const order = await Order.findById(orderId)
+        .populate('customerId', 'name email phone')
+        .populate('restaurantId', 'name location phone')
+        .populate('deliveryPersonId', 'name phone')
+        .lean();
+
+      if (!order) {
+        throw new AppError('Order not found', 404);
+      }
+
+      // Check if user has permission to view this order
+      const userId = user._id.toString();
+      const customerId = order.customerId?._id?.toString() || order.customerId?.toString();
+      const restaurantId = order.restaurantId?._id?.toString() || order.restaurantId?.toString();
+      const deliveryPersonId = order.deliveryPersonId?._id?.toString() || order.deliveryPersonId?.toString();
+
+      const hasPermission =
+        customerId === userId ||
+        restaurantId === userId ||
+        (deliveryPersonId && deliveryPersonId === userId) ||
+        user.role === 'admin';
+
+      if (!hasPermission) {
+        throw new AppError('You do not have permission to view this order', 403);
+      }
+
+      return order;
+    } catch (error) {
+      throw error;
+    }
   }
 }

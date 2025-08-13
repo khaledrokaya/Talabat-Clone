@@ -194,12 +194,9 @@ export class RestaurantOrders implements OnInit, OnDestroy {
 
   cancelOrder(orderId: string): void {
     if (confirm('Are you sure you want to cancel this order?')) {
-      const cancelData = {
-        reason: 'Restaurant cancelled order',
-        details: 'Order cancelled by restaurant'
-      };
+      const cancelReason = 'Restaurant cancelled order - Order cancelled by restaurant';
 
-      const cancelSub = this.orderService.cancelOrder(orderId, cancelData).subscribe({
+      const cancelSub = this.orderService.cancelOrder(orderId, cancelReason).subscribe({
         next: (response) => {
           if (response.success) {
             this.loadOrders();

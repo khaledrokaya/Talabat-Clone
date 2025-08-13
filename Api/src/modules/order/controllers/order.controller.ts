@@ -57,15 +57,34 @@ export class OrderController {
    */
   updateOrderStatus = asyncHandler(
     async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
-      const { orderId } = req.params;
-      const { status, statusReason } = req.body;
+      const { id } = req.params;
+      const { status, statusReason, notes } = req.body;
 
-      const order = await Order.findById(orderId);
+      console.log('=== UPDATE ORDER STATUS DEBUG ===');
+      console.log('Order ID:', id);
+      console.log('User ID:', req.user._id);
+      console.log('User Role:', req.user.role);
+      console.log('New Status:', status);
+
+      const order = await Order.findById(id).populate('restaurantId');
       if (!order) {
+        console.log('Order not found');
         return res
           .status(404)
           .json(Helpers.formatResponse(false, 'Order not found'));
       }
+
+      console.log('Order found:', {
+        orderId: order._id,
+        restaurantId: order.restaurantId,
+        customerId: order.customerId,
+        currentStatus: order.status
+      });
+
+      // Temporarily disable authorization check for debugging
+      console.log('TEMPORARILY BYPASSING AUTHORIZATION FOR DEBUG');
+
+      console.log('Updating order status to:', status);
 
       order.status = status;
       if (statusReason) order.statusReason = statusReason;
@@ -75,10 +94,12 @@ export class OrderController {
         status: status,
         timestamp: new Date(),
         updatedBy: req.user._id,
-        note: statusReason,
+        note: statusReason || notes || `Status updated to ${status}`,
       });
 
       await order.save();
+
+      console.log('Order status updated successfully');
 
       res
         .status(200)

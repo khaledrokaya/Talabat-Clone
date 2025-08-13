@@ -1,0 +1,260 @@
+<div class="order-tracking-container">
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="loading-spinner"></div>
+    <p>Loading order details...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error">
+    <div class="error-icon">
+      <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <h2>Order Not Found</h2>
+    <p>{{ error }}</p>
+    <button class="btn btn-primary" routerLink="/orders">
+      <i class="fas fa-arrow-left"></i>
+      Back to Orders
+    </button>
+  </div>
+
+  <!-- Main Content -->
+  <div class="tracking-content" *ngIf="order && !loading && !error">
+    <!-- Header -->
+    <div class="tracking-header">
+      <div class="header-content">
+        <div class="order-title">
+          <h1>
+            <i class="fas fa-route"></i>
+            Order Tracking
+          </h1>
+          <div class="order-meta">
+            <span class="order-number">
+              <i class="fas fa-hashtag"></i>
+              Order {{ order.orderNumber || order._id.slice(-6) }}
+            </span>
+            <span class="order-status" [class]="'status-' + order.status">
+              <i class="fas" [class]="getStepIcon(order.status)"></i>
+              {{ getStatusLabel(order.status) }}
+            </span>
+          </div>
+        </div>
+        <div class="header-actions" *ngIf="canCancelOrder()">
+          <button class="btn btn-danger" (click)="cancelOrder()">
+            <i class="fas fa-times"></i>
+            Cancel Order
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress Timeline -->
+    <div class="progress-section">
+      <h2>
+        <i class="fas fa-clock"></i>
+        Order Progress
+      </h2>
+      <div class="timeline-container">
+        <div class="timeline-track"></div>
+        <div class="timeline-step" *ngFor="let step of orderSteps; let i = index" [class.completed]="step.completed"
+          [class.active]="isCurrentStep(step.status)" [class.current]="isCurrentStep(step.status)">
+          <div class="step-indicator">
+            <div class="step-icon">
+              <i [class]="step.icon"></i>
+            </div>
+          </div>
+          <div class="step-content">
+            <h3>{{ step.label }}</h3>
+            <p>{{ step.description }}</p>
+            <span class="step-time" *ngIf="step.timestamp">
+              <i class="fas fa-clock"></i>
+              {{ step.timestamp | date:'MMM d, h:mm a' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Tracking Section -->
+    <div class="live-tracking-section" *ngIf="showLiveTracking()">
+      <h2>
+        <i class="fas fa-map-marker-alt"></i>
+        Live Tracking
+      </h2>
+      <div class="tracking-card">
+        <div class="map-container">
+          <div class="map-placeholder">
+            <div class="tracking-info">
+              <div class="delivery-location" *ngIf="deliveryLocation">
+                <i class="fas fa-motorcycle"></i>
+                <span>Delivery Person Location</span>
+              </div>
+              <div class="customer-location">
+                <i class="fas fa-home"></i>
+                <span>Your Delivery Address</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="eta-info" *ngIf="order.estimatedDeliveryTime">
+          <div class="eta-card">
+            <i class="fas fa-stopwatch"></i>
+            <div class="eta-details">
+              <span class="eta-label">Estimated Delivery Time</span>
+              <span class="eta-time">{{ order.estimatedDeliveryTime | date:'MMM d, h:mm a' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Details Grid -->
+    <div class="details-grid">
+      <!-- Restaurant Information -->
+      <div class="detail-card restaurant-card">
+        <div class="card-header">
+          <h3>
+            <i class="fas fa-store"></i>
+            Restaurant Details
+          </h3>
+        </div>
+        <div class="card-content">
+          <div class="restaurant-info">
+            <div class="restaurant-name">
+              {{ order.restaurant?.name || (order.restaurant?.firstName + ' ' + order.restaurant?.lastName) }}
+            </div>
+            <div class="restaurant-address" *ngIf="order.restaurant?.address">
+              <i class="fas fa-map-marker-alt"></i>
+              {{ order.restaurant.address }}
+            </div>
+            <div class="restaurant-phone" *ngIf="order.restaurant?.phone">
+              <i class="fas fa-phone"></i>
+              <a href="tel:{{ order.restaurant.phone }}">{{ order.restaurant.phone }}</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delivery Person Information -->
+      <div class="detail-card delivery-card" *ngIf="order.deliveryPerson || order.deliveryPersonId">
+        <div class="card-header">
+          <h3>
+            <i class="fas fa-user-tie"></i>
+            Your Delivery Person
+          </h3>
+        </div>
+        <div class="card-content">
+          <div class="delivery-person-info">
+            <div class="delivery-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <div class="delivery-details">
+              <div class="delivery-name">
+                {{ order.deliveryPerson?.firstName || 'Delivery' }} {{ order.deliveryPerson?.lastName || 'Person' }}
+              </div>
+              <div class="delivery-rating" *ngIf="order.deliveryPerson?.ratings">
+                <span class="rating-stars">
+                  <i class="fas fa-star"></i>
+                  {{ order.deliveryPerson.ratings.averageRating | number:'1.1-1' }}
+                </span>
+                <span class="rating-count">({{ order.deliveryPerson.ratings.totalReviews }} reviews)</span>
+              </div>
+              <div class="delivery-actions">
+                <button class="btn btn-outline" (click)="callDeliveryPerson()" *ngIf="order.deliveryPerson?.phone">
+                  <i class="fas fa-phone"></i>
+                  Call Driver
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Items -->
+      <div class="detail-card items-card">
+        <div class="card-header">
+          <h3>
+            <i class="fas fa-utensils"></i>
+            Order Items
+          </h3>
+          <span class="items-count">{{ order.items.length || 0 }} items</span>
+        </div>
+        <div class="card-content">
+          <div class="order-items">
+            <div class="item-row" *ngFor="let item of order.items">
+              <div class="item-info">
+                <div class="item-name">{{ item.name }}</div>
+                <div class="item-details" *ngIf="item.specialInstructions">
+                  <i class="fas fa-comment"></i>
+                  {{ item.specialInstructions }}
+                </div>
+              </div>
+              <div class="item-quantity">
+                <span class="quantity-badge">{{ item.quantity }}x</span>
+              </div>
+              <div class="item-price">
+                {{ (item.price * item.quantity) | currency }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delivery Address -->
+      <div class="detail-card address-card">
+        <div class="card-header">
+          <h3>
+            <i class="fas fa-map-marker-alt"></i>
+            Delivery Address
+          </h3>
+        </div>
+        <div class="card-content">
+          <div class="address-info">
+            <div class="address-main">
+              {{ order.deliveryAddress?.street }}
+            </div>
+            <div class="address-secondary">
+              {{ order.deliveryAddress?.city }}, {{ order.deliveryAddress?.state }} {{ order.deliveryAddress?.zipCode }}
+            </div>
+            <div class="address-additional" *ngIf="order.deliveryAddress?.additionalInfo">
+              <i class="fas fa-info-circle"></i>
+              {{ order.deliveryAddress.additionalInfo }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Summary -->
+    <div class="summary-section">
+      <h2>
+        <i class="fas fa-receipt"></i>
+        Order Summary
+      </h2>
+      <div class="summary-card">
+        <div class="pricing-details">
+          <div class="price-row">
+            <span class="price-label">Subtotal</span>
+            <span class="price-value">{{ getSubtotal() | currency }}</span>
+          </div>
+          <div class="price-row" *ngIf="order.deliveryFee">
+            <span class="price-label">Delivery Fee</span>
+            <span class="price-value">{{ order.deliveryFee | currency }}</span>
+          </div>
+          <div class="price-row" *ngIf="order.tax">
+            <span class="price-label">Tax</span>
+            <span class="price-value">{{ order.tax | currency }}</span>
+          </div>
+          <div class="price-row" *ngIf="order.discount">
+            <span class="price-label">Discount</span>
+            <span class="price-value discount">-{{ order.discount | currency }}</span>
+          </div>
+          <div class="price-row total-row">
+            <span class="price-label">Total</span>
+            <span class="price-value total">{{ order.totalAmount | currency }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

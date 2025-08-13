@@ -29,17 +29,39 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    // Check if user is a restaurant owner
-    const userSub = this.authService.getCurrentUser().subscribe(user => {
-      this.isRestaurantOwner = user?.role === 'restaurant_owner';
+    // Initialize role from localStorage first for immediate UI update
+    this.checkUserRoleFromStorage();
+
+    // Then try to get fresh user data from API
+    const userSub = this.authService.getCurrentUser().subscribe({
+      next: (user) => {
+        this.isRestaurantOwner = user?.role === 'restaurant_owner';
+      },
+      error: (error) => {
+        // Keep the role from localStorage if API fails
+        this.checkUserRoleFromStorage();
+      }
     });
     this.subscriptions.push(userSub);
-
     this.orderId = this.route.snapshot.params['id'];
     if (this.orderId) {
       this.loadOrderDetails();
     } else {
       this.router.navigate(['/orders']);
+    }
+  }
+
+  private checkUserRoleFromStorage(): void {
+    try {
+      const userStr = localStorage.getItem('currentUser');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        this.isRestaurantOwner = user?.role === 'restaurant_owner';
+      } else {
+        this.isRestaurantOwner = false;
+      }
+    } catch (error) {
+      this.isRestaurantOwner = false;
     }
   }
 
@@ -107,21 +129,20 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   }
 
   trackOrder(): void {
-    // Navigate to tracking page or show tracking modal
-    console.log('Tracking order:', this.orderId);
+    // Navigate to tracking page
+    this.router.navigate(['/orders/tracking', this.orderId]);
   }
 
   cancelOrder(): void {
     if (confirm('Are you sure you want to cancel this order?')) {
-      const cancelData = {
-        reason: 'Customer requested cancellation',
-        details: 'Order cancelled by customer'
-      };
+      const cancelReason = 'Customer requested cancellation - Order cancelled by customer';
 
-      const cancelSub = this.orderService.cancelOrder(this.orderId, cancelData).subscribe({
+      const cancelSub = this.orderService.cancelOrder(this.orderId, cancelReason).subscribe({
         next: (response) => {
           if (response.success) {
+            this.successMessage = 'Order has been cancelled successfully';
             this.loadOrderDetails(); // Reload to get updated status
+            this.hideMessageAfterDelay();
           } else {
             this.errorMessage = response.message || 'Failed to cancel order';
             this.hideMessageAfterDelay();
@@ -139,19 +160,32 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
   rateOrder(): void {
     // TODO: Implement rating functionality
-    console.log('Rating order:', this.orderId);
   }
 
   // Restaurant owner specific methods
   updateOrderStatus(newStatus: OrderStatus): void {
-    if (!this.isRestaurantOwner) return;
+    if (!this.isRestaurantOwner) {
+      console.error('User is not a restaurant owner');
+      this.errorMessage = 'You are not authorized to perform this action';
+      this.hideMessageAfterDelay();
+      return;
+    }
+
+    // Use the actual order ID from the loaded order, not the route parameter
+    const actualOrderId = this.order?._id || this.order?.id || this.orderId;
+    console.log('Updating order status:', {
+      newStatus,
+      routeOrderId: this.orderId,
+      actualOrderId: actualOrderId,
+      orderObject: this.order
+    });
 
     const statusData: UpdateStatusRequest = {
       status: newStatus,
       notes: `Status updated by restaurant to ${this.getStatusText(newStatus)}`
     };
 
-    const updateSub = this.orderService.updateOrderStatus(this.orderId, statusData).subscribe({
+    const updateSub = this.orderService.updateOrderStatus(actualOrderId, statusData).subscribe({
       next: (response) => {
         if (response.success) {
           this.successMessage = `Order status updated to ${this.getStatusText(newStatus)}`;
@@ -164,7 +198,26 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error updating order status:', error);
-        this.errorMessage = 'Failed to update order status';
+        console.error('Error details:', {
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+          url: error.url,
+          body: error.error
+        });
+
+        let errorMessage = 'Failed to update order status';
+        if (error.status === 404) {
+          errorMessage = 'Order not found. This order may not exist or you may not have permission to update it.';
+        } else if (error.status === 403) {
+          errorMessage = 'You are not authorized to update this order.';
+        } else if (error.status === 401) {
+          errorMessage = 'Authentication required. Please log in again.';
+        } else if (error.error?.message) {
+          errorMessage = error.error.message;
+        }
+
+        this.errorMessage = errorMessage;
         this.hideMessageAfterDelay();
       }
     });

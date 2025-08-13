@@ -30,6 +30,25 @@ export class DeliveryController {
   );
 
   /**
+   * Get delivery person's current status
+   */
+  getDeliveryStatus = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+      const result = await this.deliveryService.getDeliveryStatus(req.user._id);
+
+      res
+        .status(200)
+        .json(
+          Helpers.formatResponse(
+            true,
+            'Delivery status retrieved successfully',
+            result,
+          ),
+        );
+    },
+  );
+
+  /**
    * Update availability status
    */
   updateAvailability = asyncHandler(
@@ -95,6 +114,28 @@ export class DeliveryController {
   );
 
   /**
+   * Get available orders for delivery
+   */
+  getAvailableOrders = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+      const result = await this.deliveryService.getAvailableOrders(
+        req.user._id,
+        req.query as any,
+      );
+
+      res
+        .status(200)
+        .json(
+          Helpers.formatResponse(
+            true,
+            'Available orders retrieved successfully',
+            result,
+          ),
+        );
+    },
+  );
+
+  /**
    * Get delivery orders
    */
   getDeliveryOrders = asyncHandler(
@@ -108,6 +149,26 @@ export class DeliveryController {
         .status(200)
         .json(
           Helpers.formatResponse(true, 'Orders retrieved successfully', result),
+        );
+    },
+  );
+
+  /**
+   * Track order details
+   */
+  trackOrder = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+      const { orderId } = req.params;
+      const result = await this.deliveryService.trackOrder(orderId, req.user);
+
+      res
+        .status(200)
+        .json(
+          Helpers.formatResponse(
+            true,
+            'Order tracking details retrieved successfully',
+            result,
+          ),
         );
     },
   );

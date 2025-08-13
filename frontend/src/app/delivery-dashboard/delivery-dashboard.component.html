@@ -1,0 +1,347 @@
+<div class="delivery-dashboard">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-left">
+      <i class="fas fa-shipping-fast header-icon"></i>
+      <h1>Delivery Dashboard</h1>
+    </div>
+    <div class="status-controls">
+      <label class="toggle-switch">
+        <input type="checkbox" [checked]="isOnline" (change)="toggleAvailability($event)" />
+        <span class="slider"></span>
+        <span class="status-text">
+          <i class="fas" [class.fa-wifi]="isOnline" [class.fa-wifi-slash]="!isOnline"></i>
+          {{ isOnline ? 'Online' : 'Offline' }}
+        </span>
+      </label>
+      <button class="btn btn-outline" (click)="refreshStatus()" title="Refresh Status">
+        <i class="fas fa-sync-alt"></i>
+        Refresh Status
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card earnings">
+      <div class="stat-icon">
+        <i class="fas fa-dollar-sign"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ stats?.totalEarnings | currency }}</h3>
+        <p>Total Earnings</p>
+      </div>
+    </div>
+    <div class="stat-card deliveries">
+      <div class="stat-icon">
+        <i class="fas fa-box"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ stats?.completedDeliveries }}</h3>
+        <p>Completed Deliveries</p>
+      </div>
+    </div>
+    <div class="stat-card rating">
+      <div class="stat-icon">
+        <i class="fas fa-star"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ stats?.averageRating | number:'1.1-1' }}</h3>
+        <p>Average Rating</p>
+      </div>
+    </div>
+    <div class="stat-card efficiency">
+      <div class="stat-icon">
+        <i class="fas fa-bolt"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ stats?.onTimeDeliveryRate | number:'1.0-0' }}%</h3>
+        <p>On-time Rate</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Current Location -->
+  <div class="location-section" *ngIf="isOnline">
+    <div class="section-title">
+      <i class="fas fa-map-marker-alt"></i>
+      <h2>Current Location</h2>
+    </div>
+    <div class="location-controls">
+      <button class="btn btn-primary" (click)="updateCurrentLocation()" [disabled]="updatingLocation">
+        <i class="fas fa-crosshairs"></i>
+        {{ updatingLocation ? 'Updating...' : 'Update Location' }}
+      </button>
+      <span class="location-status" *ngIf="lastLocationUpdate">
+        <i class="fas fa-clock"></i>
+        Last updated: {{ lastLocationUpdate | date:'short' }}
+      </span>
+    </div>
+    <div class="status-info">
+      <small>
+        <i class="fas fa-info-circle"></i>
+        Status: {{ isOnline ? 'Online' : 'Offline' }} |
+        Location: {{ lastLocationUpdate ? 'Available' : 'Not Set' }}
+      </small>
+    </div>
+  </div>
+
+  <!-- Orders Section -->
+  <div class="orders-section">
+    <div class="section-header">
+      <div class="section-title">
+        <i class="fas fa-clipboard-list"></i>
+        <h2>Orders</h2>
+      </div>
+      <div class="filters">
+        <select [(ngModel)]="selectedStatus" (change)="onFilterChange()" class="form-control">
+          <option value="">All Orders</option>
+          <option value="available">Available Orders</option>
+          <option value="assigned">Assigned</option>
+          <option value="picked_up">Picked Up</option>
+          <option value="on_the_way">On the Way</option>
+          <option value="delivered">Delivered</option>
+        </select>
+        <button class="btn btn-primary" (click)="loadOrders()" title="Refresh Orders">
+          <i class="fas fa-sync-alt"></i>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Available Orders -->
+    @if (selectedStatus === 'available' || selectedStatus === '') {
+    <div class="orders-list">
+      <h3><i class="fas fa-store"></i> Available Orders (Ready for Pickup)</h3>
+      @if (availableOrders.length > 0) {
+      @for (order of availableOrders; track order._id) {
+      <div class="order-card available">
+        <div class="order-header">
+          <span class="order-id">
+            <i class="fas fa-hashtag"></i>
+            {{ order._id.slice(-6) }}
+          </span>
+          <span class="badge badge-warning">
+            <i class="fas fa-clock"></i>
+            {{ formatStatus(order.status) }}
+          </span>
+          <span class="order-amount">
+            <i class="fas fa-dollar-sign"></i>
+            {{ order.totalAmount | currency }}
+          </span>
+        </div>
+        <div class="order-details">
+          <div class="order-info-grid">
+            <div class="info-item">
+              <i class="fas fa-store"></i>
+              <strong>Restaurant:</strong> {{ order.restaurant?.name || 'Restaurant' }}
+              @if (order.restaurant?.phone) {
+              <span class="phone-link" (click)="callRestaurant(order.restaurant?.phone || '0')">
+                <i class="fas fa-phone"></i> {{ order.restaurant?.phone }}
+              </span>
+              }
+            </div>
+            <div class="info-item">
+              <i class="fas fa-user"></i>
+              <strong>Customer:</strong> {{ order.customer.name || 'Customer' }}
+              @if (order.customer.phone) {
+              <span class="phone-link" (click)="callCustomer(order.customer.phone)">
+                <i class="fas fa-phone"></i> {{ order.customer.phone }}
+              </span>
+              }
+            </div>
+            <div class="info-item">
+              <i class="fas fa-map-marker-alt"></i>
+              <strong>Delivery Address:</strong>
+              {{ order.customer.address || 'Address not available' }}
+            </div>
+            <div class="info-item">
+              <i class="fas fa-utensils"></i>
+              <strong>Items:</strong> {{ order.items.length || 0 }} items
+            </div>
+            <div class="info-item">
+              <i class="fas fa-truck"></i>
+              <strong>Delivery Fee:</strong> {{ (order.deliveryFee || 0) | currency }}
+            </div>
+            @if (order.distance) {
+            <div class="info-item">
+              <i class="fas fa-route"></i>
+              <strong>Distance:</strong> {{ order.distance | number:'1.1-1' }} km
+            </div>
+            }
+            <div class="info-item">
+              <i class="fas fa-clock"></i>
+              <strong>Created:</strong> {{ getOrderDuration(order) }}
+            </div>
+          </div>
+        </div>
+        <div class="order-actions">
+          <button class="btn btn-success" (click)="acceptOrder(order._id)" [disabled]="!isOnline">
+            <i class="fas fa-check"></i>
+            Accept Order
+          </button>
+          <button class="btn btn-secondary" (click)="viewOrderDetails(order._id)">
+            <i class="fas fa-eye"></i>
+            View Details
+          </button>
+        </div>
+      </div>
+      }
+      } @else {
+      <div class="empty-state">
+        <div class="empty-icon">
+          <i class="fas fa-box-open"></i>
+        </div>
+        <h4>No available orders</h4>
+        <p>@if (!isOnline) {
+          Go online to see available orders
+          } @else {
+          Check back later for new delivery opportunities
+          }</p>
+      </div>
+      }
+    </div>
+    }
+
+    <!-- My Orders -->
+    @if (selectedStatus !== 'available') {
+    <div class="orders-list">
+      <h3><i class="fas fa-tasks"></i> My Active Orders</h3>
+      @if (myOrders.length > 0) {
+      @for (order of myOrders; track order._id) {
+      <div class="order-card" [class]="'status-' + order.status">
+        <div class="order-header">
+          <span class="order-id">
+            <i class="fas fa-hashtag"></i>
+            {{ order._id.slice(-6) }}
+          </span>
+          <span class="badge" [class]="getStatusBadgeClass(order.status)">
+            <i class="fas" [class]="getStatusIcon(order.status)"></i>
+            {{ formatStatus(order.status) }}
+          </span>
+          <span class="order-amount">
+            <i class="fas fa-dollar-sign"></i>
+            {{ order.totalAmount | currency }}
+          </span>
+        </div>
+        <div class="order-details">
+          <div class="order-info-grid">
+            <div class="info-item">
+              <i class="fas fa-store"></i>
+              <strong>Restaurant:</strong> {{ order.restaurant?.name || 'Restaurant' }}
+            </div>
+            <div class="info-item">
+              <i class="fas fa-user"></i>
+              <strong>Customer:</strong> {{ order.customer.name || 'Customer' }}
+            </div>
+            <div class="info-item">
+              <i class="fas fa-map-marker-alt"></i>
+              <strong>Address:</strong> {{ order.customer.address || 'Address not available' }}
+            </div>
+            @if (order.customer.phone) {
+            <div class="info-item">
+              <i class="fas fa-phone"></i>
+              <strong>Phone:</strong>
+              <span class="phone-link" (click)="callCustomer(order.customer.phone)">
+                {{ order.customer.phone }}
+              </span>
+            </div>
+            }
+            <div class="info-item">
+              <i class="fas fa-money-bill-wave"></i>
+              <strong>Earnings:</strong> {{ getOrderEarnings(order) | currency }}
+            </div>
+            <div class="info-item">
+              <i class="fas fa-clock"></i>
+              <strong>Time:</strong> {{ getOrderDuration(order) }}
+            </div>
+            @if (order.estimatedDeliveryTime) {
+            <div class="info-item">
+              <i class="fas fa-stopwatch"></i>
+              <strong>ETA:</strong> {{ order.estimatedDeliveryTime | date:'short' }}
+            </div>
+            }
+          </div>
+        </div>
+        <div class="order-actions">
+          @if (canUpdateStatus(order.status)) {
+          <button class="btn btn-primary" (click)="updateOrderStatus(order._id, getNextStatus(order.status)!)">
+            <i class="fas" [class]="getNextStatusIcon(order.status)"></i>
+            {{ getStatusButtonText(order.status) }}
+          </button>
+          }
+          @if (order.customer.phone) {
+          <button class="btn btn-secondary" (click)="callCustomer(order.customer.phone!)">
+            <i class="fas fa-phone"></i>
+            Call Customer
+          </button>
+          }
+          <button class="btn btn-outline" (click)="viewOrderDetails(order._id)">
+            <i class="fas fa-eye"></i>
+            View Details
+          </button>
+        </div>
+      </div>
+      }
+      } @else {
+      <div class="empty-state">
+        <div class="empty-icon">
+          <i class="fas fa-clipboard"></i>
+        </div>
+        <h4>No active orders</h4>
+        <p>Accept orders from the available orders section to start delivering</p>
+      </div>
+      }
+    </div>
+    }
+
+    <!-- Overall Empty State -->
+    @if (myOrders.length === 0 && availableOrders.length === 0 && (selectedStatus === '' || !selectedStatus)) {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <i class="fas fa-box-open"></i>
+      </div>
+      <h3>No orders available</h3>
+      <p>@if (!isOnline) {
+        Go online to see available orders
+        } @else {
+        Check back later for new delivery opportunities
+        }</p>
+    </div>
+    }
+  </div>
+
+  <!-- Earnings Chart -->
+  <div class="earnings-section">
+    <div class="section-title">
+      <i class="fas fa-chart-line"></i>
+      <h2>Earnings Overview</h2>
+    </div>
+    <div class="period-selector">
+      <button *ngFor="let period of periods" class="btn" [class.active]="selectedPeriod === period.value"
+        (click)="selectPeriod(period.value)">
+        {{ period.label }}
+      </button>
+    </div>
+    <div class="earnings-chart" *ngIf="earnings">
+      <div class="chart-summary">
+        <div class="summary-item">
+          <i class="fas fa-money-bill-wave"></i>
+          <span class="value">{{ earnings.totalEarnings | currency }}</span>
+          <span class="label">Total Earnings</span>
+        </div>
+        <div class="summary-item">
+          <i class="fas fa-truck"></i>
+          <span class="value">{{ earnings.deliveryCount }}</span>
+          <span class="label">Deliveries</span>
+        </div>
+      </div>
+      <div class="chart-bars" *ngIf="earnings.breakdown && earnings.breakdown.length > 0">
+        <div class="bar" *ngFor="let day of earnings.breakdown" [style.height.%]="getBarHeight(day.earnings)">
+          <div class="bar-value">{{ day.earnings | currency:'USD':'symbol':'1.0-0' }}</div>
+          <div class="bar-label">{{ formatDate(day.date) }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

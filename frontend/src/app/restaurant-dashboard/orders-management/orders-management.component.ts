@@ -4,7 +4,6 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angul
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { OrderService, OrderFilters, OrderStatus, ApiResponse, OrdersListResponse, OrderSummary } from '../../shared/services/order.service';
 import { Order } from '../../shared/models/order';
-import { WebSocketService } from '../../shared/services/websocket.service';
 
 @Component({
   selector: 'app-orders-management',
@@ -41,8 +40,7 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
 
   constructor(
     public orderService: OrderService,
-    private fb: FormBuilder,
-    private wsService: WebSocketService
+    private fb: FormBuilder
   ) {
     this.filterForm = this.fb.group({
       status: [''],
@@ -58,7 +56,6 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
     this.orders = [];
 
     this.setupFormSubscriptions();
-    this.setupWebSocketConnection();
     this.loadOrders();
     this.loadOrderStats();
   }
@@ -66,9 +63,6 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
-
-    // Disconnect WebSocket to prevent connection attempts
-    this.wsService.disconnect();
   }
 
   private setupFormSubscriptions() {
@@ -85,32 +79,6 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
           page: 1 // Reset to first page when filters change
         };
         this.loadOrders();
-      });
-  }
-
-  private setupWebSocketConnection() {
-    // Only attempt WebSocket connection if user is authenticated
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.warn('No authentication token available, skipping WebSocket connection');
-      return;
-    }
-
-    // Listen for real-time order updates
-    this.wsService.connect('orders');
-
-    this.wsService.onMessage('order_status_updated')
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((data: any) => {
-        this.updateOrderInList(data.orderId, data.status);
-        this.loadOrderStats(); // Refresh stats
-      });
-
-    this.wsService.onMessage('new_order')
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((orderData: any) => {
-        this.loadOrders(); // Refresh orders list
-        this.loadOrderStats(); // Refresh stats
       });
   }
 
@@ -294,9 +262,7 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
 
   cancelOrder(order: OrderSummary) {
     if (confirm('Are you sure you want to cancel this order?')) {
-      this.orderService.cancelOrder(order._id!, {
-        reason: 'Cancelled by restaurant'
-      }).subscribe({
+      this.orderService.cancelOrder(order._id!, 'Cancelled by restaurant').subscribe({
         next: () => {
           this.updateOrderInList(order._id!, 'cancelled');
           this.loadOrderStats();

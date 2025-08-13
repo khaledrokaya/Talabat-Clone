@@ -7,7 +7,46 @@ import { body, param } from 'express-validator';
 const router = Router();
 const deliveryController = new DeliveryController();
 
-// Apply authentication to all delivery routes
+/**
+ * @swagger
+ * /api/delivery/track/{orderId}:
+ *   get:
+ *     summary: Track order details
+ *     description: Get comprehensive order tracking information including timeline and status. Accessible to customers, restaurants, and delivery persons.
+ *     tags: [Delivery]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *         description: MongoDB ObjectId of the order
+ *     responses:
+ *       200:
+ *         description: Order tracking details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       404:
+ *         description: Order not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiError'
+ */
+router.get(
+  '/track/:orderId',
+  authenticate,
+  param('orderId').isMongoId().withMessage('Invalid order ID'),
+  validateRequest,
+  deliveryController.trackOrder,
+);
+
+// Apply authentication and delivery-specific authorization to all other delivery routes
 router.use(authenticate);
 router.use(authorize('delivery'));
 
@@ -154,78 +193,146 @@ router.use(authorize('delivery'));
 
 /**
  * @swagger
+ *   /**
+   * @swagger
+   * /api/delivery/status:
+   *   get:
+   *     summary: Get delivery person's current status
+   *     description: Get the current online and availability status of the delivery person
+   *     tags: [Delivery]
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: Delivery status retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                   example: true
+   *                 message:
+   *                   type: string
+   *                   example: "Delivery status retrieved successfully"
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     isOnline:
+   *                       type: boolean
+   *                       example: true
+   *                     isAvailable:
+   *                       type: boolean
+   *                       example: true
+   *                     currentLocation:
+   *                       type: object
+   *                       properties:
+   *                         lat:
+   *                           type: number
+   *                         lng:
+   *                           type: number
+   *                         lastUpdated:
+   *                           type: string
+   *                           format: date-time
+   *                     hasCurrentOrder:
+   *                       type: boolean
+   *                       example: false
+   *                     verificationStatus:
+   *                       type: string
+   *                       example: "verified"
+   *       401:
+   *         description: Unauthorized
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ApiError'
+   *       403:
+   *         description: Forbidden - Not a delivery person
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ApiError'
+   */
+router.get(
+  '/status',
+  deliveryController.getDeliveryStatus,
+);
+
+/**
+ * @swagger
  * /api/delivery/location:
- *   patch:
- *     summary: Update delivery person location
- *     description: Updates the current location of the delivery person for order tracking
- *     tags: [Delivery]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/DeliveryLocation'
- *           example:
- *             coordinates: [-74.006, 40.7128]
- *     responses:
- *       200:
- *         description: Location updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/ApiResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       type: object
- *                       properties:
- *                         location:
- *                           type: object
- *                           properties:
- *                             type:
- *                               type: string
- *                               example: "Point"
- *                             coordinates:
- *                               type: array
- *                               items:
- *                                 type: number
- *                               example: [-74.006, 40.7128]
- *                         updatedAt:
- *                           type: string
- *                           format: date-time
- *             example:
- *               success: true
- *               message: "Location updated successfully"
- *               data:
- *                 location:
- *                   type: "Point"
- *                   coordinates: [-74.006, 40.7128]
- *                 updatedAt: "2025-07-25T18:30:00.000Z"
- *       400:
- *         description: Invalid coordinates format
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiError'
- *             example:
- *               success: false
- *               message: "Coordinates must be [lng, lat]"
- *       401:
- *         description: Unauthorized - Invalid or missing token
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiError'
- *       403:
- *         description: Forbidden - Not a delivery person
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiError'
- */
+*   patch:
+*     summary: Update delivery person location
+*     description: Updates the current location of the delivery person for order tracking
+*     tags: [Delivery]
+*     security:
+*       - bearerAuth: []
+*     requestBody:
+*       required: true
+*       content:
+*         application/json:
+*           schema:
+*             $ref: '#/components/schemas/DeliveryLocation'
+*           example:
+*             coordinates: [-74.006, 40.7128]
+*     responses:
+*       200:
+*         description: Location updated successfully
+*         content:
+*           application/json:
+*             schema:
+*               allOf:
+*                 - $ref: '#/components/schemas/ApiResponse'
+*                 - type: object
+*                   properties:
+*                     data:
+*                       type: object
+*                       properties:
+*                         location:
+*                           type: object
+*                           properties:
+*                             type:
+*                               type: string
+*                               example: "Point"
+*                             coordinates:
+*                               type: array
+*                               items:
+*                                 type: number
+*                               example: [-74.006, 40.7128]
+*                         updatedAt:
+*                           type: string
+*                           format: date-time
+*             example:
+*               success: true
+*               message: "Location updated successfully"
+*               data:
+*                 location:
+*                   type: "Point"
+*                   coordinates: [-74.006, 40.7128]
+*                 updatedAt: "2025-07-25T18:30:00.000Z"
+*       400:
+*         description: Invalid coordinates format
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ApiError'
+*             example:
+*               success: false
+*               message: "Coordinates must be [lng, lat]"
+*       401:
+*         description: Unauthorized - Invalid or missing token
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ApiError'
+*       403:
+*         description: Forbidden - Not a delivery person
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ApiError'
+*/
 router.patch(
   '/location',
   body('coordinates')
@@ -581,6 +688,144 @@ router.patch(
  *             schema:
  *               $ref: '#/components/schemas/ApiError'
  */
+/**
+ * @swagger
+ * /api/delivery/orders/available:
+ *   get:
+ *     summary: Get available orders for delivery
+ *     description: Get orders that are ready for pickup and not yet assigned to any delivery person
+ *     tags: [Delivery]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Number of orders per page
+ *       - in: query
+ *         name: maxDistance
+ *         schema:
+ *           type: number
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *         description: Maximum distance in kilometers from delivery person's current location
+ *     responses:
+ *       200:
+ *         description: Available orders retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Available orders retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     orders:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                           restaurant:
+ *                             type: object
+ *                             properties:
+ *                               name:
+ *                                 type: string
+ *                               address:
+ *                                 type: string
+ *                               phone:
+ *                                 type: string
+ *                           customer:
+ *                             type: object
+ *                             properties:
+ *                               name:
+ *                                 type: string
+ *                               address:
+ *                                 type: string
+ *                               phone:
+ *                                 type: string
+ *                           totalAmount:
+ *                             type: number
+ *                           deliveryFee:
+ *                             type: number
+ *                           status:
+ *                             type: string
+ *                           estimatedDeliveryTime:
+ *                             type: string
+ *                           distance:
+ *                             type: number
+ *                           createdAt:
+ *                             type: string
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         page:
+ *                           type: integer
+ *                           example: 1
+ *                         limit:
+ *                           type: integer
+ *                           example: 10
+ *                         total:
+ *                           type: integer
+ *                           example: 25
+ *                         pages:
+ *                           type: integer
+ *                           example: 3
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiError'
+ *       403:
+ *         description: Forbidden - Not a delivery person
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiError'
+ */
+router.get('/orders/available', deliveryController.getAvailableOrders);
+
+// Debug endpoint to check orders (temporary)
+router.get('/debug/orders', async (req, res) => {
+  try {
+    const Order = require('../order/schemas/order.schema').default;
+    const allOrders = await Order.find({}).select('_id status deliveryPersonId createdAt').sort({ createdAt: -1 }).limit(10);
+    const readyOrders = await Order.find({ status: { $in: ['ready', 'confirmed', 'preparing'] } }).select('_id status deliveryPersonId createdAt');
+
+    res.json({
+      success: true,
+      data: {
+        totalOrders: allOrders.length,
+        recentOrders: allOrders,
+        readyOrders: readyOrders,
+        readyOrdersCount: readyOrders.length
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 router.get('/orders', deliveryController.getDeliveryOrders);
 
 /**
