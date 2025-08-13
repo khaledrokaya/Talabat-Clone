@@ -11,6 +11,18 @@
   ],
   "routes": [
     {
+      "src": "/favicon.ico",
+      "dest": "/favicon.ico"
+    },
+    {
+      "src": "/talabat-logo.svg",
+      "dest": "/talabat-logo.svg"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/manifest.json"
+    },
+    {
       "src": "/assets/(.*)",
       "dest": "/assets/$1"
     },
