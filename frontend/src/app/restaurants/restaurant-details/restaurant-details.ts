@@ -58,7 +58,6 @@ export class RestaurantDetails implements OnInit, OnDestroy {
       .subscribe(params => {
         const restaurantId = params.get('id');
         if (restaurantId) {
-          console.log('Restaurant ID from route:', restaurantId);
           // Test API connectivity first
           this.testApiConnectivity();
           this.loadRestaurantDetails(restaurantId);
@@ -75,15 +74,12 @@ export class RestaurantDetails implements OnInit, OnDestroy {
   }
 
   testApiConnectivity(): void {
-    console.log('Testing API connectivity...');
-    console.log('Base API URL:', environment.apiUrl);
 
     // Test if we can reach the restaurants endpoint with rate limiting
     this.rateLimiter.executeRequest(
       () => this.restaurantService.getRestaurants({ limit: 1 }).pipe(
         timeout(10000),
         catchError(error => {
-          console.error('API connectivity test failed:', error);
           return of(null);
         })
       ),
@@ -97,21 +93,15 @@ export class RestaurantDetails implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           if (response) {
-            console.log('✅ API connectivity test successful');
-            console.log('Available restaurants count:', response.data?.restaurants?.length || 0);
           } else {
-            console.log('❌ API connectivity test failed');
           }
         },
         error: (error) => {
-          console.error('❌ API connectivity test error:', error);
         }
       });
   }
 
   loadRestaurantDetails(id: string): void {
-    console.log('Loading restaurant details for ID:', id);
-    console.log('API endpoint will be:', `${environment.apiUrl}/restaurants/${id}`);
     this.loading = true;
     this.errorMessage = '';
 
@@ -122,7 +112,6 @@ export class RestaurantDetails implements OnInit, OnDestroy {
       () => this.restaurantService.getRestaurantById(id).pipe(
         timeout(15000), // 15 second timeout
         catchError(error => {
-          console.error('API call failed:', error);
           return of(null); // Return null on error
         })
       ),
@@ -135,7 +124,6 @@ export class RestaurantDetails implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          console.log('Restaurant API Response:', response);
 
           if (!response) {
             this.errorMessage = 'Failed to load restaurant details. Please try again.';
@@ -143,28 +131,19 @@ export class RestaurantDetails implements OnInit, OnDestroy {
             return;
           }
 
-          console.log('Response type:', typeof response);
-          console.log('Response structure:', Object.keys(response || {}));
 
           // Handle your API response format: { success: true, data: { restaurantDetails: {...}, ... } }
           if (response && response.success && response.data) {
             this.restaurant = response.data;
             this.meals = this.restaurant.menu || [];
-            console.log('Restaurant loaded:', this.restaurant);
             this.groupMealsByCategory();
             this.loading = false;
           } else {
-            console.error('Invalid response structure:', response);
-            console.error('Expected format: { success: boolean, data: { restaurantDetails: any, ... } }');
             this.errorMessage = 'Failed to load restaurant details - Invalid response format.';
             this.loading = false;
           }
         },
         error: (error) => {
-          console.error('Error loading restaurant details:', error);
-          console.error('Error status:', error.status);
-          console.error('Error message:', error.message);
-          console.error('Error details:', error.error);
 
           if (error.name === 'TimeoutError') {
             this.errorMessage = 'Request timed out. Please check your connection and try again.';
@@ -200,7 +179,6 @@ export class RestaurantDetails implements OnInit, OnDestroy {
       };
     });
 
-    console.log('Menu categories:', this.menuCategories);
   }
 
   selectCategory(category: string): void {
@@ -238,7 +216,6 @@ export class RestaurantDetails implements OnInit, OnDestroy {
     };
 
     this.cartService.addToCart(cartItem);
-    console.log('Added to cart:', cartItem);
   }
 
   // Cart management methods

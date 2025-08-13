@@ -140,7 +140,6 @@ export class RestaurantList implements OnInit {
 
     this.restaurantService.getRestaurants(this.filter).subscribe({
       next: (response) => {
-        console.log('Restaurant List API Response:', response);
 
         if (response && response.success && response.data) {
           this.restaurants = response.data.restaurants || [];
@@ -151,10 +150,8 @@ export class RestaurantList implements OnInit {
         }
 
         this.loading = false;
-        console.log('Loaded restaurants in list:', this.restaurants);
       },
       error: (error) => {
-        console.error('Error loading restaurants:', error);
         this.error = 'Failed to load restaurants. Please try again.';
         this.loading = false;
         this.restaurants = [];
@@ -396,14 +393,12 @@ export class RestaurantList implements OnInit {
   onFavoriteClick(event: Event, restaurant: any): void {
     event.stopPropagation();
     event.preventDefault();
-    console.log('Toggle favorite for:', restaurant);
     // Implement favorite functionality
   }
 
   onQuickViewClick(event: Event, restaurant: any): void {
     event.stopPropagation();
     event.preventDefault();
-    console.log('Quick view for:', restaurant);
     // Implement quick view functionality
   }
 
@@ -416,23 +411,18 @@ export class RestaurantList implements OnInit {
   onFavoriteToggle(restaurant: any): void {
     const restaurantId = restaurant._id || restaurant.id;
     if (!restaurantId) {
-      console.error('Restaurant ID not found');
       return;
     }
 
     this.favoritesService.toggleFavorite(restaurantId).subscribe({
       next: (response) => {
-        console.log('Favorite toggled successfully:', response.message);
         // Optionally show success message to user
       },
       error: (error) => {
-        console.error('Error toggling favorite:', error);
         // Handle error - show error message to user
         if (error.status === 401) {
-          console.log('User needs to login to add favorites');
           // Redirect to login or show login modal
         } else if (error.status === 403) {
-          console.log('Only customers can add favorites');
         }
       }
     });
@@ -440,7 +430,6 @@ export class RestaurantList implements OnInit {
 
   // Quick view functionality
   onQuickView(restaurant: any): void {
-    console.log('Quick view for restaurant:', restaurant);
     // Implement quick view modal or navigate to restaurant details
     // For now, navigate to restaurant details page
     const restaurantId = restaurant._id || restaurant.id;

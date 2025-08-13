@@ -4,6 +4,7 @@ import {
   validateSearchMeals,
   validateMealId,
   validateCategory,
+  validatePopularMeals,
 } from '../middlewares/restaurant.middleware';
 
 const router = Router();
@@ -718,6 +719,79 @@ router.get(
  *                 featuredReason: "highly_rated"
  */
 router.get('/meals/featured', restaurantPublicController.getFeaturedMeals);
+
+/**
+ * @swagger
+ * /api/restaurants/meals/popular:
+ *   get:
+ *     summary: Get popular meals (public)
+ *     description: Retrieve the most popular meals based on order count and ratings with optional category filtering
+ *     tags: [Restaurant Public]
+ *     parameters:
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           enum: [appetizer, main_course, dessert, beverage, salad, soup, sandwich, pizza, pasta, seafood, meat, vegetarian, vegan]
+ *         description: Filter popular meals by category
+ *         example: "pizza"
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *         description: Number of popular meals to return
+ *         example: 10
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number for pagination
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Popular meals retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         meals:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/Meal'
+ *                         pagination:
+ *                           $ref: '#/components/schemas/PaginationMeta'
+ *             example:
+ *               success: true
+ *               message: "Popular meals retrieved successfully"
+ *               data:
+ *                 meals:
+ *                   - _id: "507f1f77bcf86cd799439012"
+ *                     name: "Margherita Pizza"
+ *                     price: 12.99
+ *                     orderCount: 150
+ *                     rating: 4.7
+ *                     restaurant:
+ *                       name: "Pizza Palace"
+ *                       rating: 4.5
+ *                 pagination:
+ *                   currentPage: 1
+ *                   totalPages: 3
+ *                   totalMeals: 25
+ *                   hasNext: true
+ *                   hasPrev: false
+ */
+router.get('/meals/popular', validatePopularMeals, restaurantPublicController.getPopularMeals);
 
 /**
  * @swagger

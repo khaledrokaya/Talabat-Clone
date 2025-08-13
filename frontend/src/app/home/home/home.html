@@ -158,11 +158,11 @@
     </div>
   </section>
 
-  <!-- Featured Meals Section -->
+  <!-- Popular Meals Section -->
   <section class="featured-meals" [@fadeInUp]>
     <div class="container">
       <div class="section-header">
-        <h2>Featured Dishes</h2>
+        <h2>Popular Dishes</h2>
         <p>Discover the most popular and highly-rated dishes from our restaurants</p>
       </div>
 
@@ -175,15 +175,16 @@
       }
 
       <!-- Meals Grid -->
-      @if (!mealsLoading && featuredMeals.length > 0) {
+      @if (!mealsLoading && popularMeals.length > 0) {
       <div class="meals-grid">
-        @for (meal of featuredMeals; track meal.id || meal._id; let i = $index) {
+        @for (meal of popularMeals; track meal.id || meal._id; let i = $index) {
         <div class="meal-card" [@staggeredFadeIn]="getAnimationDelay(i)">
           <div class="meal-image">
-            <img *ngIf="meal.imageUrl" [src]="meal.imageUrl" [alt]="meal.name" (error)="onImageError($event)">
-            @if (meal.discount) {
+            <img *ngIf="getMealImageUrl(meal)" [src]="getMealImageUrl(meal)" [alt]="meal.name"
+              (error)="onImageError($event)">
+            @if (getMealDiscount(meal)?.percentage) {
             <div class="meal-badge">
-              <span>{{ meal.discount.percentage }}% OFF</span>
+              <span>{{ getMealDiscount(meal).percentage }}% OFF</span>
             </div>
             }
             <div class="meal-overlay">
@@ -196,13 +197,13 @@
             <h4>{{ meal.name }}</h4>
             <p class="meal-restaurant">
               <i class="fas fa-store"></i>
-              {{ meal.restaurant?.name }}
+              {{ getMealRestaurantName(meal) }}
             </p>
             <div class="meal-meta">
-              @if (meal.rating) {
+              @if (getMealRating(meal) > 0) {
               <div class="rating">
                 <i class="fas fa-star"></i>
-                <span>{{ meal.rating | number:'1.1-1' }}</span>
+                <span>{{ getMealRating(meal) | number:'1.1-1' }}</span>
               </div>
               }
               @if (meal.preparationTime) {
@@ -214,9 +215,8 @@
             </div>
             <div class="meal-price">
               <span class="current-price">${{ meal.price | number:'1.2-2' }}</span>
-              @if (meal.discount) {
-              <span class="original-price">${{ (meal.price / (1 - meal.discount.percentage / 100)) | number:'1.2-2'
-                }}</span>
+              @if (getMealDiscount(meal)?.percentage) {
+              <span class="original-price">${{ calculateOriginalPrice(meal) | number:'1.2-2' }}</span>
               }
             </div>
           </div>
@@ -225,17 +225,17 @@
       </div>
       }
 
-      @if (!mealsLoading && featuredMeals.length > 0) {
+      @if (!mealsLoading && popularMeals.length > 0) {
       <div class="view-all">
         <a routerLink="/restaurants" class="btn-outline">
           <i class="fas fa-utensils"></i>
           Explore All Restaurants
         </a>
       </div>
-      } @else if (!mealsLoading && featuredMeals.length === 0) {
+      } @else if (!mealsLoading && popularMeals.length === 0) {
       <div class="empty-state" [@fadeInUp]>
-        <h3>No featured meals available</h3>
-        <p>We're working on adding delicious featured dishes for you!</p>
+        <h3>No popular meals available</h3>
+        <p>We're working on adding delicious popular dishes for you!</p>
         <a routerLink="/restaurants" class="btn btn-primary">Browse Restaurants</a>
       </div>
       }

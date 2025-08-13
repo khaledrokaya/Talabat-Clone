@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { UserService } from '../../shared/services/user.service';
+import { ToastService } from '../../shared/services/toast.service';
 import { Address } from '../../shared/models/address';
 
 @Component({
@@ -24,7 +25,8 @@ export class Addresses implements OnInit {
 
   constructor(
     private userService: UserService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -68,7 +70,6 @@ export class Addresses implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('خطأ في تحميل العناوين:', error);
         this.isLoading = false;
         this.addresses = [];
       }
@@ -148,12 +149,11 @@ export class Addresses implements OnInit {
             this.isSubmitting = false;
             this.closeAddressModal();
             this.loadAddresses();
-            alert('تم تحديث العنوان بنجاح');
+            this.toastService.success('تم تحديث العنوان بنجاح');
           },
           error: (error) => {
             this.isSubmitting = false;
-            console.error('خطأ في تحديث العنوان:', error);
-            alert('حدث خطأ أثناء تحديث العنوان');
+            this.toastService.error('حدث خطأ أثناء تحديث العنوان');
           }
         });
       } else {
@@ -162,12 +162,11 @@ export class Addresses implements OnInit {
             this.isSubmitting = false;
             this.closeAddressModal();
             this.loadAddresses();
-            alert('تم إضافة العنوان بنجاح');
+            this.toastService.success('تم إضافة العنوان بنجاح');
           },
           error: (error) => {
             this.isSubmitting = false;
-            console.error('خطأ في إضافة العنوان:', error);
-            alert('حدث خطأ أثناء إضافة العنوان');
+            this.toastService.error('حدث خطأ أثناء إضافة العنوان');
           }
         });
       }
@@ -188,11 +187,10 @@ export class Addresses implements OnInit {
           this.loadAddresses();
           this.showDeleteModal = false;
           this.addressToDelete = null;
-          alert('تم حذف العنوان بنجاح');
+          this.toastService.success('تم حذف العنوان بنجاح');
         },
         error: (error) => {
-          console.error('خطأ في حذف العنوان:', error);
-          alert('حدث خطأ أثناء حذف العنوان');
+          this.toastService.error('حدث خطأ أثناء حذف العنوان');
           this.showDeleteModal = false;
           this.addressToDelete = null;
         }
@@ -209,11 +207,10 @@ export class Addresses implements OnInit {
     this.userService.setDefaultAddress(addressId).subscribe({
       next: () => {
         this.loadAddresses();
-        alert('تم تعيين العنوان كافتراضي');
+        this.toastService.success('تم تعيين العنوان كافتراضي');
       },
       error: (error) => {
-        console.error('خطأ في تعيين العنوان الافتراضي:', error);
-        alert('حدث خطأ أثناء تعيين العنوان الافتراضي');
+        this.toastService.error('حدث خطأ أثناء تعيين العنوان الافتراضي');
       }
     });
   }

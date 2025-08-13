@@ -85,6 +85,6 @@ export class DeliveryService {
 
   // Order tracking - using the correct delivery tracking endpoint
   trackOrder(orderId: string): Observable<ApiResponse<any>> {
-    return this.http.get<ApiResponse<any>>(`${this.API_URL}/track/${orderId}`);
+    return this.http.get<ApiResponse<any>>(`${this.API_URL}/orders/${orderId}/track`);
   }
 }

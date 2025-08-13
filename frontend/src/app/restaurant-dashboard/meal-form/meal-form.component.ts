@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
+import { ToastService } from '../../shared/services/toast.service';
 import { Subject, takeUntil } from 'rxjs';
 import {
   RestaurantMealService,
@@ -9,7 +10,6 @@ import {
   CreateMealRequest,
   UpdateMealRequest,
   MealCategory,
-  ApiResponse
 } from '../../shared/services/restaurant-meal.service';
 
 @Component({
@@ -54,6 +54,7 @@ export class MealFormComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private mealService: RestaurantMealService,
     private router: Router,
+    private toastService: ToastService,
     private route: ActivatedRoute
   ) {
     this.initializeForm();
@@ -115,7 +116,6 @@ export class MealFormComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error loading categories:', error);
           // You can add a fallback here if needed
         }
       });
@@ -135,9 +135,8 @@ export class MealFormComponent implements OnInit, OnDestroy {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading meal:', error);
           this.loading = false;
-          alert('Error loading meal data');
+          this.toastService.error('Error loading meal data');
           this.router.navigate(['/restaurant-dashboard/meals-management']);
         }
       });
@@ -188,13 +187,13 @@ export class MealFormComponent implements OnInit, OnDestroy {
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select a valid image file');
+        this.toastService.error('Please select a valid image file');
         return;
       }
 
       // Validate file size (5MB max)
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image size should be less than 5MB');
+        this.toastService.error('Image size should be less than 5MB');
         return;
       }
 
@@ -219,6 +218,7 @@ export class MealFormComponent implements OnInit, OnDestroy {
 
     if (this.mealForm.invalid) {
       this.markFormGroupTouched();
+      this.toastService.warning('Please fill in all required fields correctly', 'Form Validation');
       return;
     }
 
@@ -231,7 +231,6 @@ export class MealFormComponent implements OnInit, OnDestroy {
           this.processFormSubmission(imageUrl);
         })
         .catch(error => {
-          console.error('Error converting image:', error);
           this.processFormSubmission();
         });
     } else {
@@ -307,20 +306,19 @@ export class MealFormComponent implements OnInit, OnDestroy {
 
   private onSuccess(message: string) {
     this.submitting = false;
-    alert(message);
+    this.toastService.success(message, 'Success');
     this.router.navigate(['/restaurant-dashboard/meals-management']);
   }
 
   private onError(message: string, error: any) {
     this.submitting = false;
-    console.error(message, error);
 
     let errorMessage = message;
     if (error.error?.message) {
       errorMessage += ': ' + error.error.message;
     }
 
-    alert(errorMessage);
+    this.toastService.error(errorMessage);
   }
 
   private markFormGroupTouched() {
@@ -425,7 +423,7 @@ export class MealFormComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           if (response.success) {
-            alert('Discount set successfully!');
+            this.toastService.success('Discount set successfully!', 'Discount Applied');
             this.showDiscountSection = false;
             this.discountForm.reset();
             // Reload meal data to show updated discount
@@ -436,8 +434,7 @@ export class MealFormComponent implements OnInit, OnDestroy {
           this.settingDiscount = false;
         },
         error: (error) => {
-          console.error('Error setting discount:', error);
-          alert('Error setting discount. Please try again.');
+          this.toastService.error('Error setting discount. Please try again.');
           this.settingDiscount = false;
         }
       });
@@ -453,7 +450,7 @@ export class MealFormComponent implements OnInit, OnDestroy {
         .subscribe({
           next: (response) => {
             if (response.success) {
-              alert('Discount removed successfully!');
+              this.toastService.success('Discount removed successfully!', 'Discount Removed');
               // Reload meal data to show updated state
               if (this.mealId) {
                 this.loadMeal(this.mealId);
@@ -462,8 +459,7 @@ export class MealFormComponent implements OnInit, OnDestroy {
             this.removingDiscount = false;
           },
           error: (error) => {
-            console.error('Error removing discount:', error);
-            alert('Error removing discount. Please try again.');
+            this.toastService.error('Error removing discount. Please try again.');
             this.removingDiscount = false;
           }
         });

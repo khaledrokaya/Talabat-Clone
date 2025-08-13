@@ -13,7 +13,6 @@ export const routes: Routes = [
   { path: 'admin', loadChildren: () => import('./admin/admin.routes').then(m => m.AdminRoutes), canActivate: [adminGuard] },
   { path: 'restaurant-dashboard', loadChildren: () => import('./restaurant-dashboard/restaurant-dashboard.routes').then(m => m.RESTAURANT_DASHBOARD_ROUTES), canActivate: [restaurantGuard] },
   { path: 'delivery-dashboard', loadChildren: () => import('./delivery-dashboard/delivery-dashboard.routes').then(m => m.deliveryDashboardRoutes), canActivate: [deliveryGuard] },
-  { path: 'order-lifecycle-demo', loadComponent: () => import('./order-lifecycle-demo/order-lifecycle-demo.component').then(m => m.OrderLifecycleDemoComponent) },
   { path: 'unauthorized', component: UnauthorizedComponent },
   { path: '', redirectTo: 'home', pathMatch: 'full' }
 ];

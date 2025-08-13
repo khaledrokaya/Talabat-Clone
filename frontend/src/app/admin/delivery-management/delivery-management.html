@@ -32,19 +32,6 @@
     </div>
   </div>
 
-  <!-- Success/Error Messages -->
-  <div *ngIf="successMessage" class="alert alert-success alert-dismissible">
-    <i class="fas fa-check-circle"></i>
-    {{ successMessage }}
-    <button type="button" class="btn-close" (click)="clearMessages()"></button>
-  </div>
-
-  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible">
-    <i class="fas fa-exclamation-triangle"></i>
-    {{ errorMessage }}
-    <button type="button" class="btn-close" (click)="clearMessages()"></button>
-  </div>
-
   <!-- Loading State -->
   <div *ngIf="isLoading" class="loading-state">
     <div class="loading-content">

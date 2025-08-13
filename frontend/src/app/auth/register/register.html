@@ -25,22 +25,19 @@
     <!-- Step 1: Role Selection -->
     <div *ngIf="currentStep === 1" class="step-content">
       <div class="role-selection">
-        <div class="role-card text-primary" (click)="selectRole('customer')"
-          [class.selected]="selectedRole === 'customer'">
+        <div class="role-card" (click)="selectRole('customer')" [class.selected]="selectedRole === 'customer'">
           <i class="fas fa-user"></i>
           <h4>Customer</h4>
           <p>Order your favorite food from restaurants</p>
         </div>
 
-        <div class="role-card text-primary" (click)="selectRole('restaurant')"
-          [class.selected]="selectedRole === 'restaurant'">
+        <div class="role-card" (click)="selectRole('restaurant')" [class.selected]="selectedRole === 'restaurant'">
           <i class="fas fa-store"></i>
           <h4>Restaurant Owner</h4>
           <p>Display and sell your products to customers</p>
         </div>
 
-        <div class="role-card text-primary" (click)="selectRole('delivery')"
-          [class.selected]="selectedRole === 'delivery'">
+        <div class="role-card" (click)="selectRole('delivery')" [class.selected]="selectedRole === 'delivery'">
           <i class="fas fa-motorcycle"></i>
           <h4>Delivery Driver</h4>
           <p>Join our delivery team and earn money</p>

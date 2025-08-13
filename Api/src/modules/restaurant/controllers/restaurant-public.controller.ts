@@ -40,6 +40,30 @@ export class RestaurantPublicController {
   });
 
   /**
+   * Get popular meals with filtering
+   */
+  getPopularMeals = asyncHandler(async (req: Request, res: Response) => {
+    const { category, limit, page } = req.query;
+
+    const result = await restaurantPublicService.getPopularMeals({
+      category,
+      limit,
+      page,
+    });
+
+    res.json(
+      Helpers.formatResponse(
+        true,
+        'Popular meals retrieved successfully',
+        result.meals,
+        {
+          pagination: result.pagination,
+        },
+      ),
+    );
+  });
+
+  /**
    * Get meals by category
    */
   getMealsByCategory = asyncHandler(async (req: Request, res: Response) => {

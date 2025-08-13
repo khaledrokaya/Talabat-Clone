@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Helpers } from '../utils/helpers';
+import { Logger } from '../utils/logger';
 
 export interface ApiError extends Error {
   statusCode?: number;
@@ -47,16 +48,7 @@ export const errorHandler = (
 
   // Log error in development
   if (process.env.NODE_ENV === 'development') {
-    console.error('❌ Error Details:', {
-      name: err.name,
-      message: err.message,
-      stack: err.stack,
-      statusCode,
-      url: req.originalUrl,
-      method: req.method,
-      ip: req.ip,
-      userAgent: req.get('User-Agent'),
-    });
+    Logger.error(`Error occurred: ${err.name} - ${err.message} at ${req.originalUrl}`);
   }
 
   // Send error response

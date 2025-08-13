@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { OrderService, OrderDetails as OrderDetailsResponse, OrderStatus, UpdateStatusRequest } from '../../shared/services/order.service';
 import { AuthService } from '../../shared/services/auth.service';
+import { ToastService } from '../../shared/services/toast.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -25,7 +26,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     private orderService: OrderService,
     private authService: AuthService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService
   ) { }
 
   ngOnInit(): void {
@@ -79,12 +81,13 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
           this.order = response.data;
         } else {
           this.errorMessage = response.message || 'Failed to load order details';
+          this.toastService.error(this.errorMessage, 'Error');
         }
         this.loading = false;
       },
       error: (error: any) => {
-        console.error('Error loading order details:', error);
         this.errorMessage = 'Failed to load order details';
+        this.toastService.error(this.errorMessage, 'Error');
         this.loading = false;
         this.hideMessageAfterDelay();
       }
@@ -141,16 +144,18 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         next: (response) => {
           if (response.success) {
             this.successMessage = 'Order has been cancelled successfully';
+            this.toastService.success(this.successMessage, 'Order Cancelled');
             this.loadOrderDetails(); // Reload to get updated status
             this.hideMessageAfterDelay();
           } else {
             this.errorMessage = response.message || 'Failed to cancel order';
+            this.toastService.error(this.errorMessage, 'Cancellation Failed');
             this.hideMessageAfterDelay();
           }
         },
         error: (error) => {
-          console.error('Error cancelling order:', error);
           this.errorMessage = 'Failed to cancel order';
+          this.toastService.error(this.errorMessage, 'Error');
           this.hideMessageAfterDelay();
         }
       });
@@ -165,7 +170,6 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   // Restaurant owner specific methods
   updateOrderStatus(newStatus: OrderStatus): void {
     if (!this.isRestaurantOwner) {
-      console.error('User is not a restaurant owner');
       this.errorMessage = 'You are not authorized to perform this action';
       this.hideMessageAfterDelay();
       return;
@@ -173,12 +177,6 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
     // Use the actual order ID from the loaded order, not the route parameter
     const actualOrderId = this.order?._id || this.order?.id || this.orderId;
-    console.log('Updating order status:', {
-      newStatus,
-      routeOrderId: this.orderId,
-      actualOrderId: actualOrderId,
-      orderObject: this.order
-    });
 
     const statusData: UpdateStatusRequest = {
       status: newStatus,
@@ -189,23 +187,16 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       next: (response) => {
         if (response.success) {
           this.successMessage = `Order status updated to ${this.getStatusText(newStatus)}`;
+          this.toastService.success(this.successMessage, 'Status Updated');
           this.loadOrderDetails(); // Reload to get updated status
           this.hideMessageAfterDelay();
         } else {
           this.errorMessage = response.message || 'Failed to update order status';
+          this.toastService.error(this.errorMessage, 'Update Failed');
           this.hideMessageAfterDelay();
         }
       },
       error: (error) => {
-        console.error('Error updating order status:', error);
-        console.error('Error details:', {
-          status: error.status,
-          statusText: error.statusText,
-          message: error.message,
-          url: error.url,
-          body: error.error
-        });
-
         let errorMessage = 'Failed to update order status';
         if (error.status === 404) {
           errorMessage = 'Order not found. This order may not exist or you may not have permission to update it.';
@@ -218,6 +209,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         }
 
         this.errorMessage = errorMessage;
+        this.toastService.error(errorMessage, 'Update Error');
         this.hideMessageAfterDelay();
       }
     });

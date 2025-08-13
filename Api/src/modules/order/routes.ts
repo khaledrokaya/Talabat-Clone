@@ -630,20 +630,12 @@ router.get(
   '/',
   authenticate,
   async (req: any, res: any, next: any) => {
-    console.log('=== ORDER ROUTE DEBUG ===');
-    console.log('User ID:', req.user._id);
-    console.log('User Role:', req.user.role);
-    console.log('User Email:', req.user.email);
-
     // Determine which controller method to call based on user role
     if (req.user.role === 'restaurant_owner') {
-      console.log('Calling getRestaurantOrders for restaurant_owner');
       return orderController.getRestaurantOrders(req, res, next);
     } else if (req.user.role === 'customer') {
-      console.log('Calling getUserOrders for customer');
       return orderController.getUserOrders(req, res, next);
     } else {
-      console.log('Access denied for role:', req.user.role);
       return res.status(403).json({
         success: false,
         message: 'Access denied. Only customers and restaurant owners can view orders.',

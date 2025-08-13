@@ -41,11 +41,8 @@ class App {
 
   private async initializeDatabase(): Promise<void> {
     try {
-      console.log('Initializing database connection...');
       await this.connectToDatabase();
-      console.log('Database initialization completed');
     } catch (error) {
-      console.error('Database initialization failed:', error);
       Logger.error(`Database initialization failed: ${String(error)}`);
       // Don't prevent app from starting, but log the error
     }
@@ -148,8 +145,6 @@ class App {
         morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'),
       );
     }
-    console.log(process.env.JWT_SECRET);
-    console.log(process.env.NODE_ENV);
 
     // Request timeout middleware
     this.app.use((req, res, next) => {
@@ -254,7 +249,6 @@ class App {
       // Check if mongoose is connected
       try {
         const readyState = (mongoose.connection as any).readyState;
-        console.log('Database connection state:', readyState, 'for path:', req.path);
 
         // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
         if (readyState === 1) {
@@ -264,7 +258,6 @@ class App {
 
         if (readyState === 0) {
           // Try to reconnect if disconnected
-          console.log('Database disconnected, attempting to reconnect...');
           try {
             // Set a timeout for the connection attempt
             const connectionPromise = connectDB();
@@ -277,13 +270,11 @@ class App {
             // Check again after connection attempt
             const newState = (mongoose.connection as any).readyState;
             if (newState === 1) {
-              console.log('Reconnection successful, proceeding with request');
               return next();
             } else {
               throw new Error(`Connection failed, state: ${newState}`);
             }
           } catch (reconnectError) {
-            console.error('Reconnection failed:', reconnectError);
             return res.status(503).json({
               success: false,
               message: 'Database connection failed. The service is temporarily unavailable.',
@@ -300,7 +291,6 @@ class App {
 
         if (readyState === 2) {
           // Wait shorter time for connecting state
-          console.log('Database connecting, waiting briefly...');
           await new Promise(resolve => setTimeout(resolve, 2000));
           const newState = (mongoose.connection as any).readyState;
           if (newState === 1) {
@@ -318,7 +308,6 @@ class App {
         }
 
       } catch (error) {
-        console.error('Database check error:', error);
         return res.status(503).json({
           success: false,
           message: 'Database connection check failed.',

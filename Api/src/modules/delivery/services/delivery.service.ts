@@ -183,7 +183,6 @@ export class DeliveryService {
       if (order.timeline && order.timeline.length > 0) {
         const wasMarkedReady = order.timeline.some(entry => entry.status === 'ready');
         if (!wasMarkedReady) {
-          console.log(`Warning: Order ${orderData.orderId} is marked ready but no timeline entry found`);
         }
       }
     }
@@ -274,13 +273,6 @@ export class DeliveryService {
       );
     }
 
-    console.log('=== UPDATE ORDER STATUS DEBUG ===');
-    console.log('Order ID:', orderId);
-    console.log('Current Status:', order.status);
-    console.log('Requested Status:', statusData.status);
-    console.log('Timeline length:', order.timeline ? order.timeline.length : 0);
-    console.log('Timeline:', JSON.stringify(order.timeline, null, 2));
-
     // **UPDATED VALIDATION**: Allow pickup for ready orders or orders that have been preparing long enough
     if (statusData.status === 'picked_up') {
       // Allow pickup if order is already marked as ready
@@ -289,7 +281,8 @@ export class DeliveryService {
         if (order.timeline && order.timeline.length > 0) {
           const wasMarkedReady = order.timeline.some(entry => entry.status === 'ready');
           if (!wasMarkedReady) {
-            console.log(`Warning: Order ${orderId} is marked ready but no timeline entry found - allowing pickup anyway`);
+            } else {
+          // No timeline entry found but allow pickup anyway for debugging
           }
         }
       }
@@ -418,7 +411,6 @@ export class DeliveryService {
       throw new AppError('Delivery person not found', 404);
     }
 
-    // console.log(delivery); // Removed verbose logging
     if (!delivery.isOnline || !delivery.isAvailable) {
       return {
         orders: [],
@@ -453,12 +445,8 @@ export class DeliveryService {
       .limit(pageLimit)
       .select('_id customerInfo deliveryAddress restaurantId customerId totalAmount deliveryFee status estimatedDeliveryTime createdAt items timeline updatedAt');
 
-    console.log('Found available orders (ready for pickup):', orders.length);
-
     // Debug: Log timeline data for first order
     if (orders.length > 0) {
-      console.log('Sample order timeline:', JSON.stringify(orders[0].timeline, null, 2));
-      console.log('Sample order status:', orders[0].status);
     }
 
     // Additional validation: Filter orders that are actually available for pickup
@@ -469,7 +457,6 @@ export class DeliveryService {
         if (order.timeline && Array.isArray(order.timeline)) {
           const hasReadyTimeline = order.timeline.some(entry => entry.status === 'ready');
           if (!hasReadyTimeline) {
-            console.log(`Order ${order._id} status is ready but no timeline entry found - but allowing anyway`);
           }
         }
         return true;
@@ -478,14 +465,12 @@ export class DeliveryService {
       // For 'preparing' orders, check if they've been preparing for a reasonable time
       if (order.status === 'preparing') {
         if (!order.timeline || !Array.isArray(order.timeline)) {
-          console.log(`Order ${order._id} is preparing but has no timeline - rejecting`);
           return false;
         }
 
         // Find when the order started preparing
         const preparingEntry = order.timeline.find(entry => entry.status === 'preparing');
         if (!preparingEntry) {
-          console.log(`Order ${order._id} status is preparing but no timeline entry found - rejecting`);
           return false;
         }
 
@@ -494,10 +479,8 @@ export class DeliveryService {
         const fifteenMinutes = 15 * 60 * 1000;
 
         if (preparingTime >= fifteenMinutes) {
-          console.log(`Order ${order._id} has been preparing for ${Math.round(preparingTime / 1000 / 60)} minutes - allowing for pickup`);
           return true;
         } else {
-          console.log(`Order ${order._id} has only been preparing for ${Math.round(preparingTime / 1000 / 60)} minutes - not ready yet`);
           return false;
         }
       }
@@ -505,7 +488,6 @@ export class DeliveryService {
       return false;
     });
 
-    console.log('Orders validated as ready for pickup:', validOrders.length);
 
     // Format orders for response
     const formattedOrders = validOrders.map(order => ({
@@ -581,7 +563,6 @@ export class DeliveryService {
     });
 
     await order.save();
-    console.log(`Order ${orderId} marked as ready for testing`);
     return order;
   }
 

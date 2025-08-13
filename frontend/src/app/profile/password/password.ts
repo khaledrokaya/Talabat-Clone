@@ -175,7 +175,6 @@ export class Password implements OnInit {
         },
         error: (error: any) => {
           this.isLoading = false;
-          console.error('خطأ في تغيير كلمة المرور:', error);
 
           // Handle different types of errors
           if (error.status === 404) {

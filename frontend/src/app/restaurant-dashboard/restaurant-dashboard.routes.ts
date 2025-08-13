@@ -4,7 +4,6 @@ import { RestaurantOrders } from './restaurant-orders/restaurant-orders';
 import { OrdersManagementComponent } from './orders-management/orders-management.component';
 import { MealsManagementComponent } from './meals-management/meals-management.component';
 import { MealFormComponent } from './meal-form/meal-form.component';
-import { Wallet } from './wallet/wallet';
 
 export const RESTAURANT_DASHBOARD_ROUTES: Routes = [
   {
@@ -31,10 +30,6 @@ export const RESTAURANT_DASHBOARD_ROUTES: Routes = [
     path: 'orders',
     component: RestaurantOrders
   },
-  {
-    path: 'wallet',
-    component: Wallet
-  }
 ];
 
 

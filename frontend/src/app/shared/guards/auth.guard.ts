@@ -10,12 +10,10 @@ export const authGuard = () => {
   if (authService.isAuthenticated()) {
     // If authenticated but no user data, trigger sync
     if (!authService.currentUserValue) {
-      console.log('AuthGuard: Valid token found, syncing user data...');
       authService.checkAuthState().subscribe();
     }
     return true;
   } else {
-    console.log('AuthGuard: No valid authentication, redirecting to login');
     router.navigate(['/auth/login']);
     return false;
   }
@@ -28,7 +26,6 @@ export const roleGuard = (allowedRoles: string[]) => {
 
     // Check authentication first
     if (!authService.isAuthenticated()) {
-      console.log('RoleGuard: No valid authentication, redirecting to login');
       router.navigate(['/auth/login']);
       return false;
     }
@@ -37,7 +34,6 @@ export const roleGuard = (allowedRoles: string[]) => {
     const currentUser = authService.currentUserValue;
 
     if (!currentUser) {
-      console.log('RoleGuard: No user data, syncing from backend...');
       // Trigger user data sync and allow access (will redirect if sync fails)
       authService.checkAuthState().subscribe({
         next: (user) => {
@@ -55,7 +51,6 @@ export const roleGuard = (allowedRoles: string[]) => {
     if (allowedRoles.includes(currentUser.role)) {
       return true;
     } else {
-      console.log(`RoleGuard: User role '${currentUser.role}' not in allowed roles:`, allowedRoles);
       router.navigate(['/unauthorized']);
       return false;
     }

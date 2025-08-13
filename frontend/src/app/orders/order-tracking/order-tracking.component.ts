@@ -2,9 +2,10 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
-import { DeliveryService } from '../../shared/services/delivery.service';
+import { ToastService } from '../../shared/services/toast.service';
 import { OrderTrackingService, OrderUpdate } from '../../shared/services/order-tracking.service';
 import { Subscription, interval } from 'rxjs';
+import { OrderService } from '../../shared/services/order.service';
 
 interface OrderStatus {
   status: string;
@@ -98,8 +99,9 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
-    private deliveryService: DeliveryService,
-    private orderTrackingService: OrderTrackingService
+    private orderTrackingService: OrderTrackingService,
+    private toastService: ToastService,
+    private OrderService: OrderService
   ) { }
 
   ngOnInit(): void {
@@ -117,7 +119,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   private loadOrderDetails(orderId: string): void {
     this.subscriptions.push(
-      this.deliveryService.trackOrder(orderId).subscribe({
+      this.OrderService.trackOrder(orderId).subscribe({
         next: (response: any) => {
           this.order = response.data;
           this.updateOrderSteps();
@@ -150,7 +152,6 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error receiving order updates:', error);
         }
       })
     );
@@ -166,7 +167,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   }
 
   private refreshOrderData(orderId: string): void {
-    this.deliveryService.trackOrder(orderId).subscribe({
+    this.OrderService.trackOrder(orderId).subscribe({
       next: (response: any) => {
         if (response.data && response.data.status !== this.order?.status) {
           this.order = response.data;
@@ -174,7 +175,6 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
         }
       },
       error: (error: any) => {
-        console.error('Error refreshing order data:', error);
       }
     });
   }
@@ -297,7 +297,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
     if (confirm('Are you sure you want to cancel this order?')) {
       // For now, we'll just show a message since cancel endpoint might not be available
-      alert('Please contact customer service to cancel your order.');
+      this.toastService.error('Please contact customer service to cancel your order.');
       // this.subscriptions.push(
       //   this.deliveryService.cancelOrder(this.order._id).subscribe({
       //     next: (response: any) => {
@@ -307,7 +307,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       //       }
       //     },
       //     error: (error: any) => {
-      //       alert('Failed to cancel order. Please try again.');
+      //       this.toastService.error('Failed to cancel order. Please try again.');
       //     }
       //   })
       // );

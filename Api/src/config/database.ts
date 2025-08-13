@@ -9,17 +9,17 @@ export const connectDB = async (): Promise<void> => {
     const mongoUrl =
       process.env.MONGO_URI || (process.env as any).MONGODB_URI || 'mongodb://localhost:27017/TalabatDB';
 
-    console.log('Attempting to connect to MongoDB...', mongoUrl.substring(0, 20) + '***');
+    Logger.info('Attempting to connect to MongoDB...');
 
     // Check if already connected
     if ((mongoose.connection as any).readyState === 1) {
-      console.log('MongoDB already connected');
+      Logger.info('MongoDB already connected');
       return;
     }
 
     // Check if connection is in progress
     if ((mongoose.connection as any).readyState === 2) {
-      console.log('MongoDB connection in progress, waiting...');
+      Logger.info('MongoDB connection in progress, waiting...');
       // Wait for existing connection attempt
       if (cachedConnection) {
         await cachedConnection;
@@ -46,23 +46,20 @@ export const connectDB = async (): Promise<void> => {
 
     await cachedConnection;
 
-    console.log(`MongoDB connected successfully: ${mongoose.connection.host}`);
-    Logger.info(`MongoDB connected: ${mongoose.connection.host}`);
+    Logger.info(`MongoDB connected successfully: ${mongoose.connection.host}`);
 
     mongoose.connection.on('error', (err) => {
-      console.error('MongoDB connection error:', err);
       Logger.error(`MongoDB connection error: ${String(err)}`);
       cachedConnection = null; // Reset cache on error
     });
 
     mongoose.connection.on('disconnected', () => {
-      console.log('MongoDB disconnected');
       Logger.warn('MongoDB disconnected');
       cachedConnection = null; // Reset cache on disconnect
     });
 
     mongoose.connection.on('connected', () => {
-      console.log('MongoDB connection established');
+      Logger.info('MongoDB connection established');
     });
 
     // Don't add SIGINT handler in serverless environment
@@ -74,7 +71,6 @@ export const connectDB = async (): Promise<void> => {
       });
     }
   } catch (error) {
-    console.error('Error connecting to MongoDB:', error);
     Logger.error(`Error connecting to MongoDB: ${String(error)}`);
     cachedConnection = null; // Reset cache on error
 

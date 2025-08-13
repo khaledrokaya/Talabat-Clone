@@ -67,7 +67,6 @@ export class CustomerOrders implements OnInit, OnDestroy {
 
     const ordersSub = this.orderService.getUserOrders(params).subscribe({
       next: (ordersData: any) => {
-        console.log('✅ Orders API response received:', ordersData);
         this.ordersData = ordersData;
 
         // Handle different response structures
@@ -84,13 +83,9 @@ export class CustomerOrders implements OnInit, OnDestroy {
           this.orders = [];
         }
 
-        console.log('📋 Orders array set to:', this.orders);
-        console.log('📊 Orders count:', this.orders?.length || 0);
         this.loading = false;
       },
       error: (error: any) => {
-        console.error('❌ Error loading orders:', error);
-        console.error('📄 Error details:', error?.error || error?.message || error);
         this.errorMessage = 'Failed to load orders';
         this.loading = false;
         this.hideMessageAfterDelay();
@@ -166,7 +161,6 @@ export class CustomerOrders implements OnInit, OnDestroy {
 
   rateOrder(orderId: string): void {
     // TODO: Implement rating functionality
-    console.log('Rating order:', orderId);
   }
 
   trackByOrderId(index: number, order: OrderSummary): string {
@@ -179,7 +173,6 @@ export class CustomerOrders implements OnInit, OnDestroy {
 
   trackOrder(orderId: string): void {
     // TODO: Implement tracking functionality
-    console.log('Tracking order:', orderId);
   }
 
   private clearMessages(): void {

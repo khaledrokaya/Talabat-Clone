@@ -117,14 +117,12 @@ export class RateLimiterService {
     if (!skipCache) {
       const cachedData = this.getCachedData(cacheKey);
       if (cachedData) {
-        console.log(`Cache hit for: ${cacheKey}`);
         return of(cachedData);
       }
     }
 
     // Check rate limiting
     if (rateLimit && this.isRateLimited(cacheKey)) {
-      console.warn(`Rate limit exceeded for: ${cacheKey}`);
       return throwError(() => new Error('Rate limit exceeded. Please try again later.'));
     }
 
@@ -142,7 +140,6 @@ export class RateLimiterService {
           mergeMap((error: any) => {
             // Retry on 429 errors with delay
             if (error.status === 429) {
-              console.log(`429 error, retrying in ${this.RETRY_DELAY}ms...`);
               return timer(this.RETRY_DELAY);
             }
             // Don't retry other errors
@@ -159,10 +156,8 @@ export class RateLimiterService {
   clearCache(key?: string): void {
     if (key) {
       this.cache.delete(key);
-      console.log(`Cache cleared for: ${key}`);
     } else {
       this.cache.clear();
-      console.log('All cache cleared');
     }
   }
 

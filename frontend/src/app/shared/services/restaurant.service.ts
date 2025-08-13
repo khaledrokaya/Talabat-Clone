@@ -69,6 +69,17 @@ interface FeaturedMealsResponse {
   featuredReason: 'highly_rated' | 'popular' | 'new' | 'promotional';
 }
 
+interface PopularMealsResponse {
+  meals: any[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalMeals: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -130,6 +141,18 @@ export class RestaurantService {
     }
 
     return this.http.get<ApiResponse<FeaturedMealsResponse>>(`${environment.apiUrl}/restaurants/meals/featured`, { params });
+  }
+
+  getPopularMeals(filter?: { limit?: number; category?: string; page?: number }): Observable<ApiResponse<PopularMealsResponse>> {
+    let params = new HttpParams();
+
+    if (filter) {
+      if (filter.limit) params = params.set('limit', filter.limit.toString());
+      if (filter.category) params = params.set('category', filter.category);
+      if (filter.page) params = params.set('page', filter.page.toString());
+    }
+
+    return this.http.get<ApiResponse<PopularMealsResponse>>(`${environment.apiUrl}/restaurants/meals/popular`, { params });
   }
 
   getRestaurantById(id: string): Observable<ApiResponse<{ restaurant: any }>> {

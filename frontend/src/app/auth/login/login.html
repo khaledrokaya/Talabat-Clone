@@ -22,25 +22,27 @@
 
     <h2>Login</h2>
 
-    <form (ngSubmit)="onLogin()" #loginForm="ngForm">
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()" novalidate>
       <div class="form-group">
         <label for="email">Email Address</label>
-        <input type="email" id="email" name="email" [(ngModel)]="email" required email class="form-control"
-          placeholder="Enter your email" [disabled]="isLoading">
+        <input type="email" id="email" formControlName="email" class="form-control"
+          [class.is-invalid]="loginForm.get('email')?.invalid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)"
+          [class.is-valid]="loginForm.get('email')?.valid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)"
+          placeholder="Enter your email" [disabled]="isLoading" autocomplete="email">
+        <app-form-error [form]="loginForm" fieldName="email"></app-form-error>
       </div>
 
       <div class="form-group">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" [(ngModel)]="password" required minlength="6"
-          class="form-control" placeholder="Enter your password" [disabled]="isLoading">
+        <input type="password" id="password" formControlName="password" class="form-control"
+          [class.is-invalid]="loginForm.get('password')?.invalid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched)"
+          [class.is-valid]="loginForm.get('password')?.valid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched)"
+          placeholder="Enter your password" [disabled]="isLoading" autocomplete="current-password">
+        <app-form-error [form]="loginForm" fieldName="password"></app-form-error>
       </div>
 
-      <div class="error-message" *ngIf="errorMessage">
-        {{ errorMessage }}
-      </div>
-
-      <button type="submit" class="btn btn-primary" [disabled]="!loginForm.form.valid || isLoading">
-        <span *ngIf="isLoading" class="spinner"></span>
+      <button type="submit" class="btn btn-primary" [disabled]="isLoading">
+        <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
         {{ isLoading ? 'Logging in...' : 'Login' }}
       </button>
     </form>

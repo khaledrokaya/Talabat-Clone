@@ -79,7 +79,7 @@ const scaleIn = trigger('scaleIn', [
 export class Home implements OnInit {
   restaurants: Restaurant[] = [];
   featuredRestaurants: Restaurant[] = [];
-  featuredMeals: Meal[] = [];
+  popularMeals: Meal[] = [];
   topRatedRestaurants: Restaurant[] = [];
   loading = true;
   mealsLoading = false;
@@ -109,7 +109,7 @@ export class Home implements OnInit {
 
   ngOnInit(): void {
     this.loadRestaurants();
-    this.loadFeaturedMeals();
+    this.loadPopularMeals();
     this.loadTopRatedRestaurants();
     this.subscribeToAuthChanges();
   }
@@ -126,7 +126,6 @@ export class Home implements OnInit {
 
     this.restaurantService.getRestaurants({ limit: 6 }).subscribe({
       next: (response) => {
-        console.log('Restaurant API Response:', response);
         if (response.success && response.data) {
           this.restaurants = response.data.restaurants || [];
           this.totalRestaurants = response.data.pagination?.total || this.restaurants.length;
@@ -139,7 +138,6 @@ export class Home implements OnInit {
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error loading restaurants:', error);
         this.error = 'Failed to load restaurants. Please try again.';
         this.loading = false;
         this.restaurants = [];
@@ -147,17 +145,17 @@ export class Home implements OnInit {
     });
   }
 
-  loadFeaturedMeals(): void {
+  loadPopularMeals(): void {
     this.mealsLoading = true;
-    this.restaurantService.getFeaturedMeals({ limit: 8 }).subscribe({
-      next: (response) => {
+    this.restaurantService.getPopularMeals({ limit: 8 }).subscribe({
+      next: (response: any) => {
         if (response.success && response.data) {
-          this.featuredMeals = response.data.meals || [];
+          // The response structure has meals directly in data array
+          this.popularMeals = Array.isArray(response.data) ? response.data : response.data.meals || [];
         }
         this.mealsLoading = false;
       },
-      error: (error) => {
-        console.error('Error loading featured meals:', error);
+      error: (error: any) => {
         this.mealsLoading = false;
       }
     });
@@ -166,17 +164,14 @@ export class Home implements OnInit {
   loadTopRatedRestaurants(): void {
     this.restaurantService.getTopRatedRestaurants({ limit: 4 }).subscribe({
       next: (response) => {
-        console.log('Top-rated restaurants API response:', response);
         if (response.success && response.data) {
           // Handle both possible response structures
           this.topRatedRestaurants = Array.isArray(response.data)
             ? response.data
             : (response.data.restaurants || []);
-          console.log('Top-rated restaurants loaded:', this.topRatedRestaurants);
         }
       },
       error: (error) => {
-        console.error('Error loading top-rated restaurants:', error);
         this.topRatedRestaurants = [];
       }
     });
@@ -247,13 +242,11 @@ export class Home implements OnInit {
 
   // Handle favorite toggle from restaurant card
   onFavoriteToggle(restaurant: CardRestaurant): void {
-    console.log('Favorite toggled for restaurant:', restaurant.restaurantDetails?.name);
     // The restaurant-card component handles the actual favorite toggle logic
   }
 
   // Handle quick view from restaurant card
   onQuickView(restaurant: CardRestaurant): void {
-    console.log('Quick view for restaurant:', restaurant.restaurantDetails?.name);
     // TODO: Implement quick view modal or navigate to restaurant details
     this.router.navigate(['/restaurants', restaurant._id]);
   }
@@ -310,14 +303,12 @@ export class Home implements OnInit {
   onFavoriteClick(event: Event, restaurant: any): void {
     event.stopPropagation();
     event.preventDefault();
-    console.log('Favorite clicked for:', this.getRestaurantName(restaurant));
     // TODO: Implement favorite functionality
   }
 
   onQuickViewClick(event: Event, restaurant: any): void {
     event.stopPropagation();
     event.preventDefault();
-    console.log('Quick view clicked for:', this.getRestaurantName(restaurant));
     // TODO: Implement quick view modal
     this.router.navigate(['/restaurants', restaurant._id]);
   }
@@ -380,6 +371,28 @@ export class Home implements OnInit {
     }, 0);
 
     return (totalRating / restaurants.length).toFixed(1);
+  }
+
+  // Helper methods for meal display
+  getMealRestaurantName(meal: any): string {
+    return meal.restaurantId?.restaurantDetails?.name || meal.restaurant?.name || 'Unknown Restaurant';
+  }
+
+  getMealRating(meal: any): number {
+    return meal.ratings?.average || meal.rating || 0;
+  }
+
+  getMealDiscount(meal: any): any {
+    return meal.discount;
+  }
+
+  getMealImageUrl(meal: any): string {
+    return meal.image || meal.imageUrl || '';
+  }
+
+  calculateOriginalPrice(meal: any): number {
+    if (!meal.discount?.percentage) return meal.price;
+    return meal.price / (1 - meal.discount.percentage / 100);
   }
 }
 

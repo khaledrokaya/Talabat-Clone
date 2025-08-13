@@ -48,11 +48,9 @@ export class DataCacheService {
       cached.accessCount++;
       cached.lastAccessed = Date.now();
 
-      console.log(`Cache hit for: ${key}`);
       return new BehaviorSubject(cached.data).asObservable();
     }
 
-    console.log(`Cache miss for: ${key}, fetching data...`);
 
     return requestFn().pipe(
       map((data: T) => {
@@ -103,7 +101,6 @@ export class DataCacheService {
    */
   clear(): void {
     this.cache.clear();
-    console.log('Cache cleared');
   }
 
   /**
@@ -144,7 +141,6 @@ export class DataCacheService {
       }
     }
 
-    console.log(`Invalidated ${deleted} cache entries matching pattern: ${pattern}`);
     return deleted;
   }
 
@@ -186,7 +182,6 @@ export class DataCacheService {
     };
 
     this.cache.set(key, entry);
-    console.log(`Cached data for key: ${key} (expires in ${maxAge}ms)`);
   }
 
   private isExpired(entry: CacheEntry<any>): boolean {
@@ -205,7 +200,6 @@ export class DataCacheService {
     }
 
     if (cleaned > 0) {
-      console.log(`Cache cleanup: removed ${cleaned} expired entries`);
     }
   }
 
@@ -224,7 +218,6 @@ export class DataCacheService {
 
     if (leastUsedKey) {
       this.cache.delete(leastUsedKey);
-      console.log(`Evicted least used cache entry: ${leastUsedKey}`);
     }
   }
 }

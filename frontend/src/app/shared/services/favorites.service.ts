@@ -44,7 +44,6 @@ export class FavoritesService {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
-      console.error('Error reading favorites from localStorage:', error);
       return [];
     }
   }
@@ -55,7 +54,6 @@ export class FavoritesService {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(favoriteIds));
       this.favoritesSubject.next(favoriteIds);
     } catch (error) {
-      console.error('Error saving favorites to localStorage:', error);
     }
   }
 
@@ -154,10 +152,8 @@ export class FavoritesService {
     if (token) {
       this.getFavorites().subscribe({
         next: (response) => {
-          console.log('Favorites loaded successfully');
         },
         error: (error) => {
-          console.error('Error loading favorites:', error);
         }
       });
     }

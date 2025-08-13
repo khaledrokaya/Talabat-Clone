@@ -315,7 +315,6 @@ export class CategoryService {
   static async updateCategoryCount(categoryId: string, increment: number = 1): Promise<void> {
     // TODO: Implement this when you have meal-category relationship in database
     // This would update the count in the database
-    console.log(`Category ${categoryId} count would be updated by ${increment}`);
   }
 }
 

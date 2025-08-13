@@ -43,19 +43,15 @@ export class Navbar implements OnInit, OnDestroy {
     // Check if we already have user data
     if (this.authService.currentUserValue) {
       this.currentUser = this.authService.currentUserValue;
-      console.log('Navbar: User already loaded', this.currentUser.email);
     } else {
       // We have valid token but no user data, sync from backend
-      console.log('Navbar: Syncing auth state...');
       const syncSub = this.authService.checkAuthState().subscribe({
         next: (user) => {
           this.currentUser = user;
           if (user) {
-            console.log('Navbar: Auth state synced successfully', user.email);
           }
         },
         error: (error) => {
-          console.error('Navbar: Error syncing auth state:', error);
         }
       });
       this.subscriptions.push(syncSub);
@@ -92,7 +88,6 @@ export class Navbar implements OnInit, OnDestroy {
           this.currentUser = user;
         },
         error: (error) => {
-          console.error('Error loading user:', error);
         }
       });
       this.subscriptions.push(userSub);
@@ -124,7 +119,6 @@ export class Navbar implements OnInit, OnDestroy {
         this.router.navigate(['/']);
       },
       error: (error) => {
-        console.error('Logout error:', error);
         // Force logout even if server request fails - just navigate since logout clears data anyway
         this.currentUser = null;
         this.showUserMenu = false;

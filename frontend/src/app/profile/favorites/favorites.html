@@ -8,17 +8,6 @@
       <p>Your list of favorite restaurants for quick access</p>
     </div>
     <div class="card-body">
-      <!-- Success/Error Messages -->
-      <div class="alert alert-success" *ngIf="successMessage">
-        <i class="fas fa-check-circle"></i>
-        {{ successMessage }}
-      </div>
-
-      <div class="alert alert-danger" *ngIf="errorMessage">
-        <i class="fas fa-exclamation-circle"></i>
-        {{ errorMessage }}
-      </div>
-
       <div class="favorites-content" *ngIf="!isLoading">
         <div class="empty-state" *ngIf="favorites.length === 0">
           <div class="empty-icon">

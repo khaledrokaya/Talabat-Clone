@@ -1,4 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
+// Import the Toastr styles - must be first
+@import 'ngx-toastr/toastr';
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
@@ -920,4 +922,177 @@ button:focus,
 
 .footer-logo {
   margin-bottom: 12px;
+}
+
+/* Custom Talabat-themed Toastr styles - SIMPLIFIED FOR DEBUGGING */
+
+.toast-container {
+  font-family: 'Cairo', sans-serif !important;
+}
+
+/* Simplified toast styling to test basic functionality */
+.toast-success {
+  background-color: #4CAF50 !important;
+  color: white !important;
+}
+
+.toast-error {
+  background-color: #F44336 !important;
+  color: white !important;
+}
+
+.toast-warning {
+  background-color: #FF9800 !important;
+  color: white !important;
+}
+
+.toast-info {
+  background-color: #2196F3 !important;
+  color: white !important;
+}
+
+.toast-title {
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.toast-message {
+  color: white !important;
+}
+
+/* End of toast styles */
+
+/* Toast animations */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.8);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes fadeOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(100%) scale(0.8);
+  }
+}
+
+/* Toast with icons */
+.toast-with-icon .toast-title:before {
+  content: '';
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  vertical-align: middle;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.toast-success.toast-with-icon .toast-title:before {
+  content: '✓';
+  background: none;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.toast-error.toast-with-icon .toast-title:before {
+  content: '✕';
+  background: none;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.toast-warning.toast-with-icon .toast-title:before {
+  content: '⚠';
+  background: none;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.toast-info.toast-with-icon .toast-title:before {
+  content: 'ℹ';
+  background: none;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+/* Custom styled toasts */
+.toast-premium {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important;
+  border-left: 4px solid #FF8C00 !important;
+  color: #8B4513 !important;
+  box-shadow: 0 8px 32px rgba(255, 215, 0, 0.3) !important;
+}
+
+.toast-delivery {
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%) !important;
+  border-left: 4px solid #1565C0 !important;
+  color: white !important;
+}
+
+/* Additional custom toast types */
+.toast-talabat-branded {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
+  border-left: 4px solid #d84315 !important;
+  color: white !important;
+  box-shadow: 0 8px 32px rgba(255, 107, 53, 0.3) !important;
+}
+
+.toast-order-status {
+  background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%) !important;
+  border-left: 4px solid #6A1B9A !important;
+  color: white !important;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .toast {
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .toast-title {
+    color: white !important;
+  }
+
+  .toast-message {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+}
+
+/* Responsive toasts */
+@media (max-width: 576px) {
+  .toast-container {
+    width: 100% !important;
+    padding: 10px !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+
+  .toast {
+    margin: 0 0 10px 0 !important;
+    border-radius: 8px !important;
+  }
+
+  .toast-title {
+    font-size: 13px !important;
+  }
+
+  .toast-message {
+    font-size: 12px !important;
+  }
 }

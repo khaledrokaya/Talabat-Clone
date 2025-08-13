@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TalabatLogo } from '../../components/talabat-logo/talabat-logo';
 
@@ -7,7 +7,8 @@ import { TalabatLogo } from '../../components/talabat-logo/talabat-logo';
   standalone: true,
   imports: [CommonModule, TalabatLogo],
   templateUrl: './loading.component.html',
-  styleUrls: ['./loading.component.scss']
+  styleUrls: ['./loading.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LoadingComponent implements OnInit, OnDestroy {
   @Input() isLoading: boolean = false;
@@ -16,8 +17,12 @@ export class LoadingComponent implements OnInit, OnDestroy {
   @Input() progress: number = 0;
 
   private resizeListener?: () => void;
+  private _displayText: string = '';
 
   ngOnInit() {
+    // Set the display text once during initialization
+    this._displayText = this.getRandomLoadingMessage();
+
     // Listen for window resize to update logo size responsively
     this.resizeListener = () => this.updateLogoSize();
     window.addEventListener('resize', this.resizeListener);
@@ -43,22 +48,23 @@ export class LoadingComponent implements OnInit, OnDestroy {
   }
 
   // Loading messages array for variety
-  get loadingMessages() {
-    return [
+  private getRandomLoadingMessage(): string {
+    if (this.text !== 'Loading delicious food...') {
+      return this.text;
+    }
+
+    const messages = [
       'Loading delicious food...',
       'Preparing your feast...',
       'Finding the best restaurants...',
       'Getting your order ready...',
       'Almost there...'
     ];
+    return messages[Math.floor(Math.random() * messages.length)];
   }
 
-  // Get a random loading message if none provided
-  get displayText() {
-    if (this.text !== 'Loading delicious food...') {
-      return this.text;
-    }
-    const messages = this.loadingMessages;
-    return messages[Math.floor(Math.random() * messages.length)];
+  // Get the stable display text
+  get displayText(): string {
+    return this._displayText || this.text;
   }
 }

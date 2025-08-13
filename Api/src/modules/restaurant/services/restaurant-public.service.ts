@@ -83,6 +83,47 @@ export class RestaurantPublicService {
   }
 
   /**
+   * Get popular meals with filtering
+   */
+  async getPopularMeals(filters: any = {}): Promise<any> {
+    const {
+      category,
+      limit = 10,
+      page = 1,
+    } = filters;
+
+    const query: any = {
+      isAvailable: true,
+    };
+
+    // Category filter
+    if (category) {
+      query.category = category;
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const meals = await Meal.find(query)
+      .populate('restaurantId', 'restaurantDetails.name address ratings')
+      .sort({ orderCount: -1, ratings: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    const total = await Meal.countDocuments(query);
+
+    return {
+      meals,
+      pagination: {
+        currentPage: Number(page),
+        totalPages: Math.ceil(total / Number(limit)),
+        totalMeals: total,
+        hasNext: Number(page) < Math.ceil(total / Number(limit)),
+        hasPrev: Number(page) > 1,
+      },
+    };
+  }
+
+  /**
    * Get meals by category
    */
   async getMealsByCategory(category: string): Promise<any[]> {

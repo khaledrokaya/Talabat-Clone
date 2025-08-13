@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { AuthService } from '../../shared/services/auth.service';
+import { ToastService } from '../../shared/services/toast.service';
 import { TalabatLogo } from '../../shared/components/talabat-logo/talabat-logo';
 
 @Component({
@@ -16,8 +17,6 @@ export class VerifyEmail implements OnInit {
   email = '';
   otp = '';
   type: 'registration' | 'password-reset' = 'registration';
-  errorMessage = '';
-  successMessage = '';
   isLoading = false;
   isResending = false;
   canResend = true;
@@ -26,7 +25,8 @@ export class VerifyEmail implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private toastService: ToastService
   ) { }
 
   ngOnInit(): void {
@@ -44,32 +44,25 @@ export class VerifyEmail implements OnInit {
 
       // Show initial success message if OTP was just sent (e.g., from failed login)
       if (otpSent) {
-        this.successMessage = 'Verification code has been sent to your email';
+        this.toastService.success('Verification code has been sent to your email', 'Code Sent');
         this.startCountdown(); // Start countdown since OTP was just sent
-
-        // Clear the message after a few seconds
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 5000);
       }
     });
   }
 
   onVerifyOTP(): void {
     if (!this.otp || this.otp.length !== 6) {
-      this.errorMessage = 'Please enter a 6-digit verification code';
+      this.toastService.warning('Please enter a 6-digit verification code', 'Invalid Code');
       return;
     }
 
     this.isLoading = true;
-    this.errorMessage = '';
-    this.successMessage = '';
 
     this.authService.verifyOTP(this.email, this.otp, this.type).subscribe({
       next: (response) => {
         this.isLoading = false;
         if (response.success) {
-          this.successMessage = 'Email verified successfully!';
+          this.toastService.success('Email verified successfully!', 'Verification Complete');
 
           setTimeout(() => {
             // Redirect based on verification type
@@ -83,17 +76,16 @@ export class VerifyEmail implements OnInit {
             }
           }, 2000);
         } else {
-          this.errorMessage = response.message || 'Failed to verify code';
+          this.toastService.error(response.message || 'Failed to verify code', 'Verification Failed');
         }
       },
       error: (error) => {
         this.isLoading = false;
-        console.error('OTP verification failed', error);
 
         if (error.error && !error.error.success) {
-          this.errorMessage = error.error.message || 'Failed to verify code';
+          this.toastService.showApiError(error, 'Failed to verify code');
         } else {
-          this.errorMessage = 'An unexpected error occurred. Please try again.';
+          this.toastService.error('An unexpected error occurred. Please try again.', 'Verification Error');
         }
       }
     });
@@ -105,27 +97,24 @@ export class VerifyEmail implements OnInit {
     }
 
     this.isResending = true;
-    this.errorMessage = '';
-    this.successMessage = '';
 
     this.authService.resendOTP(this.email, this.type).subscribe({
       next: (response) => {
         this.isResending = false;
         if (response.success) {
-          this.successMessage = 'New verification code sent to your email';
+          this.toastService.success('New verification code sent to your email', 'Code Resent');
           this.startCountdown();
         } else {
-          this.errorMessage = response.message || 'Failed to send verification code';
+          this.toastService.error(response.message || 'Failed to send verification code', 'Resend Failed');
         }
       },
       error: (error) => {
         this.isResending = false;
-        console.error('Resend OTP failed', error);
 
         if (error.error && !error.error.success) {
-          this.errorMessage = error.error.message || 'Failed to send verification code';
+          this.toastService.showApiError(error, 'Failed to send verification code');
         } else {
-          this.errorMessage = 'An unexpected error occurred. Please try again.';
+          this.toastService.error('An unexpected error occurred. Please try again.', 'Resend Error');
         }
       }
     });

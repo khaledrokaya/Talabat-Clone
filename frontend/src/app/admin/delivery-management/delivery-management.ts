@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AdminService, AdminDelivery, ApprovalRequest } from '../../shared/services/admin.service';
+import { ToastService } from '../../shared/services/toast.service';
 
 @Component({
   selector: 'app-delivery-management',
@@ -15,8 +16,6 @@ export class DeliveryManagement implements OnInit {
   filteredDelivery: AdminDelivery[] = [];
 
   isLoading = true;
-  errorMessage = '';
-  successMessage = '';
 
   // Pagination
   currentPage = 1;
@@ -41,7 +40,8 @@ export class DeliveryManagement implements OnInit {
 
   constructor(
     private adminService: AdminService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private toastService: ToastService
   ) {
     this.approvalForm = this.fb.group({
       status: ['verified', Validators.required],
@@ -60,11 +60,9 @@ export class DeliveryManagement implements OnInit {
 
   loadPendingDelivery(): void {
     this.isLoading = true;
-    this.errorMessage = '';
 
     this.adminService.getPendingDeliveryUsers().subscribe({
       next: (response: any) => {
-        console.log('Pending delivery response:', response);
         if (response.success && response.data) {
           this.pendingDelivery = response.data;
           this.filteredDelivery = [...this.pendingDelivery];
@@ -72,15 +70,14 @@ export class DeliveryManagement implements OnInit {
         } else {
           this.pendingDelivery = [];
           this.filteredDelivery = [];
-          this.errorMessage = 'Failed to load pending delivery applications';
+          this.toastService.error('Failed to load pending delivery applications', 'Loading Error');
         }
-        console.log('Processed pending delivery:', this.pendingDelivery);
         this.isLoading = false;
       },
       error: (error) => {
         this.pendingDelivery = [];
         this.filteredDelivery = [];
-        this.errorMessage = 'Error loading delivery applications: ' + (error.error?.message || 'Unknown error');
+        this.toastService.showApiError(error, 'Error loading delivery applications');
         this.isLoading = false;
       }
     });
@@ -143,7 +140,6 @@ export class DeliveryManagement implements OnInit {
     this.showApprovalModal = false;
     this.currentDelivery = null;
     this.currentDeliveryId = '';
-    this.clearMessages();
   }
 
   submitApproval(): void {
@@ -154,30 +150,30 @@ export class DeliveryManagement implements OnInit {
         this.adminService.approveDelivery(this.currentDeliveryId, request).subscribe({
           next: (response) => {
             if (response.success) {
-              this.successMessage = 'Delivery partner approved successfully';
+              this.toastService.success('Delivery partner approved successfully', 'Approval Successful');
               this.loadPendingDelivery();
               this.closeModal();
             } else {
-              this.errorMessage = 'Failed to approve delivery partner';
+              this.toastService.error('Failed to approve delivery partner', 'Approval Error');
             }
           },
           error: (error) => {
-            this.errorMessage = 'Error approving delivery: ' + (error.error?.message || 'Unknown error');
+            this.toastService.showApiError(error, 'Error approving delivery');
           }
         });
       } else {
         this.adminService.rejectDelivery(this.currentDeliveryId, request).subscribe({
           next: (response) => {
             if (response.success) {
-              this.successMessage = 'Delivery partner rejected successfully';
+              this.toastService.success('Delivery partner rejected successfully', 'Rejection Successful');
               this.loadPendingDelivery();
               this.closeModal();
             } else {
-              this.errorMessage = 'Failed to reject delivery partner';
+              this.toastService.error('Failed to reject delivery partner', 'Rejection Error');
             }
           },
           error: (error) => {
-            this.errorMessage = 'Error rejecting delivery: ' + (error.error?.message || 'Unknown error');
+            this.toastService.showApiError(error, 'Error rejecting delivery');
           }
         });
       }
@@ -220,11 +216,6 @@ export class DeliveryManagement implements OnInit {
 
   formatDateTime(dateString: string): string {
     return new Date(dateString).toLocaleString();
-  }
-
-  clearMessages(): void {
-    this.errorMessage = '';
-    this.successMessage = '';
   }
 
   generatePageNumbers(): number[] {
@@ -291,16 +282,16 @@ export class DeliveryManagement implements OnInit {
       this.adminService.rejectDelivery(this.currentDelivery._id, request).subscribe({
         next: (response) => {
           if (response.success) {
-            this.successMessage = 'Delivery partner rejected successfully';
+            this.toastService.success('Delivery partner rejected successfully', 'Rejection Successful');
             this.loadPendingDelivery();
             this.closeRejectionModal();
             this.closeModal();
           } else {
-            this.errorMessage = 'Failed to reject delivery partner';
+            this.toastService.error('Failed to reject delivery partner', 'Rejection Error');
           }
         },
         error: (error) => {
-          this.errorMessage = 'Error rejecting delivery: ' + (error.error?.message || 'Unknown error');
+          this.toastService.showApiError(error, 'Error rejecting delivery');
         }
       });
     }
@@ -308,7 +299,6 @@ export class DeliveryManagement implements OnInit {
 
   toggleDeliveryStatus(delivery: AdminDelivery): void {
     // Implementation for toggling delivery status
-    console.log('Toggle delivery status for:', delivery._id);
   }
 
   getWeekDays(): string[] {

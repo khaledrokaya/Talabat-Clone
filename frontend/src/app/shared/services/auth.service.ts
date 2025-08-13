@@ -166,15 +166,12 @@ export class AuthService {
       if (storedUser) {
         // We have both token and user data
         this.lastLoginTime = Date.now();
-        console.log('User restored from storage:', storedUser.email, storedUser.role);
       } else {
         // We have valid token but no user data - fetch from backend
-        console.log('Found valid token without user data, fetching user profile...');
         this.fetchAndSetCurrentUser();
       }
     } else if (storedUser) {
       // We have user data but invalid/no token - clear everything
-      console.log('Invalid token found, clearing stored user data');
       this.clearStoredAuth();
       this.currentUserSubject.next(null);
     }
@@ -194,7 +191,6 @@ export class AuthService {
         return JSON.parse(userStr);
       }
     } catch (error) {
-      console.error('Error parsing stored user:', error);
       this.clearStoredAuth();
     }
     return null;
@@ -276,7 +272,6 @@ export class AuthService {
       const payload = token.split('.')[1];
       return JSON.parse(atob(payload));
     } catch (error) {
-      console.error('Error decoding token:', error);
       return null;
     }
   }
@@ -335,7 +330,6 @@ export class AuthService {
 
   // Login method - works for all users including admin
   login(credentials: LoginRequest): Observable<AuthResponse> {
-    console.log('Login attempt for:', credentials.email);
 
     return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/login`, credentials, {
       withCredentials: true
@@ -343,11 +337,9 @@ export class AuthService {
       .pipe(
         tap(response => {
           if (response.success && response.data && response.data.user) {
-            console.log('Login response received:', response.data.user.role, response.data.user.email);
 
             // Store tokens from response if available
             if (response.data.tokens) {
-              console.log('Storing tokens from login response');
               localStorage.setItem('accessToken', response.data.tokens.accessToken);
               localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
             }
@@ -362,7 +354,6 @@ export class AuthService {
             setTimeout(() => {
               const token = this.getToken();
               if (token && !this.isTokenExpired(token)) {
-                console.log('Login successful, tokens available, user state:', this.currentUserValue?.email);
                 // Ensure user state is properly set
                 if (!this.currentUserValue) {
                   // Create proper user object from response data
@@ -379,19 +370,16 @@ export class AuthService {
                     updatedAt: new Date()
                   };
                   this.currentUserSubject.next(userObj);
-                  console.log('User state manually set after login');
                 }
 
                 // Debug auth state after login
                 this.debugAuthState();
               } else {
-                console.error('No valid token found after login');
               }
             }, 100);
           }
         }),
         catchError(error => {
-          console.error('Login error:', error);
           return throwError(() => error);
         })
       );
@@ -433,11 +421,9 @@ export class AuthService {
       tap(response => {
         if (response.success && response.data) {
           // Tokens are set automatically by backend, no manual setting needed
-          console.log('Token refreshed successfully');
         }
       }),
       catchError(error => {
-        console.error('Token refresh error:', error);
         this.forceLogout();
         return throwError(() => error);
       })
@@ -476,7 +462,6 @@ export class AuthService {
   }
 
   private setAuthData(user: any): void {
-    console.log('Setting auth data for user:', user.email, user.role);
 
     // Create user object compatible with our User interface
     const userObj: User = {
@@ -497,7 +482,6 @@ export class AuthService {
     this.currentUserSubject.next(userObj);
     this.scheduleTokenRefresh();
 
-    console.log('User authentication data set successfully:', userObj.role, userObj.email);
   }
 
   private forceLogout(): void {
@@ -525,10 +509,7 @@ export class AuthService {
 
     // Debug logging for production cookie issues
     if (environment.production) {
-      console.log('Getting token - localStorage:', token ? 'Found' : 'Not found');
-      console.log('Getting token - cookie:', cookieToken ? 'Found' : 'Not found');
       if (!token && !cookieToken) {
-        console.log('Available cookies:', document.cookie);
       }
     }
 
@@ -560,7 +541,6 @@ export class AuthService {
 
     // If we have a valid token but no user data, fetch it and return true
     if (!currentUser) {
-      console.log('Valid token found without user data, fetching user...');
       this.fetchAndSetCurrentUser();
       return true; // Consider user logged in while fetching
     }
@@ -594,7 +574,6 @@ export class AuthService {
           this.currentUserSubject.next(user);
         },
         error: (error) => {
-          console.error('Error refreshing user state:', error);
         }
       });
     }
@@ -604,12 +583,10 @@ export class AuthService {
   private fetchAndSetCurrentUser(): void {
     this.getCurrentUser().subscribe({
       next: (user) => {
-        console.log('Successfully fetched user profile:', user);
         this.setAuthData(user);
         this.lastLoginTime = Date.now();
       },
       error: (error) => {
-        console.error('Error fetching user profile:', error);
         // If we can't fetch user profile, clear invalid tokens
         this.clearStoredAuth();
         this.currentUserSubject.next(null);
@@ -629,7 +606,6 @@ export class AuthService {
   // Force reload user from stored data (useful for debugging)
   forceReloadUserState(): void {
     const storedUser = this.getStoredUser();
-    console.log('Force reloading user state:', storedUser);
 
     // Set login time to provide grace period for session validation
     if (storedUser) {
@@ -641,10 +617,8 @@ export class AuthService {
 
   // Clear all auth data (useful for debugging corrupted sessions)
   clearAllAuthData(): void {
-    console.log('Clearing all authentication data...');
     this.clearStoredAuth();
     this.currentUserSubject.next(null);
-    console.log('All authentication data cleared');
   }
 
   // Debug method to log current authentication state
@@ -656,36 +630,17 @@ export class AuthService {
     const isAuthenticated = this.isAuthenticated();
     const allCookies = this.getAllCookies();
 
-    console.log('=== Authentication State Debug ===');
-    console.log('Access Token:', token ? `Present (${token.substring(0, 20)}...)` : 'Missing');
-    console.log('Refresh Token:', refreshToken ? `Present (${refreshToken.substring(0, 20)}...)` : 'Missing');
-    console.log('Current User:', currentUser ? `${currentUser.email} (${currentUser.role})` : 'None');
-    console.log('Is Logged In:', isLoggedIn);
-    console.log('Is Authenticated:', isAuthenticated);
 
     if (token) {
       const isExpired = this.isTokenExpired(token);
       const expiration = this.getTokenExpiration(token);
-      console.log('Token Expired:', isExpired);
-      console.log('Token Expiration:', expiration ? new Date(expiration).toLocaleString() : 'Invalid');
     }
 
-    console.log('Last Login Time:', new Date(this.lastLoginTime).toLocaleString());
-    console.log('All Cookies:', allCookies);
-    console.log('LocalStorage User:', localStorage.getItem('currentUser') ? 'Present' : 'Missing');
-    console.log('=====================================');
   }
 
   // Debug method specifically for cookies
   debugCookies(): void {
     const allCookies = this.getAllCookies();
-    console.log('=== Cookie Debug ===');
-    console.log('All cookies:', allCookies);
-    console.log('AccessToken cookie:', this.getCookie('accessToken'));
-    console.log('RefreshToken cookie:', this.getCookie('refreshToken'));
-    console.log('CurrentUser cookie:', this.getCookie('currentUser'));
-    console.log('Document.cookie:', document.cookie);
-    console.log('==================');
   }
 
   // Check and sync authentication state (useful for components)
@@ -698,12 +653,10 @@ export class AuthService {
         // We have a valid token but no user data, fetch it
         return this.getCurrentUser().pipe(
           tap(user => {
-            console.log('Synced user data from backend:', user);
             this.setAuthData(user);
             this.lastLoginTime = Date.now();
           }),
           catchError(error => {
-            console.error('Failed to sync user data:', error);
             this.clearStoredAuth();
             this.currentUserSubject.next(null);
             return of(null);
@@ -735,7 +688,6 @@ export class AuthService {
     return this.checkAuthState().pipe(
       map(user => {
         const isAuthenticated = user !== null;
-        console.log('Auth state initialized:', isAuthenticated ? `User: ${user.email} (${user.role})` : 'Not authenticated');
         return isAuthenticated;
       })
     );

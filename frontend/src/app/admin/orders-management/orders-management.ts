@@ -394,6 +394,5 @@ export class OrdersManagement implements OnInit {
 
   viewAllRestaurants(): void {
     // Navigate to restaurants page or show more
-    console.log('Navigate to restaurants page');
   }
 }

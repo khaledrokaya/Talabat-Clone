@@ -12,6 +12,7 @@ import {
   MealsListResponse
 } from '../../shared/services/restaurant-meal.service';
 import { RateLimiterService } from '../../shared/services/rate-limiter.service';
+import { ToastService } from '../../shared/services/toast.service';
 import { DebounceService } from '../../shared/services/debounce.service';
 
 @Component({
@@ -50,6 +51,7 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
     private mealService: RestaurantMealService,
     private fb: FormBuilder,
     private router: Router,
+    private toastService: ToastService,
     private rateLimiter: RateLimiterService,
     private debounceService: DebounceService
   ) {
@@ -128,7 +130,6 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: any) => {
-          console.log('Meals API Response:', response);
           if (response.success) {
             // Handle both response formats
             if (Array.isArray(response.data)) {
@@ -145,22 +146,18 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
               this.meals = response.data.meals;
               this.pagination = response.data.pagination;
             } else {
-              console.warn('Unexpected API response format:', response);
               this.meals = [];
               this.pagination = null;
             }
           } else {
-            console.error('API returned success: false');
             this.meals = [];
           }
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading meals:', error);
           if (error.message.includes('Rate limit exceeded')) {
-            alert('Too many requests. Please wait a moment before trying again.');
+            this.toastService.error('Too many requests. Please wait a moment before trying again.');
           } else {
-            console.error('Network or server error:', error);
           }
           this.meals = [];
           this.loading = false;
@@ -186,7 +183,6 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error loading categories:', error);
         }
       });
   }
@@ -209,7 +205,6 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error loading meal stats:', error);
         }
       });
   }
@@ -274,12 +269,11 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
             if (response.success) {
               this.loadMeals();
               this.loadMealStats();
-              alert('Meal deleted successfully!');
+              this.toastService.error('Meal deleted successfully!');
             }
           },
           error: (error) => {
-            console.error('Error deleting meal:', error);
-            alert('Error deleting meal. Please try again.');
+            this.toastService.error('Error deleting meal. Please try again.');
           }
         });
     }
@@ -299,8 +293,7 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error toggling meal availability:', error);
-          alert('Error updating meal availability.');
+          this.toastService.error('Error updating meal availability.');
         }
       });
   }

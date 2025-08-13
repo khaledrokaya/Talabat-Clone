@@ -180,12 +180,10 @@ export class RestaurantCard implements OnInit, OnDestroy {
     // Toggle favorite status via service
     this.favoritesService.toggleFavorite(this.restaurantId).subscribe({
       next: (response) => {
-        console.log('Favorite toggled successfully:', response);
         // Emit the event for parent components that need to handle it
         this.favoriteToggle.emit(this.restaurant);
       },
       error: (error) => {
-        console.error('Error toggling favorite:', error);
       }
     });
   }

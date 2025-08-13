@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService, CustomerRegisterRequest, RestaurantRegisterRequest, DeliveryRegisterRequest } from '../../shared/services/auth.service';
+import { ToastService } from '../../shared/services/toast.service';
+import { FormValidationService } from '../../shared/services/form-validation.service';
 import { TalabatLogo } from '../../shared/components/talabat-logo/talabat-logo';
 
 @Component({
@@ -132,7 +134,9 @@ export class Register {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private toastService: ToastService,
+    private formValidationService: FormValidationService
   ) {
     this.initializeForms();
   }
@@ -140,13 +144,33 @@ export class Register {
   private initializeForms(): void {
     // Basic information form
     this.basicForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      email: ['', [
+        Validators.required,
+        FormValidationService.emailValidator()
+      ]],
+      password: ['', [
+        Validators.required,
+        Validators.minLength(8),
+        FormValidationService.passwordStrengthValidator()
+      ]],
       confirmPassword: ['', [Validators.required]],
-      firstName: ['', [Validators.required]],
-      lastName: ['', [Validators.required]],
-      phone: ['', [Validators.required]]
-    }, { validators: this.passwordMatchValidator });
+      firstName: ['', [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(50)
+      ]],
+      lastName: ['', [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(50)
+      ]],
+      phone: ['', [
+        Validators.required,
+        FormValidationService.phoneValidator()
+      ]]
+    }, {
+      validators: FormValidationService.passwordMatchValidator('password', 'confirmPassword')
+    });
 
     // Customer specific form
     this.customerForm = this.fb.group({
@@ -158,25 +182,65 @@ export class Register {
 
     // Restaurant specific form
     this.restaurantForm = this.fb.group({
-      restaurantName: ['', [Validators.required]],
-      description: ['', [Validators.required, Validators.minLength(20)]],
+      restaurantName: ['', [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(100)
+      ]],
+      description: ['', [
+        Validators.required,
+        Validators.minLength(20),
+        Validators.maxLength(500)
+      ]],
       restaurantType: ['', [Validators.required]],
       cuisineType: ['', [Validators.required]],
       serviceType: ['both', [Validators.required]],
-      averageDeliveryTime: [30, [Validators.required, Validators.min(15), Validators.max(120)]],
-      minimumOrderAmount: [15, [Validators.required, Validators.min(5)]],
-      deliveryFee: [3.99, [Validators.required, Validators.min(0), Validators.max(10)]],
-      serviceRadius: [10, [Validators.required, Validators.min(1), Validators.max(50)]],
-      licenseNumber: ['', [Validators.required]],
-      taxId: ['', [Validators.required]],
-      bankAccountNumber: ['', [Validators.required]],
-      bankName: ['', [Validators.required]],
-      website: [''],
+      averageDeliveryTime: [30, [
+        Validators.required,
+        Validators.min(15),
+        Validators.max(120)
+      ]],
+      minimumOrderAmount: [15, [
+        Validators.required,
+        Validators.min(5),
+        Validators.max(100)
+      ]],
+      deliveryFee: [3.99, [
+        Validators.required,
+        Validators.min(0),
+        Validators.max(50)
+      ]],
+      serviceRadius: [10, [
+        Validators.required,
+        Validators.min(1),
+        Validators.max(100)
+      ]],
+      licenseNumber: ['', [
+        Validators.required,
+        Validators.minLength(5),
+        Validators.maxLength(50)
+      ]],
+      taxId: ['', [
+        Validators.required,
+        Validators.minLength(5),
+        Validators.maxLength(50)
+      ]],
+      bankAccountNumber: ['', [
+        Validators.required,
+        Validators.minLength(8),
+        Validators.maxLength(30)
+      ]],
+      bankName: ['', [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(100)
+      ]],
+      website: ['', FormValidationService.urlValidator()],
       instagram: [''],
       facebook: [''],
       twitter: [''],
-      logoUrl: [''],
-      bannerUrl: [''],
+      logoUrl: ['', FormValidationService.urlValidator()],
+      bannerUrl: ['', FormValidationService.urlValidator()],
       openingTime: ['08:00', [Validators.required]],
       closingTime: ['22:00', [Validators.required]],
       isOpen: [true],
@@ -231,6 +295,9 @@ export class Register {
   nextStep(): void {
     if (this.currentStep === 2 && this.basicForm.valid) {
       this.currentStep = 3;
+    } else if (this.currentStep === 2 && this.basicForm.invalid) {
+      this.formValidationService.markFormGroupTouched(this.basicForm);
+      this.toastService.showValidationError('Please fill in all required fields correctly');
     }
   }
 
@@ -243,6 +310,7 @@ export class Register {
   onRegister(): void {
     if (!this.isFormValid()) {
       this.errorMessage = 'Please fill in all required fields';
+      this.toastService.showValidationError('Please fill in all required fields correctly');
       return;
     }
 
@@ -405,6 +473,7 @@ export class Register {
     this.isLoading = false;
     if (response.success) {
       this.successMessage = 'Registration successful! Please check your email for verification.';
+      this.toastService.success('Registration successful! A verification email has been sent to your inbox.', 'Welcome!', 6000);
 
       // Get email from the basic form
       const email = this.basicForm.get('email')?.value;
@@ -421,12 +490,12 @@ export class Register {
       }, 2000);
     } else {
       this.errorMessage = response.message || 'Registration failed. Please try again.';
+      this.toastService.error(this.errorMessage);
     }
   }
 
   private handleError(error: any): void {
     this.isLoading = false;
-    console.error('Registration failed', error);
 
     if (error.error && !error.error.success) {
       this.errorMessage = error.error.message || 'Registration failed. Please try again.';
@@ -434,7 +503,6 @@ export class Register {
       this.errorMessage = 'An unexpected error occurred. Please try again.';
     }
 
-    // Show alert for better user experience
-    alert(this.errorMessage);
+    this.toastService.error(this.errorMessage);
   }
 }

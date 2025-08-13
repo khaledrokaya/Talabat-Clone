@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FavoritesService } from '../../shared/services/favorites.service';
+import { ToastService } from '../../shared/services/toast.service';
 import { RestaurantCard } from '../../restaurants/restaurant-card/restaurant-card';
 
 @Component({
@@ -16,12 +17,11 @@ export class Favorites implements OnInit {
   isLoading = true;
   showRemoveModal = false;
   restaurantToRemove: string | null = null;
-  successMessage = '';
-  errorMessage = '';
 
   constructor(
     private favoritesService: FavoritesService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService
   ) { }
 
   ngOnInit(): void {
@@ -30,20 +30,16 @@ export class Favorites implements OnInit {
 
   loadFavorites(): void {
     this.isLoading = true;
-    this.clearMessages();
 
     this.favoritesService.getFavorites().subscribe({
       next: (response: any) => {
-        console.log('Favorites API response:', response);
         this.favorites = response.data || [];
         this.isLoading = false;
       },
       error: (error: any) => {
-        console.error('Error loading favorites:', error);
-        this.errorMessage = 'Error loading favorite restaurants';
+        this.toastService.error('Error loading favorite restaurants', 'Loading Error');
         this.isLoading = false;
         this.favorites = [];
-        this.hideMessageAfterDelay();
       }
     });
   }
@@ -66,15 +62,12 @@ export class Favorites implements OnInit {
           );
           this.showRemoveModal = false;
           this.restaurantToRemove = null;
-          this.successMessage = 'Restaurant removed from favorites successfully';
-          this.hideMessageAfterDelay();
+          this.toastService.success('Restaurant removed from favorites successfully', 'Favorites Updated');
         },
         error: (error: any) => {
-          console.error('Error removing restaurant from favorites:', error);
-          this.errorMessage = 'Error occurred while removing restaurant from favorites';
+          this.toastService.error('Error occurred while removing restaurant from favorites', 'Remove Error');
           this.showRemoveModal = false;
           this.restaurantToRemove = null;
-          this.hideMessageAfterDelay();
         }
       });
     }
@@ -104,7 +97,6 @@ export class Favorites implements OnInit {
   // Restaurant card interaction handlers
   onFavoriteToggle(restaurant: any): void {
     // On favorites page, toggling favorite means removing it
-    console.log('Removing restaurant from favorites:', restaurant.restaurantDetails?.name || restaurant.name);
     // The restaurant-card component handles the actual toggle logic
     // We just need to refresh the list after the action
     setTimeout(() => {
@@ -119,17 +111,6 @@ export class Favorites implements OnInit {
   // Track by function for ngFor performance
   trackByRestaurant(index: number, restaurant: any): string {
     return restaurant._id || index.toString();
-  }
-
-  private clearMessages(): void {
-    this.successMessage = '';
-    this.errorMessage = '';
-  }
-
-  private hideMessageAfterDelay(): void {
-    setTimeout(() => {
-      this.clearMessages();
-    }, 5000);
   }
 }
 

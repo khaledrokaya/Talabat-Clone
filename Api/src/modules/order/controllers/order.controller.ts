@@ -60,31 +60,12 @@ export class OrderController {
       const { id } = req.params;
       const { status, statusReason, notes } = req.body;
 
-      console.log('=== UPDATE ORDER STATUS DEBUG ===');
-      console.log('Order ID:', id);
-      console.log('User ID:', req.user._id);
-      console.log('User Role:', req.user.role);
-      console.log('New Status:', status);
-
       const order = await Order.findById(id).populate('restaurantId');
       if (!order) {
-        console.log('Order not found');
         return res
           .status(404)
           .json(Helpers.formatResponse(false, 'Order not found'));
       }
-
-      console.log('Order found:', {
-        orderId: order._id,
-        restaurantId: order.restaurantId,
-        customerId: order.customerId,
-        currentStatus: order.status
-      });
-
-      // Temporarily disable authorization check for debugging
-      console.log('TEMPORARILY BYPASSING AUTHORIZATION FOR DEBUG');
-
-      console.log('Updating order status to:', status);
 
       order.status = status;
       if (statusReason) order.statusReason = statusReason;
@@ -98,8 +79,6 @@ export class OrderController {
       });
 
       await order.save();
-
-      console.log('Order status updated successfully');
 
       res
         .status(200)
@@ -383,10 +362,9 @@ export class OrderController {
     async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
       const { id } = req.params;
       const order = await Order.findById(id)
-        .populate('customerId', 'firstName lastName')
-        .populate('restaurantId', 'name location phone')
+        .populate('customerId', 'firstName lastName email phone')
+        .populate('restaurantId', 'firstName lastName location phone')
         .populate('deliveryPersonId', 'firstName lastName phone location');
-
       if (!order) {
         return res
           .status(404)
@@ -395,8 +373,7 @@ export class OrderController {
 
       // Check if user is authorized to track this order
       if (
-        order.customerId.toString() !== req.user._id.toString() &&
-        req.user.role !== 'admin'
+        order.customerId._id.toString() !== req.user._id.toString()
       ) {
         return res
           .status(403)
@@ -408,10 +385,39 @@ export class OrderController {
         orderNumber: order.orderNumber,
         status: order.status,
         estimatedDeliveryTime: order.estimatedDeliveryTime,
-        restaurant: order.restaurantId,
-        deliveryPerson: order.deliveryPersonId,
         createdAt: order.createdAt,
         updatedAt: order.updatedAt,
+        statusHistory: order.statusHistory,
+        items: order.items,
+        totalAmount: order.totalAmount,
+        deliveryFee: order.deliveryFee,
+        tax: order.tax,
+        discount: order.discount,
+        deliveryAddress: order.deliveryAddress,
+        currentLocation: order.deliveryPersonId?.location || null,
+        timeline: order.timeline || [],
+        statusReason: order.statusReason || null,
+        customer: {
+          id: order.customerId._id,
+          firstName: order.customerId.firstName,
+          lastName: order.customerId.lastName,
+          email: order.customerId.email,
+          phone: order.customerId.phone,
+          location: order.customerId.location,
+        },
+        restaurant: {
+          id: order.restaurantId._id,
+          firstName: order.restaurantId.firstName,
+          lastName: order.restaurantId.lastName,
+          phone: order.restaurantId.phone,
+        },
+        deliveryPerson: {
+          id: order.deliveryPersonId._id,
+          firstName: order.deliveryPersonId.firstName,
+          lastName: order.deliveryPersonId.lastName,
+          phone: order.deliveryPersonId.phone,
+          location: order.deliveryPersonId.location,
+        },
       };
 
       res

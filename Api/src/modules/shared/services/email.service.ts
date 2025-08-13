@@ -38,13 +38,9 @@ export class EmailService {
       };
 
       await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Email sent to ${options.to}`);
     } catch (error) {
-      console.error('❌ Failed to send email:', error);
-
       // In development, don't fail the request if email fails
       if (process.env.NODE_ENV === 'development') {
-        console.log('📧 [DEV MODE] Email sending failed, but continuing...');
         return;
       }
 

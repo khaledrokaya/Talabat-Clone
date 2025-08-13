@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OrderService, OrderSummary, OrdersListResponse } from '../../shared/services/order.service';
+import { ToastService } from '../../shared/services/toast.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -24,7 +25,7 @@ export class RestaurantOrders implements OnInit, OnDestroy {
 
   private subscriptions: Subscription[] = [];
 
-  constructor(private orderService: OrderService) { }
+  constructor(private orderService: OrderService, private toastService: ToastService) { }
 
   ngOnInit(): void {
     this.loadOrders();
@@ -50,7 +51,6 @@ export class RestaurantOrders implements OnInit, OnDestroy {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading orders:', error);
         this.errorMessage = 'Failed to load orders';
         this.isLoading = false;
         this.hideMessageAfterDelay();
@@ -166,14 +166,13 @@ export class RestaurantOrders implements OnInit, OnDestroy {
       next: (response) => {
         if (response.success) {
           this.loadOrders(); // Reload orders to reflect changes
-          alert(`Order status updated to ${this.getStatusText(newStatus)}`);
+          this.toastService.error(`Order status updated to ${this.getStatusText(newStatus)}`);
         } else {
           this.errorMessage = response.message || 'Failed to update order status';
           this.hideMessageAfterDelay();
         }
       },
       error: (error) => {
-        console.error('Error updating order status:', error);
         this.errorMessage = 'Failed to update order status';
         this.hideMessageAfterDelay();
       }
@@ -200,14 +199,13 @@ export class RestaurantOrders implements OnInit, OnDestroy {
         next: (response) => {
           if (response.success) {
             this.loadOrders();
-            alert('Order cancelled successfully');
+            this.toastService.error('Order cancelled successfully');
           } else {
             this.errorMessage = response.message || 'Failed to cancel order';
             this.hideMessageAfterDelay();
           }
         },
         error: (error) => {
-          console.error('Error cancelling order:', error);
           this.errorMessage = 'Failed to cancel order';
           this.hideMessageAfterDelay();
         }
@@ -228,7 +226,6 @@ export class RestaurantOrders implements OnInit, OnDestroy {
         }
       },
       error: (error) => {
-        console.error('Error loading order details:', error);
         this.errorMessage = 'Failed to load order details';
         this.hideMessageAfterDelay();
       }

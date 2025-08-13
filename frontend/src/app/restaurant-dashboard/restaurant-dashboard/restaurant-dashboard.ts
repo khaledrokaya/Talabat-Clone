@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../shared/services/auth.service';
+import { ToastService } from '../../shared/services/toast.service';
 import { RestaurantService } from '../../shared/services/restaurant.service';
 import { RestaurantAnalyticsService, AnalyticsData } from '../../shared/services/restaurant-analytics.service';
 import { MockRestaurantAnalyticsService } from '../../shared/services/mock-restaurant-analytics.service';
@@ -68,6 +69,7 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
     private authService: AuthService,
     private restaurantService: RestaurantService,
     private restaurantAnalyticsService: RestaurantAnalyticsService,
+    private toastService: ToastService,
     private mockAnalyticsService: MockRestaurantAnalyticsService,
     private orderService: OrderService,
     private router: Router
@@ -113,7 +115,6 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
     )
       .pipe(
         catchError((error) => {
-          console.log('Analytics API not available, using mock data:', error);
           return this.mockAnalyticsService.getAnalyticsForPeriod(
             this.selectedPeriod as '7days' | '30days' | '3months'
           );
@@ -123,7 +124,6 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
         next: (response) => {
           if (response.success && response.data) {
             this.analyticsData = response.data;
-            console.log('Analytics data loaded:', this.analyticsData);
 
             // Update dashboard with analytics data if needed
             if (this.analyticsData.restaurant) {
@@ -132,7 +132,6 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error loading analytics:', error);
         }
       });
     this.subscriptions.push(analyticsSub);
@@ -160,7 +159,6 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
     const dashboardSub = this.restaurantAnalyticsService.getDashboardData()
       .pipe(
         catchError((error) => {
-          console.log('API not available, keeping initial zero values:', error);
           // Don't load mock data - keep zeros to show actual state
           this.loading = false;
           return of({ success: false, data: null });
@@ -196,7 +194,6 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading dashboard data:', error);
           // Ensure arrays are initialized on error
           this.recentOrders = [];
           this.topProducts = [];
@@ -230,7 +227,6 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
     const ordersSub = this.orderService.getOrders(orderFilters)
       .subscribe({
         next: (response: any) => {
-          console.log('Orders API Response:', response);
           if (response.success && response.data) {
             // Handle both response formats: direct array or nested orders
             if (Array.isArray(response.data)) {
@@ -238,14 +234,11 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
             } else {
               this.recentOrders = response.data.orders?.slice(0, 5) || [];
             }
-            console.log('Loaded recent orders:', this.recentOrders.length);
           } else {
             this.recentOrders = [];
-            console.log('No orders found in response');
           }
         },
         error: (error) => {
-          console.error('Error loading orders:', error);
           this.recentOrders = [];
         }
       });
@@ -331,7 +324,6 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
 
   updateChart() {
     // Update chart based on selected period and reload analytics
-    console.log('Updating chart for period:', this.selectedPeriod);
     this.loadAnalytics();
   }
 
@@ -354,15 +346,12 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
                 order.status = newStatus;
               }
               this.closeOrderDropdown();
-              console.log('Order status updated successfully');
             } else {
-              console.error('Failed to update order status:', response.message);
-              alert('Failed to update order status. Please try again.');
+              this.toastService.error('Failed to update order status. Please try again.');
             }
           },
           error: (error: any) => {
-            console.error('Error updating order status:', error);
-            alert('Failed to update order status. Please try again.');
+            this.toastService.error('Failed to update order status. Please try again.');
           }
         });
       this.subscriptions.push(orderSub);
@@ -412,7 +401,6 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
       const meal = this.recentMeals.find(m => m.id === mealId);
       if (meal) {
         meal.isActive = !currentStatus;
-        console.log(`Meal ${mealId} status updated to ${meal.isActive ? 'active' : 'inactive'}`);
       }
     }
   }
@@ -420,12 +408,10 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
   toggleRestaurantStatus() {
     this.restaurantStatus = !this.restaurantStatus;
     // Call API to update restaurant status
-    console.log('Restaurant status:', this.restaurantStatus ? 'Open' : 'Closed');
   }
 
   downloadReport() {
     // Generate and download report
-    console.log('Downloading report...');
   }
 
   getStatusText(status: string): string {

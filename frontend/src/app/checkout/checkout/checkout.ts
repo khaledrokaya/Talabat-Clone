@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { CartService, Cart } from '../../shared/services/cart.service';
 import { OrderService, CreateOrderRequest } from '../../shared/services/order.service';
+import { ToastService } from '../../shared/services/toast.service';
 import { Observable } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { Address } from '../../shared/models/address';
@@ -29,7 +30,8 @@ export class Checkout implements OnInit {
     private cartService: CartService,
     private orderService: OrderService,
     private userService: UserService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService
   ) {
     this.cart$ = this.cartService.cart$;
   }
@@ -78,7 +80,6 @@ export class Checkout implements OnInit {
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error loading user profile:', error);
         this.errorMessage = 'Failed to load user data.';
         this.loading = false;
       }
@@ -89,16 +90,19 @@ export class Checkout implements OnInit {
     const currentCart = this.cartService.currentCart;
     if (!currentCart.restaurantId || currentCart.items.length === 0) {
       this.errorMessage = 'Shopping cart is empty or no restaurant selected.';
+      this.toastService.warning(this.errorMessage, 'Cart Empty');
       return;
     }
 
     if (!this.selectedAddress) {
       this.errorMessage = 'Please select a delivery address.';
+      this.toastService.warning(this.errorMessage, 'Address Required');
       return;
     }
 
     if (!this.currentUser) {
       this.errorMessage = 'User information not loaded. Please refresh the page.';
+      this.toastService.error(this.errorMessage, 'User Error');
       return;
     }
 
@@ -157,19 +161,17 @@ export class Checkout implements OnInit {
       paymentStatus: 'pending'
     };
 
-    console.log('Order request:', orderRequest); // Debug log
-
     this.orderService.createOrder(orderRequest as any).subscribe({
       next: (order) => {
-        console.log('Order placed successfully:', order);
         this.cartService.clearCart();
-        alert('Your order has been placed successfully!');
+        const orderNumber = order?.data?.order?.orderNumber;
+        this.toastService.showOrderSuccess(orderNumber);
         // Redirect to order confirmation or order history page
         this.router.navigate(['/orders']);
       },
       error: (error) => {
-        console.error('Error placing order:', error);
         this.errorMessage = error.error?.data?.message || error.error?.message || 'Failed to place order. Please try again.';
+        this.toastService.error(this.errorMessage, 'Order Failed');
       }
     });
   }

@@ -54,7 +54,6 @@ export class OrderTrackingService {
       .pipe(
         switchMap(() => this.pollOrderUpdates()),
         catchError((error) => {
-          console.error('Error polling order updates:', error);
           return [];
         })
       )
@@ -84,7 +83,6 @@ export class OrderTrackingService {
           });
         }
       } catch (error) {
-        console.error(`Error fetching order ${orderId}:`, error);
       }
     }
 

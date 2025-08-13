@@ -67,7 +67,6 @@ export class UsersManagementComponent implements OnInit {
         this.filteredUsers = this.users;
       },
       error: (error) => {
-        console.error('Error loading users:', error);
         this.loading = false;
         return [];
       }
@@ -146,7 +145,6 @@ export class UsersManagementComponent implements OnInit {
     if (confirm(`Are you sure you want to delete ${this.selectedUsers.length} selected users? This action cannot be undone.`)) {
       this.loading = true;
       // Implement bulk delete logic here
-      console.log('Bulk deleting users:', this.selectedUsers);
       this.selectedUsers = [];
       this.loadUsers();
     }
@@ -186,7 +184,6 @@ export class UsersManagementComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('Error deleting user:', error);
         this.error = 'Failed to delete user. Please try again.';
         this.loading = false;
       }
@@ -256,7 +253,6 @@ export class UsersManagementComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('Error updating user status:', error);
         this.error = 'Failed to update user status. Please try again.';
         this.loading = false;
       }

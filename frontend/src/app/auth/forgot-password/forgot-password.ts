@@ -61,7 +61,6 @@ export class ForgotPassword implements OnInit {
       },
       error: (error) => {
         this.isLoading = false;
-        console.error('Forgot password error:', error);
 
         if (error.status === 404) {
           this.errorMessage = 'No account found with this email address';
@@ -114,7 +113,6 @@ export class ForgotPassword implements OnInit {
       },
       error: (error) => {
         this.isLoading = false;
-        console.error('Password reset error:', error);
 
         if (error.status === 400) {
           // Check if it's an OTP-related error
@@ -149,7 +147,6 @@ export class ForgotPassword implements OnInit {
       },
       error: (error) => {
         this.isLoading = false;
-        console.error('Resend OTP error:', error);
         this.errorMessage = 'Failed to resend code. Please try again.';
       }
     });

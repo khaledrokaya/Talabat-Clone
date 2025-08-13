@@ -77,7 +77,6 @@ export class RestaurantReviews implements OnInit, OnDestroy {
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error loading reviews:', error);
         this.loading = false;
       }
     });
@@ -98,7 +97,6 @@ export class RestaurantReviews implements OnInit, OnDestroy {
         }
       },
       error: (error) => {
-        console.error('Error checking user review:', error);
       }
     });
     this.subscriptions.push(userReviewSub);
@@ -161,7 +159,6 @@ export class RestaurantReviews implements OnInit, OnDestroy {
         this.loadReviews(); // Reload reviews to show updated data
       },
       error: (error) => {
-        console.error('Error submitting review:', error);
         this.submitting = false;
       }
     }));
@@ -177,7 +174,6 @@ export class RestaurantReviews implements OnInit, OnDestroy {
         this.loadReviews();
       },
       error: (error) => {
-        console.error('Error deleting review:', error);
       }
     });
     this.subscriptions.push(deleteSub);

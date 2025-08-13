@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { AuthService, User } from '../../shared/services/auth.service';
 import { ProfileService } from '../../shared/services/profile.service';
+import { ToastService } from '../../shared/services/toast.service';
 import { Observable } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 
@@ -20,7 +21,8 @@ export class Profile implements OnInit {
   constructor(
     private authService: AuthService,
     private profileService: ProfileService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService
   ) {
     this.currentUser$ = this.authService.currentUser$;
 
@@ -37,10 +39,10 @@ export class Profile implements OnInit {
     // Load current user profile
     this.profileService.getProfile().subscribe({
       next: (profile) => {
-        console.log('Profile loaded:', profile);
+        // Profile loaded successfully
       },
       error: (error) => {
-        console.error('Error loading profile:', error);
+        this.toastService.error('Failed to load profile information', 'Profile Error');
       }
     });
   }

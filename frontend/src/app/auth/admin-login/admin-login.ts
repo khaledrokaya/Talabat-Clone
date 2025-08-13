@@ -60,7 +60,6 @@ export class AdminLogin implements OnInit {
         if (response.success && response.data?.user) {
           // Check if the logged-in user is an admin
           if (response.data.user.role === 'admin') {
-            console.log('Admin logged in successfully');
             // Force reload the auth state to ensure UI updates
             setTimeout(() => {
               this.authService.forceReloadUserState();

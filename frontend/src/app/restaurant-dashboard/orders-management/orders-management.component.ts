@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 import { OrderService, OrderFilters, OrderStatus, ApiResponse, OrdersListResponse, OrderSummary } from '../../shared/services/order.service';
+import { ToastService } from '../../shared/services/toast.service';
 import { Order } from '../../shared/models/order';
 
 @Component({
@@ -40,7 +41,8 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
 
   constructor(
     public orderService: OrderService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private toastService: ToastService
   ) {
     this.filterForm = this.fb.group({
       status: [''],
@@ -89,7 +91,6 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: any) => {
-          console.log('Orders API Response:', response);
           if (response.success && response.data) {
             // Handle both response formats: direct array or nested orders
             if (Array.isArray(response.data)) {
@@ -103,12 +104,9 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
             this.orders = [];
             this.pagination = null;
           }
-          console.log('Processed orders:', this.orders);
-          console.log('Pagination:', this.pagination);
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading orders:', error);
           this.orders = [];
           this.pagination = null;
           this.loading = false;
@@ -153,7 +151,6 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error loading order stats:', error);
           this.orderStats = {
             pending: 0,
             preparing: 0,
@@ -233,8 +230,7 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
           this.closeDropdown(); // Close dropdown after successful update
         },
         error: (error) => {
-          console.error('Error updating order status:', error);
-          alert('Failed to update order status. Please try again.');
+          this.toastService.error('Failed to update order status. Please try again.');
         }
       });
     }

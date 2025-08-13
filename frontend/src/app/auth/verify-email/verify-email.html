@@ -20,17 +20,7 @@
       <div class="form-group">
         <label for="otp">Verification Code (6 digits)</label>
         <input type="text" id="otp" [(ngModel)]="otp" name="otp" placeholder="000000" maxlength="6" pattern="[0-9]{6}"
-          class="otp-input" [class.error]="errorMessage" required />
-      </div>
-
-      <!-- Error Message -->
-      <div *ngIf="errorMessage" class="error-message">
-        {{ errorMessage }}
-      </div>
-
-      <!-- Success Message -->
-      <div *ngIf="successMessage" class="success-message">
-        {{ successMessage }}
+          class="otp-input" required />
       </div>
 
       <!-- Verify Button -->

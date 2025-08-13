@@ -560,6 +560,37 @@ export const validateCategory = [
     .withMessage('Invalid category'),
 ];
 
+export const validatePopularMeals = [
+  query('category')
+    .optional()
+    .isIn([
+      'appetizer',
+      'main_course',
+      'dessert',
+      'beverage',
+      'salad',
+      'soup',
+      'sandwich',
+      'pizza',
+      'pasta',
+      'seafood',
+      'meat',
+      'vegetarian',
+      'vegan',
+    ])
+    .withMessage('Invalid category'),
+
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 50 })
+    .withMessage('Limit must be between 1 and 50'),
+
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer'),
+];
+
 export const validateAnalyticsQuery = [
   query('from')
     .optional()

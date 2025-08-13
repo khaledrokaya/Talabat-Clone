@@ -67,7 +67,6 @@ export class LogoutComponent {
         this.router.navigate(['/home']);
       },
       error: (error) => {
-        console.error('Logout error:', error);
         this.isLoggingOut = false;
         // Even if logout fails on server, redirect to home
         this.router.navigate(['/home']);

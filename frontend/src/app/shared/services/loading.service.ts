@@ -28,7 +28,7 @@ export class LoadingService {
         }, 500);
       }
       this.setLoading(false);
-    }, 5000); // Show loading for at least 5 seconds to showcase the beautiful loading screen
+    }, 3000); // Show loading for at least 5 seconds to showcase the beautiful loading screen
   }
 
   /**

@@ -42,7 +42,6 @@ export class AdminDashboard implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading dashboard data:', error);
         this.errorMessage = error.error?.message || 'Failed to load dashboard data. Please try again.';
         this.isLoading = false;
       }
@@ -63,14 +62,12 @@ export class AdminDashboard implements OnInit {
 
   exportDashboardReport(): void {
     // Implement export functionality
-    console.log('Exporting dashboard report...');
     // This would typically generate a PDF or Excel report
   }
 
   setChartPeriod(period: string): void {
     this.chartPeriod = period;
     // Update chart data based on period
-    console.log('Chart period changed to:', period);
   }
 
   getCurrentTime(): string {

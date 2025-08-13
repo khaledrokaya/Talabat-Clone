@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AdminService, AdminRestaurant, RestaurantFilters, RestaurantsResponse, ApprovalRequest, StatusUpdateRequest, PendingRestaurant } from '../../shared/services/admin.service';
+import { ToastService } from '../../shared/services/toast.service';
 
 @Component({
   selector: 'app-restaurants-management',
@@ -17,8 +18,6 @@ export class RestaurantsManagement implements OnInit {
   filteredRestaurants: any[] = [];
 
   isLoading = true;
-  errorMessage = '';
-  successMessage = '';
 
   // Pagination
   currentPage = 1;
@@ -45,7 +44,8 @@ export class RestaurantsManagement implements OnInit {
   constructor(
     private adminService: AdminService,
     private router: Router,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private toastService: ToastService
   ) {
     this.approvalForm = this.fb.group({
       status: ['verified'],
@@ -59,25 +59,21 @@ export class RestaurantsManagement implements OnInit {
 
   loadPendingRestaurants(): void {
     this.isLoading = true;
-    this.errorMessage = '';
 
     this.adminService.getPendingRestaurants().subscribe({
       next: (response) => {
-        console.log('Pending restaurants response:', response);
         if (response.success && response.data) {
           this.pendingRestaurants = response.data;
           this.filteredRestaurants = [...this.pendingRestaurants];
           this.updatePagination();
         } else {
-          console.warn('Invalid response format for pending restaurants:', response);
           this.pendingRestaurants = [];
           this.filteredRestaurants = [];
         }
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading pending restaurants:', error);
-        this.errorMessage = 'Failed to load pending restaurants';
+        this.toastService.error('Failed to load pending restaurants', 'Loading Error');
         this.pendingRestaurants = [];
         this.filteredRestaurants = [];
         this.isLoading = false;
@@ -132,7 +128,6 @@ export class RestaurantsManagement implements OnInit {
     this.actionType = 'approve';
     this.currentRestaurant = restaurant;
     this.currentRestaurantId = restaurant._id || restaurant.id;
-    console.log(reason);
     this.approvalForm.patchValue({
       status: 'verified',
       reason: reason
@@ -143,15 +138,15 @@ export class RestaurantsManagement implements OnInit {
     }).subscribe({
       next: (response) => {
         if (response.success) {
-          this.successMessage = response.message;
+          this.toastService.showApiSuccess(response, 'Restaurant approved successfully');
           this.loadPendingRestaurants();
           this.closeModal();
         } else {
-          this.errorMessage = 'Failed to approve restaurant';
+          this.toastService.error('Failed to approve restaurant', 'Approval Error');
         }
       },
       error: (error) => {
-        this.errorMessage = 'Error approving restaurant: ' + (error.error?.message || 'Unknown error');
+        this.toastService.showApiError(error, 'Error approving restaurant');
       }
     });
     this.isLoading = false;
@@ -173,15 +168,15 @@ export class RestaurantsManagement implements OnInit {
     }).subscribe({
       next: (response) => {
         if (response.success) {
-          this.successMessage = response.message;
+          this.toastService.showApiSuccess(response, 'Restaurant rejected successfully');
           this.loadPendingRestaurants();
           this.closeModal();
         } else {
-          this.errorMessage = 'Failed to reject restaurant';
+          this.toastService.error('Failed to reject restaurant', 'Rejection Error');
         }
       },
       error: (error) => {
-        this.errorMessage = 'Error rejecting restaurant: ' + (error.error?.message || 'Unknown error');
+        this.toastService.showApiError(error, 'Error rejecting restaurant');
       }
     });
     this.isLoading = false;
@@ -201,7 +196,6 @@ export class RestaurantsManagement implements OnInit {
     this.showDeleteModal = false;
     this.currentRestaurant = null;
     this.currentRestaurantId = '';
-    this.clearMessages();
   }
 
   submitApproval(): void {
@@ -212,30 +206,30 @@ export class RestaurantsManagement implements OnInit {
         this.adminService.approveRestaurant(this.currentRestaurantId, request).subscribe({
           next: (response) => {
             if (response.success) {
-              this.successMessage = response.message;
+              this.toastService.showApiSuccess(response, 'Restaurant approved successfully');
               this.loadPendingRestaurants();
               this.closeModal();
             } else {
-              this.errorMessage = 'Failed to approve restaurant';
+              this.toastService.error('Failed to approve restaurant', 'Approval Error');
             }
           },
           error: (error) => {
-            this.errorMessage = 'Error approving restaurant: ' + (error.error?.message || 'Unknown error');
+            this.toastService.showApiError(error, 'Error approving restaurant');
           }
         });
       } else {
         this.adminService.rejectRestaurant(this.currentRestaurantId, request).subscribe({
           next: (response) => {
             if (response.success) {
-              this.successMessage = response.message;
+              this.toastService.showApiSuccess(response, 'Restaurant rejected successfully');
               this.loadPendingRestaurants();
               this.closeModal();
             } else {
-              this.errorMessage = 'Failed to reject restaurant';
+              this.toastService.error('Failed to reject restaurant', 'Rejection Error');
             }
           },
           error: (error) => {
-            this.errorMessage = 'Error rejecting restaurant: ' + (error.error?.message || 'Unknown error');
+            this.toastService.showApiError(error, 'Error rejecting restaurant');
           }
         });
       }
@@ -247,15 +241,15 @@ export class RestaurantsManagement implements OnInit {
       this.adminService.deleteRestaurant(this.currentRestaurantId).subscribe({
         next: (response) => {
           if (response.success) {
-            this.successMessage = response.message;
+            this.toastService.showApiSuccess(response, 'Restaurant deleted successfully');
             this.loadPendingRestaurants();
             this.closeModal();
           } else {
-            this.errorMessage = 'Failed to delete restaurant';
+            this.toastService.error('Failed to delete restaurant', 'Delete Error');
           }
         },
         error: (error) => {
-          this.errorMessage = 'Error deleting restaurant: ' + (error.error?.message || 'Unknown error');
+          this.toastService.showApiError(error, 'Error deleting restaurant');
         }
       });
     }
@@ -316,11 +310,6 @@ export class RestaurantsManagement implements OnInit {
 
   trackByRestaurant(index: number, restaurant: PendingRestaurant): string {
     return (restaurant as any)._id || (restaurant as any).id || index.toString();
-  }
-
-  clearMessages(): void {
-    this.errorMessage = '';
-    this.successMessage = '';
   }
 
   generatePageNumbers(): number[] {

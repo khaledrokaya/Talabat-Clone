@@ -5,6 +5,7 @@ import { Customer } from '../../customer/schemas/customer.schema';
 import Order from '../../order/schemas/order.schema';
 import { AppError } from '../../shared/middlewares/error.middleware';
 import { Helpers } from '../../shared/utils/helpers';
+import { Logger } from '../../shared/utils/logger';
 import {
   ApproveUserDTO,
   UpdateUserStatusDTO,
@@ -340,7 +341,7 @@ export class AdminService {
     // Send notification email (if needed)
     // await emailService.sendApprovalNotification(user.email, user.firstName, status, reason);
 
-    console.log(
+    Logger.info(
       `User ${userId} ${status} by admin. Reason: ${reason || 'N/A'}`,
     );
   }
@@ -363,7 +364,7 @@ export class AdminService {
     user.isActive = isActive;
     await user.save();
 
-    console.log(
+    Logger.info(
       `User ${userId} ${isActive ? 'activated' : 'deactivated'} by admin. Reason: ${reason || 'N/A'}`,
     );
   }
@@ -397,7 +398,6 @@ export class AdminService {
     await User.deleteOne({ _id: user._id });
     await user.save();
 
-    console.log(`User ${userId} soft deleted by admin`);
   }
 
   /**

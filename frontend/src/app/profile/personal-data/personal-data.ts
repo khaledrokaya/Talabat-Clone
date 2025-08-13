@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { Router } from '@angular/router';
 import { ProfileService, CustomerProfile, UpdateProfileRequest } from '../../shared/services/profile.service';
 import { AuthService } from '../../shared/services/auth.service';
+import { ToastService } from '../../shared/services/toast.service';
 import { User } from '../../shared/models/user';
 import { Subscription } from 'rxjs';
 
@@ -22,8 +23,6 @@ export class PersonalData implements OnInit, OnDestroy {
   profile: CustomerProfile | null = null;
   loading = false;
   submitting = false;
-  successMessage = '';
-  errorMessage = '';
   activeTab = 'personal';
   private subscriptions: Subscription[] = [];
 
@@ -31,7 +30,8 @@ export class PersonalData implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private profileService: ProfileService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService
   ) {
     this.profileForm = this.createPersonalForm();
     this.addressForm = this.createAddressForm();
@@ -45,7 +45,6 @@ export class PersonalData implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.subscriptions.forEach(sub => sub.unsubscribe());
-    this.clearMessages();
   }
 
   private createPersonalForm(): FormGroup {
@@ -79,7 +78,6 @@ export class PersonalData implements OnInit, OnDestroy {
 
   setActiveTab(tab: string) {
     this.activeTab = tab;
-    this.clearMessages();
   }
 
   private subscribeToAuthState() {
@@ -99,7 +97,6 @@ export class PersonalData implements OnInit, OnDestroy {
     }
 
     this.loading = true;
-    this.clearMessages();
 
     const profileSub = this.profileService.getProfile().subscribe({
       next: (profile) => {
@@ -108,10 +105,8 @@ export class PersonalData implements OnInit, OnDestroy {
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error loading profile:', error);
-        this.errorMessage = 'Error loading data';
+        this.toastService.error('Error loading data', 'Loading Error');
         this.loading = false;
-        this.hideMessageAfterDelay();
       }
     });
     this.subscriptions.push(profileSub);
@@ -180,7 +175,6 @@ export class PersonalData implements OnInit, OnDestroy {
     }
 
     this.submitting = true;
-    this.clearMessages();
 
     const personalData = this.profileForm.value;
 
@@ -194,18 +188,15 @@ export class PersonalData implements OnInit, OnDestroy {
     const updateSub = this.profileService.updateProfile(updateData).subscribe({
       next: (updatedProfile: CustomerProfile) => {
         this.profile = updatedProfile;
-        this.successMessage = 'Personal information updated successfully';
+        this.toastService.success('Personal information updated successfully', 'Profile Updated');
         this.submitting = false;
-        this.hideMessageAfterDelay();
 
         // Update auth service with new user data by refreshing user state
         this.authService.refreshUserState();
       },
       error: (error: any) => {
-        console.error('Error updating personal data:', error);
-        this.errorMessage = error.error?.message || 'Error saving personal information';
+        this.toastService.showApiError(error, 'Error saving personal information');
         this.submitting = false;
-        this.hideMessageAfterDelay();
       }
     });
     this.subscriptions.push(updateSub);
@@ -218,7 +209,6 @@ export class PersonalData implements OnInit, OnDestroy {
     }
 
     this.submitting = true;
-    this.clearMessages();
 
     const addressData = this.addressForm.value;
 
@@ -235,18 +225,15 @@ export class PersonalData implements OnInit, OnDestroy {
     const updateSub = this.profileService.updateProfile(updateData).subscribe({
       next: (updatedProfile: CustomerProfile) => {
         this.profile = updatedProfile;
-        this.successMessage = 'Address updated successfully';
+        this.toastService.success('Address updated successfully', 'Profile Updated');
         this.submitting = false;
-        this.hideMessageAfterDelay();
 
         // Update auth service with new user data by refreshing user state
         this.authService.refreshUserState();
       },
       error: (error: any) => {
-        console.error('Error updating address:', error);
-        this.errorMessage = error.error?.message || 'Error saving address';
+        this.toastService.showApiError(error, 'Error saving address');
         this.submitting = false;
-        this.hideMessageAfterDelay();
       }
     });
     this.subscriptions.push(updateSub);
@@ -259,7 +246,6 @@ export class PersonalData implements OnInit, OnDestroy {
     }
 
     this.submitting = true;
-    this.clearMessages();
 
     const deliveryData = this.deliveryPreferencesForm.value;
 
@@ -274,18 +260,15 @@ export class PersonalData implements OnInit, OnDestroy {
     const updateSub = this.profileService.updateProfile(updateData).subscribe({
       next: (updatedProfile: CustomerProfile) => {
         this.profile = updatedProfile;
-        this.successMessage = 'Delivery preferences updated successfully';
+        this.toastService.success('Delivery preferences updated successfully', 'Profile Updated');
         this.submitting = false;
-        this.hideMessageAfterDelay();
 
         // Update auth service with new user data by refreshing user state
         this.authService.refreshUserState();
       },
       error: (error: any) => {
-        console.error('Error updating delivery preferences:', error);
-        this.errorMessage = error.error?.message || 'Error saving delivery preferences';
+        this.toastService.showApiError(error, 'Error saving delivery preferences');
         this.submitting = false;
-        this.hideMessageAfterDelay();
       }
     });
     this.subscriptions.push(updateSub);
@@ -295,12 +278,10 @@ export class PersonalData implements OnInit, OnDestroy {
     if (this.profile) {
       this.populateFormFromProfile(this.profile);
     }
-    this.clearMessages();
   }
 
   resetAllForms() {
     this.resetForm();
-    this.clearMessages();
   }
 
   onFileSelected(event: any) {
@@ -309,15 +290,13 @@ export class PersonalData implements OnInit, OnDestroy {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      this.errorMessage = 'Please select a valid image file';
-      this.hideMessageAfterDelay();
+      this.toastService.warning('Please select a valid image file', 'File Validation');
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      this.errorMessage = 'Image size must be less than 5 MB';
-      this.hideMessageAfterDelay();
+      this.toastService.warning('Image size must be less than 5 MB', 'File Size');
       return;
     }
   }
@@ -370,17 +349,6 @@ export class PersonalData implements OnInit, OnDestroy {
       const control = this.deliveryPreferencesForm.get(key);
       control?.markAsTouched();
     });
-  }
-
-  private clearMessages() {
-    this.successMessage = '';
-    this.errorMessage = '';
-  }
-
-  private hideMessageAfterDelay() {
-    setTimeout(() => {
-      this.clearMessages();
-    }, 5000);
   }
 }
 
