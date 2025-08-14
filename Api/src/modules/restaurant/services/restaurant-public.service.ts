@@ -226,7 +226,10 @@ export class RestaurantPublicService {
       verificationStatus: 'verified',
     })
       .select('-password -businessInfo -__v')
-      .populate('menu');
+      .populate('menu')
+      .lean();
+    const meals = await Meal.find({ restaurantId: restaurant._id }).lean();
+    restaurant.menu = meals;
 
     if (!restaurant) {
       throw new AppError('Restaurant not found', 404);

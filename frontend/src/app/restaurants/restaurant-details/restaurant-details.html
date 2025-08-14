@@ -113,7 +113,7 @@
         @if (getFilteredMeals().length > 0) {
         <div class="meals-grid">
           @for (meal of getFilteredMeals(); track trackByMeal($index, meal)) {
-          <div class="meal-card">
+          <div class="meal-card" id="{{ meal._id }}">
             <div class="meal-content">
               <div class="meal-info">
                 <div class="meal-header">

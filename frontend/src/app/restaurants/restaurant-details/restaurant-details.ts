@@ -108,6 +108,7 @@ export class RestaurantDetails implements OnInit, OnDestroy {
     // Use rate limiter with caching
     const cacheKey = `restaurant-details-${id}`;
 
+    // Fetch restaurant details with rate limiting and caching
     this.rateLimiter.executeRequest(
       () => this.restaurantService.getRestaurantById(id).pipe(
         timeout(15000), // 15 second timeout

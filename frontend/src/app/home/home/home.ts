@@ -147,7 +147,7 @@ export class Home implements OnInit {
 
   loadPopularMeals(): void {
     this.mealsLoading = true;
-    this.restaurantService.getPopularMeals({ limit: 8 }).subscribe({
+    this.restaurantService.getPopularMeals({ limit: 12 }).subscribe({
       next: (response: any) => {
         if (response.success && response.data) {
           // The response structure has meals directly in data array
@@ -162,7 +162,7 @@ export class Home implements OnInit {
   }
 
   loadTopRatedRestaurants(): void {
-    this.restaurantService.getTopRatedRestaurants({ limit: 4 }).subscribe({
+    this.restaurantService.getTopRatedRestaurants({ limit: 3 }).subscribe({
       next: (response) => {
         if (response.success && response.data) {
           // Handle both possible response structures

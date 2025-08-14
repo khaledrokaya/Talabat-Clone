@@ -275,5 +275,17 @@ export class RestaurantService {
   replyToReview(reviewId: string, reply: string): Observable<Review> {
     return this.http.post<Review>(`${environment.apiUrl}/reviews/${reviewId}/reply`, { reply });
   }
+
+  // Restaurant status management
+  updateRestaurantStatus(restaurantId: string, isOperational: boolean): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/restaurant/operational-status`, {
+      restaurantId,
+      isOperational
+    });
+  }
+
+  getRestaurantStatus(restaurantId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/restaurant/${restaurantId}/status`);
+  }
 }
 

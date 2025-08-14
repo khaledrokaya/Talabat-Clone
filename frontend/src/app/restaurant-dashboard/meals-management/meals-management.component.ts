@@ -62,7 +62,6 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
     this.setupFormSubscriptions();
     this.loadMeals();
     this.loadCategories();
-    this.loadMealStats();
   }
 
   ngOnDestroy() {
@@ -187,28 +186,6 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
       });
   }
 
-  loadMealStats() {
-    // Use rate limiter with caching for stats
-    this.rateLimiter.executeRequest(
-      () => this.mealService.getMealsStats(),
-      'meal-stats',
-      {
-        cacheDuration: 120000, // Cache for 2 minutes
-        rateLimit: true
-      }
-    )
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.mealStats = response.data;
-          }
-        },
-        error: (error) => {
-        }
-      });
-  }
-
   refreshData() {
     // Clear cache and reload
     this.rateLimiter.clearCache('meal-categories');
@@ -217,7 +194,6 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
 
     this.loadMeals();
     this.loadCategories();
-    this.loadMealStats();
   }
 
   changePage(page: number) {
@@ -268,7 +244,6 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
           next: (response) => {
             if (response.success) {
               this.loadMeals();
-              this.loadMealStats();
               this.toastService.error('Meal deleted successfully!');
             }
           },
@@ -289,7 +264,6 @@ export class MealsManagementComponent implements OnInit, OnDestroy {
         next: (response) => {
           if (response.success) {
             meal.isAvailable = newAvailability;
-            this.loadMealStats();
           }
         },
         error: (error) => {

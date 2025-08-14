@@ -85,7 +85,7 @@ export class MealController {
 
       const filter: any = { restaurantId };
       if (category) filter.category = category;
-
+      console.log(filter);
       // Only filter by availability if explicitly requested
       // This allows restaurant owners to see all their meals
       if (isAvailable !== undefined) {

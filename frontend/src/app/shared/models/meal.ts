@@ -1,3 +1,5 @@
+import { Restaurant } from "./restaurant";
+
 export interface Meal {
   _id?: string;
   id?: string;
@@ -10,7 +12,7 @@ export interface Meal {
   preparationTime?: number;
   rating?: number;
   reviewsCount?: number;
-  restaurantId?: string;
+  restaurantId?: Restaurant;
   restaurant?: {
     _id?: string;
     id?: string;

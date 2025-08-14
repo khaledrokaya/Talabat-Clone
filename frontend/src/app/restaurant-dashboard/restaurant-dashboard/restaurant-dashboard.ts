@@ -406,12 +406,48 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
   }
 
   toggleRestaurantStatus() {
-    this.restaurantStatus = !this.restaurantStatus;
-    // Call API to update restaurant status
-  }
+    if (!this.currentUser) {
+      this.toastService.error('User not authenticated');
+      return;
+    }
 
-  downloadReport() {
-    // Generate and download report
+    const newStatus = !this.restaurantStatus;
+    const statusText = newStatus ? 'open' : 'close';
+
+    if (confirm(`Are you sure you want to ${statusText} your restaurant?`)) {
+      this.loading = true;
+
+      // Use the current user's ID as the restaurant owner ID
+      const restaurantId = this.currentUser.id || this.currentUser._id || '';
+
+      if (!restaurantId) {
+        this.toastService.error('Restaurant ID not found');
+        this.loading = false;
+        return;
+      }
+
+      const statusSub = this.restaurantService.updateRestaurantStatus(restaurantId, newStatus)
+        .subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.restaurantStatus = newStatus;
+              this.toastService.success(
+                `Restaurant status updated successfully! Your restaurant is now ${newStatus ? 'open' : 'closed'}.`
+              );
+            } else {
+              this.toastService.error('Failed to update restaurant status. Please try again.');
+            }
+            this.loading = false;
+          },
+          error: (error) => {
+            console.error('Error updating restaurant status:', error);
+            this.toastService.error('Failed to update restaurant status. Please try again.');
+            this.loading = false;
+          }
+        });
+
+      this.subscriptions.push(statusSub);
+    }
   }
 
   getStatusText(status: string): string {

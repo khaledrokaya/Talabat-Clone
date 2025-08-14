@@ -178,7 +178,8 @@
       @if (!mealsLoading && popularMeals.length > 0) {
       <div class="meals-grid">
         @for (meal of popularMeals; track meal.id || meal._id; let i = $index) {
-        <div class="meal-card" [@staggeredFadeIn]="getAnimationDelay(i)">
+        <div class="meal-card" [@staggeredFadeIn]="getAnimationDelay(i)"
+          [routerLink]="[`/restaurants/${meal.restaurantId?._id}`+'#'+`${meal._id}`]">
           <div class="meal-image">
             <img *ngIf="getMealImageUrl(meal)" [src]="getMealImageUrl(meal)" [alt]="meal.name"
               (error)="onImageError($event)">
@@ -253,7 +254,8 @@
       @if (topRatedRestaurants.length > 0) {
       <div class="top-rated-grid">
         @for (restaurant of topRatedRestaurants; track restaurant._id || restaurant.id; let i = $index) {
-        <div class="top-restaurant-card" [@staggeredSlideIn]="getAnimationDelay(i)">
+        <div class="top-restaurant-card" [@staggeredSlideIn]="getAnimationDelay(i)"
+          [routerLink]="['/restaurants', restaurant._id]">
           <div class="rank-badge">
             <span>#{{ i + 1 }}</span>
           </div>

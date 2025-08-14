@@ -75,29 +75,9 @@
     </form>
   </div>
 
-  <!-- Meal Statistics -->
-  <div class="stats-cards">
-    <div class="stat-card">
-      <div class="stat-value">{{ mealStats.totalMeals }}</div>
-      <div class="stat-label">Total Meals</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value">{{ mealStats.availableMeals }}</div>
-      <div class="stat-label">Available</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value">{{ mealStats.unavailableMeals }}</div>
-      <div class="stat-label">Unavailable</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value">{{ formatPrice(mealStats.averagePrice) }}</div>
-      <div class="stat-label">Average Price</div>
-    </div>
-  </div>
-
   <!-- Meals Section -->
   <div class="meals-section">
-    <div class="section-header">
+    <div class="header">
       <h3>Meals List</h3>
       @if (pagination) {
       <div class="pagination-info">
