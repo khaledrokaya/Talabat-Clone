@@ -35,7 +35,7 @@ export class OrderController {
       const { id } = req.params;
       const order = await Order.findById(id)
         .populate('customerId', 'firstName lastName email phone')
-        .populate('restaurantId', 'name location phone')
+        .populate('restaurantId', 'restaurantDetails address phone')
         .populate('deliveryPersonId', 'firstName lastName phone');
 
       if (!order) {
@@ -103,7 +103,7 @@ export class OrderController {
 
       const skip = (Number(page) - 1) * Number(limit);
       const orders = await Order.find(filter)
-        .populate('restaurantId', 'name location')
+        .populate('restaurantId', 'restaurantDetails address phone')
         .populate('deliveryPersonId', 'firstName lastName phone')
         .skip(skip)
         .limit(Number(limit))
@@ -364,7 +364,7 @@ export class OrderController {
       const order = await Order.findById(id)
         .populate('customerId', 'firstName lastName email phone')
         .populate('restaurantId', 'firstName lastName location phone')
-        .populate('deliveryPersonId', 'firstName lastName phone location');
+        .populate('deliveryPersonId', 'firstName lastName phone address');
       if (!order) {
         return res
           .status(404)
@@ -393,6 +393,13 @@ export class OrderController {
         deliveryFee: order.deliveryFee,
         tax: order.tax,
         discount: order.discount,
+        deliveryPerson: {
+          id: order.deliveryPersonId?._id,
+          firstName: order.deliveryPersonId?.firstName,
+          lastName: order.deliveryPersonId?.lastName,
+          phone: order.deliveryPersonId?.phone,
+          location: order.deliveryPersonId?.location,
+        },
         deliveryAddress: order.deliveryAddress,
         currentLocation: order.deliveryPersonId?.location || null,
         timeline: order.timeline || [],
@@ -410,13 +417,6 @@ export class OrderController {
           firstName: order.restaurantId.firstName,
           lastName: order.restaurantId.lastName,
           phone: order.restaurantId.phone,
-        },
-        deliveryPerson: {
-          id: order.deliveryPersonId._id,
-          firstName: order.deliveryPersonId.firstName,
-          lastName: order.deliveryPersonId.lastName,
-          phone: order.deliveryPersonId.phone,
-          location: order.deliveryPersonId.location,
         },
       };
 

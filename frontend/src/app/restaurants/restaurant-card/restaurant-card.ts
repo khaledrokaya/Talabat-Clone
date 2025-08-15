@@ -110,7 +110,6 @@ export class RestaurantCard implements OnInit, OnDestroy {
 
   get isOpen(): boolean {
     // Handle different data structures
-    if (this.restaurant.isOpen !== undefined) return this.restaurant.isOpen;
     if (!this.restaurant.isOperational && this.restaurant.isOperational !== undefined) return false;
 
     const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();

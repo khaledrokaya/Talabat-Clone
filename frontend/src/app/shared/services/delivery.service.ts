@@ -79,6 +79,11 @@ export class DeliveryService {
     return this.http.get<ApiResponse<DeliveryEarnings>>(`${this.API_URL}/earnings`, { params });
   }
 
+  // Simple total earnings
+  getSimpleEarnings(): Observable<ApiResponse<{ totalEarnings: number }>> {
+    return this.http.get<ApiResponse<{ totalEarnings: number }>>(`${this.API_URL}/earnings/simple`);
+  }
+
   getStats(): Observable<ApiResponse<DeliveryStats>> {
     return this.http.get<ApiResponse<DeliveryStats>>(`${this.API_URL}/stats`);
   }

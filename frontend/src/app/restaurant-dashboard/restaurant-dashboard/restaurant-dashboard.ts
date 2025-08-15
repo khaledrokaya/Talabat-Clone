@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../shared/services/auth.service';
 import { ToastService } from '../../shared/services/toast.service';
 import { RestaurantService } from '../../shared/services/restaurant.service';
-import { RestaurantAnalyticsService, AnalyticsData } from '../../shared/services/restaurant-analytics.service';
+import { RestaurantAnalyticsService, AnalyticsData, ActualDashboardResponse } from '../../shared/services/restaurant-analytics.service';
 import { MockRestaurantAnalyticsService } from '../../shared/services/mock-restaurant-analytics.service';
 import { OrderService, OrderFilters } from '../../shared/services/order.service';
 import { User } from '../../shared/models/user';
@@ -62,6 +62,7 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
   recentOrders: any[] = [];
   recentMeals: RecentMeal[] = [];
   topProducts: TopProduct[] = [];
+  dashboardMealStats: { total: number; active: number; inactive: number } | null = null;
 
   private subscriptions: Subscription[] = [];
 
@@ -166,30 +167,36 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          if (response.success && response.data && response.data.dashboard) {
-            const dashboardData = response.data.dashboard;
+          if (response.success && response.data) {
+            const apiData: ActualDashboardResponse = response.data;
 
             // Map the API response to our dashboard format
             this.dashboardData = {
-              totalRevenue: dashboardData.todayStats?.revenue || 0,
-              totalOrders: dashboardData.todayStats?.orders || 0,
-              averageRating: dashboardData.weeklyStats?.averageRating || 0,
-              totalCustomers: dashboardData.weeklyStats?.uniqueCustomers || 0
+              totalRevenue: 0, // Not provided in API yet
+              totalOrders: 0, // Not provided in API yet
+              averageRating: apiData.restaurant?.rating || 0,
+              totalCustomers: 0 // Not provided in API yet
             };
 
-            // Update recent orders if available
-            if (dashboardData.recentOrders && dashboardData.recentOrders.length > 0) {
-              this.recentOrders = dashboardData.recentOrders || [];
-            } else {
-              this.recentOrders = []; // Empty array if no orders
+            // Update restaurant status from API data
+            if (apiData.restaurant) {
+              this.restaurantStatus = apiData.restaurant.isOperational || false;
             }
 
-            // Update popular meals/products if available
-            if (dashboardData.popularMeals && dashboardData.popularMeals.length > 0) {
-              this.topProducts = this.mapApiMealsToProducts(dashboardData.popularMeals);
-            } else {
-              this.topProducts = []; // Empty array if no popular meals
+            // Store meal statistics from dashboard API
+            if (apiData.meals) {
+              this.dashboardMealStats = {
+                total: apiData.meals.total || 0,
+                active: apiData.meals.active || 0,
+                inactive: apiData.meals.inactive || 0
+              };
             }
+
+            // Update recent orders if available (currently not in API response)
+            this.recentOrders = [];
+
+            // Update popular meals/products if available (currently not in API response)
+            this.topProducts = [];
           }
           this.loading = false;
         },
@@ -510,6 +517,20 @@ export class RestaurantDashboard implements OnInit, OnDestroy {
 
   getInactiveMeals(): number {
     return this.analyticsData?.meals?.inactive || 0;
+  }
+
+  // Additional methods to get meal data from dashboard API
+  getTotalMealsFromDashboard(): number {
+    // This will be set when we load the dashboard data
+    return this.dashboardMealStats?.total || 0;
+  }
+
+  getActiveMealsFromDashboard(): number {
+    return this.dashboardMealStats?.active || 0;
+  }
+
+  getInactiveMealsFromDashboard(): number {
+    return this.dashboardMealStats?.inactive || 0;
   }
 
   getAnalyticsPeriod(): string {

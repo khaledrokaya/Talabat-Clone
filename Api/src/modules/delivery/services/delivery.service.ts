@@ -30,15 +30,26 @@ export class DeliveryService {
       throw new AppError('Delivery person not found', 404);
     }
 
+    // Calculate actual availability based on current order status
+    const hasCurrentOrder = !!delivery.currentOrder;
+    const isActuallyAvailable = delivery.isOnline && !hasCurrentOrder;
+
+    // Update the delivery record if availability status is inconsistent
+    if (delivery.isAvailable !== isActuallyAvailable) {
+      delivery.isAvailable = isActuallyAvailable;
+      await delivery.save();
+    }
+
     return {
       isOnline: delivery.isOnline || false,
-      isAvailable: delivery.isAvailable || false,
+      isAvailable: isActuallyAvailable,
       currentLocation: delivery.currentLocation ? {
         lat: delivery.currentLocation.lat,
         lng: delivery.currentLocation.lng,
         lastUpdated: delivery.currentLocation.lastUpdated
       } : null,
-      hasCurrentOrder: !!delivery.currentOrder,
+      hasCurrentOrder: hasCurrentOrder,
+      currentOrderId: delivery.currentOrder || null,
       verificationStatus: delivery.verificationStatus
     };
   }
@@ -95,14 +106,29 @@ export class DeliveryService {
     const statusChangedAt = new Date();
     delivery.isOnline = availabilityData.isOnline;
 
+    // Only allow setting availability to true if delivery person has no current order
     if (availabilityData.isAcceptingOrders !== undefined) {
-      delivery.isAvailable = availabilityData.isAcceptingOrders;
+      if (availabilityData.isAcceptingOrders && delivery.currentOrder) {
+        throw new AppError('Cannot set availability to true while having an active order', 400);
+      }
+
+      // Set availability based on online status and current order status
+      if (availabilityData.isOnline && !delivery.currentOrder) {
+        delivery.isAvailable = availabilityData.isAcceptingOrders;
+      } else {
+        delivery.isAvailable = false; // Not online or has current order
+      }
+    } else {
+      // If not explicitly setting availability, calculate it automatically
+      delivery.isAvailable = delivery.isOnline && !delivery.currentOrder;
     }
 
     await delivery.save();
 
     return {
       isOnline: delivery.isOnline,
+      isAvailable: delivery.isAvailable,
+      hasCurrentOrder: !!delivery.currentOrder,
       statusChangedAt
     };
   }
@@ -281,8 +307,8 @@ export class DeliveryService {
         if (order.timeline && order.timeline.length > 0) {
           const wasMarkedReady = order.timeline.some(entry => entry.status === 'ready');
           if (!wasMarkedReady) {
-            } else {
-          // No timeline entry found but allow pickup anyway for debugging
+          } else {
+            // No timeline entry found but allow pickup anyway for debugging
           }
         }
       }
@@ -370,10 +396,36 @@ export class DeliveryService {
         break;
       case 'delivered':
         order.deliveredAt = updatedAt;
+
+        // Update payment status to show delivery received payment
+        if (!order.paymentStatus || order.paymentStatus === 'pending') {
+          order.paymentStatus = 'paid_to_delivery';
+          order.paymentMethod = order.paymentMethod || 'cash_on_delivery';
+        }
+
+        // Ensure delivery fee is set for earnings calculation
+        if (!order.deliveryFee || order.deliveryFee === 0) {
+          order.deliveryFee = 25; // Default delivery fee if not set
+        }
+
+        // Update delivery person record
         const delivery = await Delivery.findById(deliveryId);
         if (delivery) {
           delivery.currentOrder = undefined;
           delivery.isAvailable = true;
+
+          // Add to delivery earnings tracking
+          if (!delivery.totalEarnings) {
+            delivery.totalEarnings = 0;
+          }
+          delivery.totalEarnings += order.deliveryFee;
+
+          // Update completed deliveries count
+          if (!delivery.completedDeliveries) {
+            delivery.completedDeliveries = 0;
+          }
+          delivery.completedDeliveries += 1;
+
           await delivery.save();
           // Clear cache when order is completed
           this.cache.clearDeliveryCache(deliveryId);
@@ -411,7 +463,17 @@ export class DeliveryService {
       throw new AppError('Delivery person not found', 404);
     }
 
-    if (!delivery.isOnline || !delivery.isAvailable) {
+    // Check if delivery person is actually available (recalculate based on current order status)
+    const hasCurrentOrder = !!delivery.currentOrder;
+    const isActuallyAvailable = delivery.isOnline && !hasCurrentOrder;
+
+    // Update availability if it's inconsistent
+    if (delivery.isAvailable !== isActuallyAvailable) {
+      delivery.isAvailable = isActuallyAvailable;
+      await delivery.save();
+    }
+
+    if (!delivery.isOnline || !isActuallyAvailable) {
       return {
         orders: [],
         pagination: {
@@ -419,14 +481,18 @@ export class DeliveryService {
           limit: 10,
           total: 0,
           pages: 0
-        }
+        },
+        message: hasCurrentOrder ?
+          'You have an active order. Complete it before accepting new orders.' :
+          'You must be online and available to see orders.'
       };
     }
 
-    // **IMPROVED QUERY**: Look for orders that could be ready for pickup
-    // Include orders that are 'ready' or 'preparing' (but validate timeline for preparing orders)
+    // **IMPROVED QUERY**: Look for orders that are available for delivery assignment
+    // 1. Status should be ready for pickup (confirmed, preparing, ready, ready_for_pickup)
+    // 2. Should NOT have a delivery person already assigned
     const query: any = {
-      status: { $in: ['ready', 'preparing'] }, // Allow both ready and preparing orders
+      status: { $in: ['confirmed', 'preparing', 'ready', 'ready_for_pickup'] },
       $or: [
         { deliveryPersonId: { $exists: false } },
         { deliveryPersonId: null }
@@ -443,51 +509,48 @@ export class DeliveryService {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(pageLimit)
-      .select('_id customerInfo deliveryAddress restaurantId customerId totalAmount deliveryFee status estimatedDeliveryTime createdAt items timeline updatedAt');
+      .select('_id customerInfo deliveryAddress restaurantId customerId totalAmount deliveryFee status estimatedDeliveryTime createdAt items timeline updatedAt deliveryPersonId');
 
-    // Debug: Log timeline data for first order
-    if (orders.length > 0) {
-    }
-
-    // Additional validation: Filter orders that are actually available for pickup
+    // Additional validation: Filter orders that are actually available for pickup AND not assigned
     const validOrders = orders.filter(order => {
-      // Always accept orders with status 'ready'
-      if (order.status === 'ready') {
-        // For ready orders, ideally check timeline, but don't be too strict
-        if (order.timeline && Array.isArray(order.timeline)) {
-          const hasReadyTimeline = order.timeline.some(entry => entry.status === 'ready');
-          if (!hasReadyTimeline) {
-          }
-        }
+      // CRITICAL: Ensure no delivery person is assigned
+      if (order.deliveryPersonId) {
+        return false; // Skip orders that already have a delivery person
+      }
+
+      // Always accept orders with status 'ready' or 'ready_for_pickup'
+      if (['ready', 'ready_for_pickup'].includes(order.status)) {
+        return true;
+      }
+
+      // Accept 'confirmed' orders (restaurant confirmed but not yet started preparing)
+      if (order.status === 'confirmed') {
         return true;
       }
 
       // For 'preparing' orders, check if they've been preparing for a reasonable time
       if (order.status === 'preparing') {
         if (!order.timeline || !Array.isArray(order.timeline)) {
-          return false;
+          // If no timeline data, still allow (could be valid preparing order)
+          return true;
         }
 
         // Find when the order started preparing
         const preparingEntry = order.timeline.find(entry => entry.status === 'preparing');
         if (!preparingEntry) {
-          return false;
-        }
-
-        // Check if it's been preparing for at least 15 minutes (could be ready)
-        const preparingTime = new Date().getTime() - new Date(preparingEntry.timestamp).getTime();
-        const fifteenMinutes = 15 * 60 * 1000;
-
-        if (preparingTime >= fifteenMinutes) {
+          // If no preparing entry in timeline, still allow (data might be incomplete)
           return true;
-        } else {
-          return false;
         }
+
+        // Check if it's been preparing for at least 10 minutes (could be ready soon)
+        const preparingTime = new Date().getTime() - new Date(preparingEntry.timestamp).getTime();
+        const tenMinutes = 10 * 60 * 1000;
+
+        return preparingTime >= tenMinutes;
       }
 
       return false;
     });
-
 
     // Format orders for response
     const formattedOrders = validOrders.map(order => ({
@@ -736,6 +799,88 @@ export class DeliveryService {
 
     this.cache.setEarnings(cacheKey, finalResult);
     return finalResult;
+  }
+
+  /**
+   * Get simple total earnings for a delivery person
+   */
+  async getSimpleDeliveryEarnings(deliveryId: string): Promise<number> {
+    try {
+      const Order = require('../../order/schemas/order.schema').default;
+
+      // Get earnings from completed orders
+      const result = await Order.aggregate([
+        {
+          $match: {
+            deliveryPersonId: deliveryId,
+            status: 'delivered',
+            deliveryFee: { $exists: true, $gt: 0 }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalEarnings: { $sum: '$deliveryFee' }
+          }
+        }
+      ]);
+
+      const orderEarnings = result.length > 0 ? result[0].totalEarnings : 0;
+
+      // Also check and update delivery person's record
+      const delivery = await Delivery.findById(deliveryId);
+      if (delivery) {
+        const storedEarnings = delivery.totalEarnings || 0;
+
+        // Update if the order aggregation shows more earnings
+        if (orderEarnings > storedEarnings) {
+          delivery.totalEarnings = orderEarnings;
+          await delivery.save();
+          this.cache.clearDeliveryCache(deliveryId);
+        }
+
+        return Math.max(orderEarnings, storedEarnings);
+      }
+
+      return orderEarnings;
+    } catch (error) {
+      console.error('Error calculating simple delivery earnings:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Fix missing delivery fees in orders
+   */
+  async fixMissingDeliveryFees(): Promise<any> {
+    try {
+      const Order = require('../../order/schemas/order.schema').default;
+
+      // Update orders that are delivered but have no delivery fee
+      const updateResult = await Order.updateMany(
+        {
+          status: 'delivered',
+          deliveryPersonId: { $exists: true },
+          $or: [
+            { deliveryFee: { $exists: false } },
+            { deliveryFee: 0 },
+            { deliveryFee: null }
+          ]
+        },
+        {
+          $set: {
+            deliveryFee: 25, // Default delivery fee
+            paymentStatus: 'paid_to_delivery'
+          }
+        }
+      );
+
+      console.log(`Fixed ${updateResult.modifiedCount} orders with missing delivery fees`);
+      return updateResult;
+    } catch (error) {
+      console.error('Error fixing delivery fees:', error);
+      throw error;
+    }
   }
 
   /**
@@ -1027,6 +1172,63 @@ export class DeliveryService {
 
     this.cache.setStats(cacheKey, finalResult);
     return finalResult;
+  }
+
+  /**
+   * UTILITY: Fix availability status for all delivery persons
+   * This method ensures all delivery persons have correct availability status
+   * based on their current order assignments
+   */
+  async fixAllDeliveryAvailability(): Promise<any> {
+    const deliveries = await Delivery.find({});
+    let fixed = 0;
+    let total = deliveries.length;
+
+    for (const delivery of deliveries) {
+      const hasCurrentOrder = !!delivery.currentOrder;
+      const shouldBeAvailable = delivery.isOnline && !hasCurrentOrder;
+
+      if (delivery.isAvailable !== shouldBeAvailable) {
+        delivery.isAvailable = shouldBeAvailable;
+        await delivery.save();
+        fixed++;
+      }
+    }
+
+    return {
+      message: `Fixed availability status for ${fixed} out of ${total} delivery persons`,
+      totalDeliveryPersons: total,
+      fixedCount: fixed
+    };
+  }
+
+  /**
+   * UTILITY: Get delivery person's current order details
+   */
+  async getCurrentOrderDetails(deliveryId: string): Promise<any> {
+    const delivery = await Delivery.findById(deliveryId);
+    if (!delivery) {
+      throw new AppError('Delivery person not found', 404);
+    }
+
+    if (!delivery.currentOrder) {
+      return {
+        hasCurrentOrder: false,
+        currentOrder: null,
+        isAvailable: delivery.isOnline
+      };
+    }
+
+    const Order = require('../../order/schemas/order.schema').default;
+    const currentOrder = await Order.findById(delivery.currentOrder)
+      .populate('customerId', 'firstName lastName phone')
+      .populate('restaurantId', 'firstName lastName restaurantDetails');
+
+    return {
+      hasCurrentOrder: true,
+      currentOrder: currentOrder,
+      isAvailable: false // Should be false if has current order
+    };
   }
 
   /**

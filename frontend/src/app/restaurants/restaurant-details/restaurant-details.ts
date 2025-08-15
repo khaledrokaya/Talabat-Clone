@@ -287,8 +287,21 @@ export class RestaurantDetails implements OnInit, OnDestroy {
   }
 
   isRestaurantOpen(): boolean {
-    return this.restaurant?.isOperational !== false && this.restaurant?.isOpen !== false;
+    // Handle different data structures
+    if (!this.restaurant.isOperational && this.restaurant.isOperational !== undefined) return false;
+    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    const todayHours = this.restaurant.restaurantDetails?.openingHours?.[today];
+
+    if (!todayHours) return true; // Default to open if no hours specified
+
+    const now = new Date();
+    const currentTime = now.getHours() * 100 + now.getMinutes();
+    const openTime = parseInt(todayHours.open?.replace(':', '') || '0');
+    const closeTime = parseInt(todayHours.close?.replace(':', '') || '2359');
+
+    return todayHours.isOpen && currentTime >= openTime && currentTime <= closeTime;
   }
+
 
   getMealImage(meal: Meal): string {
     return meal.image || 'assets/images/default-meal.jpg';

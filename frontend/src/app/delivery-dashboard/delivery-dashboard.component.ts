@@ -93,7 +93,36 @@ export class DeliveryDashboardComponent implements OnInit, OnDestroy {
       this.deliveryService.getEarnings(this.selectedPeriod).subscribe({
         next: (response) => {
           this.earnings = response.data;
+
+          // If the detailed earnings shows 0, try to get simple earnings for verification
+          if (this.earnings && this.earnings.totalEarnings === 0) {
+            this.loadSimpleEarnings();
+          }
         },
+        error: (error) => {
+          // Fallback to simple earnings if detailed fails
+          this.loadSimpleEarnings();
+        }
+      })
+    );
+  }
+
+  private loadSimpleEarnings(): void {
+    this.subscriptions.push(
+      this.deliveryService.getSimpleEarnings().subscribe({
+        next: (response) => {
+          if (response.data.totalEarnings > 0) {
+            // Use simple earnings data to create a basic earnings object
+            this.earnings = {
+              totalEarnings: response.data.totalEarnings,
+              deliveryCount: 0, // Will be updated when we get stats
+              breakdown: []
+            };
+          }
+        },
+        error: (error) => {
+          console.error('Error loading simple earnings:', error);
+        }
       })
     );
   }

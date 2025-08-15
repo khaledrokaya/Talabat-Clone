@@ -25,7 +25,7 @@ export interface IOrder extends Document {
   | 'on_the_way'
   | 'delivered'
   | 'cancelled';
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded' | 'paid_to_delivery';
   paymentMethod: 'cash' | 'card' | 'digital-wallet';
   subtotal: number;
   deliveryFee: number;
@@ -162,7 +162,7 @@ const orderSchema = new Schema(
       type: String,
       required: [true, 'Payment status is required'],
       enum: {
-        values: ['pending', 'paid', 'failed', 'refunded'],
+        values: ['pending', 'paid', 'failed', 'refunded', 'paid_to_delivery'],
         message: 'Please select a valid payment status',
       },
       default: 'pending',
@@ -171,7 +171,7 @@ const orderSchema = new Schema(
       type: String,
       required: [true, 'Payment method is required'],
       enum: {
-        values: ['cash', 'card', 'digital-wallet'],
+        values: ['cash', 'card', 'digital-wallet', 'cash_on_delivery'],
         message: 'Please select a valid payment method',
       },
     },

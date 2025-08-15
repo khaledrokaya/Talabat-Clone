@@ -150,7 +150,9 @@
             </div>
             <div class="delivery-details">
               <div class="delivery-name">
-                {{ order.deliveryPerson?.firstName || 'Delivery' }} {{ order.deliveryPerson?.lastName || 'Person' }}
+                {{ order.deliveryPerson?.firstName !== undefined ? (order.deliveryPerson?.firstName + " " +
+                order.deliveryPerson?.lastName):"No
+                Delivery Person assigned to the order" }}
               </div>
               <div class="delivery-rating" *ngIf="order.deliveryPerson?.ratings">
                 <span class="rating-stars">

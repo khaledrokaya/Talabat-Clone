@@ -71,13 +71,14 @@
       }
 
       <!-- Restaurant Info -->
-      @if (order.restaurantId) {
+      @if (!isRestaurantOwner && order.restaurantId) {
       <article class="order-card restaurant-card">
         <h3>Restaurant Information</h3>
         <div class="details-container">
           <div class="info-content">
-            <h4>{{ order.restaurantId.name }}</h4>
-            <p><strong>Address:</strong> {{ order.restaurantId.address }}</p>
+            <h4>{{ order.restaurantId.restaurantDetails.name }}</h4>
+            <p><strong>Address:</strong> {{ order.restaurantId.address.street }}, {{ order.restaurantId.address.city }},
+              {{ order.restaurantId.address.state }} {{ order.restaurantId.address.zipCode }}</p>
             @if (order.restaurantId.phone) {
             <p>
               <strong>Phone:</strong> {{ order.restaurantId.phone }}
@@ -113,28 +114,6 @@
           }
         </div>
       </article>
-
-      <!-- Delivery Address -->
-      @if (order.deliveryAddress) {
-      <article class="order-card address-card">
-        <h3>Delivery Address</h3>
-        <address class="address-details">
-          <p>{{ order.deliveryAddress.street }}</p>
-          <p>{{ order.deliveryAddress.city }}, {{ order.deliveryAddress.state }} {{ order.deliveryAddress.zipCode }}</p>
-          @if (order.deliveryAddress.additionalInfo) {
-          <p>
-            <strong>Additional Info:</strong> {{ order.deliveryAddress.additionalInfo }}
-          </p>
-          }
-          @if (order.deliveryAddress.coordinates) {
-          <div class="coordinates">
-            <small>Coordinates: {{ order.deliveryAddress.coordinates.lat }}, {{ order.deliveryAddress.coordinates.lng
-              }}</small>
-          </div>
-          }
-        </address>
-      </article>
-      }
 
       <!-- Order Instructions -->
       @if (order.specialInstructions) {
@@ -253,7 +232,7 @@
           }
 
           @if (order.status === 'preparing') {
-          <button class="btn btn-warning bg-black" (click)="markReady()">
+          <button class="btn btn-warning bg-black text-light" (click)="markReady()">
             <i class="fas fa-check-double"></i> Mark Ready
           </button>
           }

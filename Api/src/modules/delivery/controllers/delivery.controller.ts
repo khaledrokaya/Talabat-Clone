@@ -196,6 +196,46 @@ export class DeliveryController {
   );
 
   /**
+   * Get simple total earnings
+   */
+  getSimpleEarnings = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+      const totalEarnings = await this.deliveryService.getSimpleDeliveryEarnings(
+        req.user._id
+      );
+
+      res
+        .status(200)
+        .json(
+          Helpers.formatResponse(
+            true,
+            'Total earnings retrieved successfully',
+            { totalEarnings },
+          ),
+        );
+    },
+  );
+
+  /**
+   * Fix missing delivery fees (admin only)
+   */
+  fixDeliveryFees = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+      const result = await this.deliveryService.fixMissingDeliveryFees();
+
+      res
+        .status(200)
+        .json(
+          Helpers.formatResponse(
+            true,
+            'Delivery fees fixed successfully',
+            result,
+          ),
+        );
+    },
+  );
+
+  /**
    * Update vehicle information
    */
   updateVehicleInfo = asyncHandler(
@@ -339,6 +379,44 @@ export class DeliveryController {
           Helpers.formatResponse(
             true,
             'Nearby delivery persons retrieved successfully',
+            result,
+          ),
+        );
+    },
+  );
+
+  /**
+   * Fix availability status for all delivery persons (Admin utility)
+   */
+  fixAllDeliveryAvailability = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+      const result = await this.deliveryService.fixAllDeliveryAvailability();
+
+      res
+        .status(200)
+        .json(
+          Helpers.formatResponse(
+            true,
+            'Delivery availability status fixed',
+            result,
+          ),
+        );
+    },
+  );
+
+  /**
+   * Get current order details for delivery person
+   */
+  getCurrentOrderDetails = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response, _next: NextFunction) => {
+      const result = await this.deliveryService.getCurrentOrderDetails(req.user._id);
+
+      res
+        .status(200)
+        .json(
+          Helpers.formatResponse(
+            true,
+            'Current order details retrieved successfully',
             result,
           ),
         );

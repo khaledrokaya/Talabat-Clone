@@ -904,6 +904,78 @@ router.get('/earnings', deliveryController.getDeliveryEarnings);
 
 /**
  * @swagger
+ * /api/delivery/earnings/simple:
+ *   get:
+ *     summary: Get simple total earnings
+ *     description: Retrieve just the total earnings amount for the delivery person
+ *     tags: [Delivery]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Total earnings retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Total earnings retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     totalEarnings:
+ *                       type: number
+ *                       example: 1250.75
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Not a delivery person
+ */
+router.get('/earnings/simple', deliveryController.getSimpleEarnings);
+
+/**
+ * @swagger
+ * /api/delivery/admin/fix-fees:
+ *   post:
+ *     summary: Fix missing delivery fees (Admin only)
+ *     description: Administrative endpoint to fix orders with missing delivery fees
+ *     tags: [Delivery]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Delivery fees fixed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Delivery fees fixed successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     modifiedCount:
+ *                       type: number
+ *                       example: 25
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin access required
+ */
+router.post('/admin/fix-fees', deliveryController.fixDeliveryFees);
+
+/**
+ * @swagger
  * /api/delivery/stats:
  *   get:
  *     summary: Get delivery statistics

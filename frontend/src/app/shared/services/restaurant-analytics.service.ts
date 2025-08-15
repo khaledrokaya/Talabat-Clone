@@ -3,6 +3,21 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+export interface ActualDashboardResponse {
+  restaurant: {
+    name: string;
+    rating: number;
+    totalReviews: number;
+    isOperational: boolean;
+    verificationStatus: string;
+  };
+  meals: {
+    total: number;
+    active: number;
+    inactive: number;
+  };
+}
+
 export interface DashboardStats {
   todayStats: {
     orders: number;
@@ -88,8 +103,8 @@ export class RestaurantAnalyticsService {
    * Get comprehensive restaurant dashboard data
    * Endpoint: GET /api/restaurant/dashboard
    */
-  getDashboardData(): Observable<ApiResponse<{ dashboard: DashboardStats }>> {
-    return this.http.get<ApiResponse<{ dashboard: DashboardStats }>>(
+  getDashboardData(): Observable<ApiResponse<ActualDashboardResponse>> {
+    return this.http.get<ApiResponse<ActualDashboardResponse>>(
       `${this.API_BASE}/restaurant/dashboard`
     );
   }
