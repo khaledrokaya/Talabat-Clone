@@ -12,7 +12,7 @@
 
         <div class="order-items">
           <div class="order-item" *ngFor="let item of cart.items">
-            <span class="item-name">{{ item.productName }}</span>
+            <span class="item-name">{{ item.mealName }}</span>
             <span class="item-quantity">x{{ item.quantity }}</span>
             <span class="item-price">{{ item.totalPrice }} EGP</span>
           </div>

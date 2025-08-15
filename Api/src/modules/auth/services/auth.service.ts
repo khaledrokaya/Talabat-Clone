@@ -3,6 +3,7 @@ import { Restaurant } from '../../restaurant/schemas/restaurant.schema';
 import { Delivery } from '../../delivery/schemas/delivery.schema';
 import { Customer } from '../../customer/schemas/customer.schema';
 import OTP from '../schemas/otp.schema';
+import Cart from '../../cart/schemas/cart.schema';
 import { emailService } from '../../shared/services/email.service';
 import { Helpers } from '../../shared/utils/helpers';
 import { AppError } from '../../shared/middlewares/error.middleware';
@@ -102,6 +103,15 @@ export class AuthService {
     // Keep email verification as false until OTP is verified
     user.isEmailVerified = false;
     await user.save();
+
+    // Create cart for customer users
+    if (role === 'customer') {
+      await Cart.create({
+        customerId: user._id,
+        items: [],
+        totalAmount: 0,
+      });
+    }
 
     // Generate OTP for email verification
     const otp = Helpers.generateOTP();

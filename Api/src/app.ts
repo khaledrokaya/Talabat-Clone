@@ -22,6 +22,7 @@ import orderRoutes from './modules/order/routes';
 import mealRoutes from './modules/meal/routes';
 import restaurantPublicRoutes from './modules/restaurant/routes/public.routes';
 import restaurantUserRoutes from './modules/restaurant/routes/restaurant-user.routes';
+import cartRoutes from './modules/cart/routes';
 
 // Load environment variables
 dotenv.config();
@@ -325,6 +326,7 @@ class App {
     this.app.use('/api/customer', customerRoutes);
     this.app.use('/api/orders', orderRoutes);
     this.app.use('/api/meals', mealRoutes);
+    this.app.use('/api/cart', cartRoutes); // Cart endpoints
     this.app.use('/api/restaurants', restaurantPublicRoutes); // Public restaurant endpoints
     this.app.use('/api/restaurant', restaurantUserRoutes); // Private restaurant management endpoints
 
@@ -339,6 +341,7 @@ class App {
           '/api/restaurants (public)',
           '/api/restaurant (private, requires auth)',
           '/api/meals',
+          '/api/cart (requires customer auth)',
           '/api/delivery',
           '/api/customer',
           '/api/orders',

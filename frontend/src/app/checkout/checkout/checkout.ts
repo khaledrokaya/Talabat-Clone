@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { CartService, Cart } from '../../shared/services/cart.service';
 import { OrderService, CreateOrderRequest } from '../../shared/services/order.service';
+import { AuthService } from '../../shared/services/auth.service';
 import { ToastService } from '../../shared/services/toast.service';
 import { Observable } from 'rxjs';
 import { FormsModule } from '@angular/forms';
@@ -30,6 +31,7 @@ export class Checkout implements OnInit {
     private cartService: CartService,
     private orderService: OrderService,
     private userService: UserService,
+    private authService: AuthService,
     private router: Router,
     private toastService: ToastService
   ) {
@@ -37,6 +39,21 @@ export class Checkout implements OnInit {
   }
 
   ngOnInit(): void {
+    // Check if user is authenticated
+    if (!this.authService.isLoggedIn()) {
+      this.toastService.warning('Please log in to access checkout', 'Authentication Required');
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    // Check if cart has items
+    const currentCart = this.cartService.currentCart;
+    if (!currentCart.items || currentCart.items.length === 0) {
+      this.toastService.warning('Your cart is empty', 'Empty Cart');
+      this.router.navigate(['/restaurants']);
+      return;
+    }
+
     this.loadAddresses();
   }
 
@@ -87,6 +104,13 @@ export class Checkout implements OnInit {
   }
 
   placeOrder(): void {
+    // Double-check authentication
+    if (!this.authService.isLoggedIn()) {
+      this.toastService.warning('Please log in to place an order', 'Authentication Required');
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
     const currentCart = this.cartService.currentCart;
     if (!currentCart.restaurantId || currentCart.items.length === 0) {
       this.errorMessage = 'Shopping cart is empty or no restaurant selected.';
@@ -124,11 +148,11 @@ export class Checkout implements OnInit {
       restaurantId: currentCart.restaurantId,
       customerId: this.currentUser.id || this.currentUser._id,
       items: currentCart.items.map(item => ({
-        mealId: item.productId,
-        name: item.productName,
-        price: item.unitPrice,
+        mealId: item.mealId,
+        name: item.mealName,
+        price: item.price,
         quantity: item.quantity,
-        specialInstructions: item.selectedOptions?.map(opt => opt.choiceName).join(', ') || ''
+        specialInstructions: item.specialInstructions || ''
       })),
       deliveryAddress: {
         street: this.selectedAddress.street,
@@ -163,11 +187,22 @@ export class Checkout implements OnInit {
 
     this.orderService.createOrder(orderRequest as any).subscribe({
       next: (order) => {
-        this.cartService.clearCart();
-        const orderNumber = order?.data?.order?.orderNumber;
-        this.toastService.showOrderSuccess(orderNumber);
-        // Redirect to order confirmation or order history page
-        this.router.navigate(['/orders']);
+        // Clear cart after successful order
+        this.cartService.clearCart().subscribe({
+          next: () => {
+            const orderNumber = order?.data?.order?.orderNumber;
+            this.toastService.showOrderSuccess(orderNumber);
+            // Redirect to order confirmation or order history page
+            this.router.navigate(['/orders']);
+          },
+          error: (clearError) => {
+            console.error('Failed to clear cart after order:', clearError);
+            // Still show success and redirect even if cart clear fails
+            const orderNumber = order?.data?.order?.orderNumber;
+            this.toastService.showOrderSuccess(orderNumber);
+            this.router.navigate(['/orders']);
+          }
+        });
       },
       error: (error) => {
         this.errorMessage = error.error?.data?.message || error.error?.message || 'Failed to place order. Please try again.';

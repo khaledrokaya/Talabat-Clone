@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
 import { RestaurantService } from '../../shared/services/restaurant.service';
 import { CartService, CartItem } from '../../shared/services/cart.service';
+import { ToastService } from '../../shared/services/toast.service';
+import { AuthService } from '../../shared/services/auth.service';
 import { RateLimiterService } from '../../shared/services/rate-limiter.service';
 import { Restaurant, Meal } from '../../shared/models/restaurant';
 import { environment } from '../../../environments/environment';
@@ -49,6 +51,8 @@ export class RestaurantDetails implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private restaurantService: RestaurantService,
     private cartService: CartService,
+    private toastService: ToastService,
+    private authService: AuthService,
     private rateLimiter: RateLimiterService
   ) { }
 
@@ -202,26 +206,42 @@ export class RestaurantDetails implements OnInit, OnDestroy {
 
   addToCart(meal: Meal): void {
     if (!meal.isAvailable || !this.isRestaurantOpen()) {
+      this.toastService.warning('This item is currently unavailable', 'Item Unavailable');
       return;
     }
 
-    const cartItem: CartItem = {
-      id: meal._id,
-      productId: meal._id,
-      productName: meal.name,
+    if (!this.authService.isLoggedIn()) {
+      this.toastService.warning('Please log in to add items to cart', 'Login Required');
+      return;
+    }
+
+    const cartItem: Omit<CartItem, 'id' | 'totalPrice'> = {
+      mealId: meal._id,
+      mealName: meal.name,
       quantity: 1,
-      unitPrice: this.getMealPrice(meal),
-      totalPrice: this.getMealPrice(meal),
+      price: this.getMealPrice(meal),
       restaurantId: this.restaurant?._id || '',
       restaurantName: this.getRestaurantName()
     };
 
-    this.cartService.addToCart(cartItem);
+    this.cartService.addToCart(cartItem).subscribe({
+      next: (success) => {
+        if (success) {
+          this.toastService.success(`${meal.name} added to cart`, 'Added to Cart');
+        } else {
+          this.toastService.error('Failed to add item to cart', 'Error');
+        }
+      },
+      error: (error) => {
+        console.error('Failed to add item to cart:', error);
+        this.toastService.error('Failed to add item to cart', 'Error');
+      }
+    });
   }
 
   // Cart management methods
   getCartQuantity(mealId: string): number {
-    const cartItem = this.cartService.currentCart.items.find(item => item.productId === mealId);
+    const cartItem = this.cartService.currentCart.items.find(item => item.mealId === mealId);
     return cartItem ? cartItem.quantity : 0;
   }
 
@@ -231,26 +251,80 @@ export class RestaurantDetails implements OnInit, OnDestroy {
 
   increaseQuantity(meal: Meal): void {
     if (!meal.isAvailable || !this.isRestaurantOpen()) {
+      this.toastService.warning('This item is currently unavailable', 'Item Unavailable');
+      return;
+    }
+
+    if (!this.authService.isLoggedIn()) {
+      this.toastService.warning('Please log in to modify cart items', 'Login Required');
       return;
     }
 
     const currentQuantity = this.getCartQuantity(meal._id);
     if (currentQuantity > 0) {
-      this.cartService.updateQuantity(meal._id, currentQuantity + 1);
+      this.cartService.updateQuantity(meal._id, currentQuantity + 1).subscribe({
+        next: (success) => {
+          if (success) {
+            this.toastService.info(`${meal.name} quantity updated`, 'Cart Updated');
+          } else {
+            this.toastService.error('Failed to update quantity', 'Error');
+          }
+        },
+        error: (error) => {
+          console.error('Failed to update quantity:', error);
+          this.toastService.error('Failed to update quantity', 'Error');
+        }
+      });
     } else {
       this.addToCart(meal);
     }
   }
 
   decreaseQuantity(meal: Meal): void {
+    if (!this.authService.isLoggedIn()) {
+      this.toastService.warning('Please log in to modify cart items', 'Login Required');
+      return;
+    }
+
     const currentQuantity = this.getCartQuantity(meal._id);
-    if (currentQuantity > 0) {
-      this.cartService.updateQuantity(meal._id, currentQuantity - 1);
+    if (currentQuantity > 1) {
+      this.cartService.updateQuantity(meal._id, currentQuantity - 1).subscribe({
+        next: (success) => {
+          if (success) {
+            this.toastService.info(`${meal.name} quantity updated`, 'Cart Updated');
+          } else {
+            this.toastService.error('Failed to update quantity', 'Error');
+          }
+        },
+        error: (error) => {
+          console.error('Failed to update quantity:', error);
+          this.toastService.error('Failed to update quantity', 'Error');
+        }
+      });
+    } else if (currentQuantity === 1) {
+      this.removeFromCart(meal._id);
     }
   }
 
   removeFromCart(mealId: string): void {
-    this.cartService.removeFromCart(mealId);
+    if (!this.authService.isLoggedIn()) {
+      this.toastService.warning('Please log in to modify cart items', 'Login Required');
+      return;
+    }
+
+    this.cartService.removeFromCart(mealId).subscribe({
+      next: (success) => {
+        if (success) {
+          this.toastService.showDeleteSuccess('Item');
+        } else {
+          this.toastService.error('Failed to remove item from cart', 'Error');
+        }
+      },
+      error: (error) => {
+        console.error('Failed to remove item from cart:', error);
+        this.toastService.error('Failed to remove item from cart', 'Error');
+      }
+    });
   }
 
   // Helper methods for template

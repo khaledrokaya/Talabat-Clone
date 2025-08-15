@@ -1,8 +1,46 @@
 <div class="cart-container">
   <div class="container">
-    <h1>Shopping Cart</h1>
+    <div class="cart-header">
+      <h1>Shopping Cart</h1>
+      <div class="cart-actions" *ngIf="isLoggedIn">
+        <button class="btn btn-outline btn-sm" (click)="refreshCart()" [disabled]="isLoading" title="Refresh cart">
+          <i class="fas fa-sync-alt" [class.fa-spin]="isLoading"></i>
+          Refresh
+        </button>
+      </div>
+    </div>
 
-    <div class="cart-content" *ngIf="cart$ | async as cart">
+    <!-- Login Required Message -->
+    <div class="login-required" *ngIf="!isLoggedIn">
+      <div class="login-required-content">
+        <div class="login-icon">
+          <i class="fas fa-sign-in-alt"></i>
+        </div>
+        <h3>Please Log In</h3>
+        <p>You need to be logged in to manage your cart and place orders</p>
+        <div class="login-actions">
+          <a routerLink="/auth/login" class="btn btn-primary">
+            <i class="fas fa-sign-in-alt"></i>
+            Log In
+          </a>
+          <a routerLink="/auth/register" class="btn btn-outline">
+            <i class="fas fa-user-plus"></i>
+            Sign Up
+          </a>
+        </div>
+        <p class="browse-note">
+          You can still <a routerLink="/restaurants">browse restaurants</a> without logging in
+        </p>
+      </div>
+    </div>
+
+    <!-- Cart Content (only show when logged in) -->
+    <div class="cart-content" *ngIf="isLoggedIn && (cart$ | async) as cart">
+      <!-- Loading Overlay -->
+      <div class="loading-overlay" *ngIf="isLoading">
+        <div class="spinner"></div>
+      </div>
+
       <!-- Empty Cart -->
       <div class="empty-cart" *ngIf="cart.items.length === 0">
         <div class="empty-cart-icon">
@@ -20,29 +58,43 @@
       <div class="cart-items" *ngIf="cart.items.length > 0">
         <div class="cart-header">
           <h3>{{ cart.restaurantName || 'Your Order' }}</h3>
-          <button (click)="clearCart()" class="btn btn-danger btn-sm">Clear Cart</button>
+          <button (click)="clearCart()" class="btn btn-danger btn-sm" [disabled]="isLoading">
+            <i class="fas fa-trash"></i>
+            Clear Cart
+          </button>
         </div>
 
-        <div class="cart-item" *ngFor="let item of cart.items">
+        <div class="cart-item" *ngFor="let item of cart.items; trackBy: trackByItem">
           <div class="item-info">
-            <h4>{{ item.productName }}</h4>
+            <h4>{{ item.mealName }}</h4>
             <div class="item-options" *ngIf="item.selectedOptions && item.selectedOptions.length > 0">
               <span *ngFor="let option of item.selectedOptions" class="option-tag">
                 {{ option.choiceName }}
               </span>
             </div>
-            <div class="item-price">{{ item.unitPrice }} EGP</div>
+            <div class="item-special-instructions" *ngIf="item.specialInstructions">
+              <i class="fas fa-comment"></i>
+              {{ item.specialInstructions }}
+            </div>
+            <div class="item-price">{{ item.price }} EGP</div>
           </div>
 
           <div class="item-controls">
             <div class="quantity-controls">
-              <button (click)="updateQuantity(item.id, item.quantity - 1)" class="quantity-btn"
-                [disabled]="item.quantity <= 1">-</button>
+              <button (click)="updateQuantity(item.mealId, item.quantity - 1)" class="quantity-btn"
+                [disabled]="item.quantity <= 1 || isLoading">
+                -
+              </button>
               <span class="quantity">{{ item.quantity }}</span>
-              <button (click)="updateQuantity(item.id, item.quantity + 1)" class="quantity-btn">+</button>
+              <button (click)="updateQuantity(item.mealId, item.quantity + 1)" class="quantity-btn"
+                [disabled]="isLoading">
+                +
+              </button>
             </div>
             <div class="item-total">{{ item.totalPrice }} EGP</div>
-            <button (click)="removeItem(item.id)" class="remove-btn">🗑️</button>
+            <button (click)="removeItem(item.mealId)" class="remove-btn" [disabled]="isLoading" title="Remove item">
+              <i class="fas fa-trash"></i>
+            </button>
           </div>
         </div>
 
@@ -62,8 +114,14 @@
           </div>
 
           <div class="checkout-actions">
-            <a routerLink="/restaurants" class="btn btn-secondary">Add More Items</a>
-            <a routerLink="/checkout" class="btn btn-primary">Proceed to Checkout</a>
+            <a routerLink="/restaurants" class="btn btn-secondary">
+              <i class="fas fa-plus"></i>
+              Add More Items
+            </a>
+            <a routerLink="/checkout" class="btn btn-primary" [class.disabled]="cart.items.length === 0">
+              <i class="fas fa-credit-card"></i>
+              Proceed to Checkout
+            </a>
           </div>
         </div>
       </div>
