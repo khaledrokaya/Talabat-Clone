@@ -1,16 +1,24 @@
-MIT License
+Talabat Non-Commercial License
 
 Copyright (c) 2025 - Talabat Food Delivery Platform
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+of this software and associated documentation files (the "Software"), to:
+- Modify the Software
+- Use the Software privately
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+subject to the following conditions:
+
+1. Any use of the Software MUST include prominent acknowledgment of Talabat Food Delivery Platform 
+   in documentation, user interfaces, and/or any public-facing materials using this text:
+   "This product includes software components from Talabat Food Delivery Platform."
+
+2. The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+
+3. The Software may NOT be used for commercial purposes.
+
+4. The Software may NOT be distributed, published, or shared with third parties.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
