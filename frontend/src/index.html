@@ -3,18 +3,139 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Talabat - Food Delivery Platform</title>
+  <title>Talabat - Professional Food Delivery Platform</title>
   <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/svg+xml" href="logo.svg">
-  <link rel="icon" type="image/svg+xml" href="./public/logo.svg">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <!-- Viewport and Mobile Optimization -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- SEO Meta Tags -->
+  <meta name="description"
+    content="Talabat - Professional food delivery platform built with Angular. Order from restaurants, track deliveries, and manage your food business with our comprehensive platform.">
+  <meta name="keywords"
+    content="food delivery, restaurant, ordering, talabat, delivery platform, food service, online ordering">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph Meta Tags for Social Sharing -->
+  <meta property="og:title" content="Talabat - Professional Food Delivery Platform">
+  <meta property="og:description"
+    content="Complete food delivery ecosystem with customer, restaurant, delivery, and admin interfaces.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://talabat-platform.vercel.app">
+  <meta property="og:image" content="/assets/images/talabat-og-image.png">
+  <meta property="og:site_name" content="Talabat Platform">
+
+  <!-- Twitter Card Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Talabat - Professional Food Delivery Platform">
+  <meta name="twitter:description"
+    content="Complete food delivery ecosystem with multi-role support and real-time features.">
+  <meta name="twitter:image" content="/assets/images/talabat-twitter-image.png">
+  <meta name="twitter:creator" content="@khaledrokaya">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- Icons and Favicons -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+  <link rel="mask-icon" href="/assets/icons/safari-pinned-tab.svg" color="#ff6b35">
+
+  <!-- Theme Colors -->
+  <meta name="theme-color" content="#ff6b35">
+  <meta name="msapplication-TileColor" content="#ff6b35">
+  <meta name="msapplication-config" content="/assets/icons/browserconfig.xml">
+
+  <!-- Preconnect to External Resources -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://api.talabat-platform.com">
+
+  <!-- Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap" rel="stylesheet">
+
+  <!-- Performance and Security -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <!-- Loading Optimization -->
+  <link rel="dns-prefetch" href="//fonts.googleapis.com">
+  <link rel="dns-prefetch" href="//fonts.gstatic.com">
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Talabat Food Delivery Platform",
+    "description": "Professional food delivery platform with multi-role support",
+    "url": "https://talabat-platform.vercel.app",
+    "applicationCategory": "Food Delivery",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
 </head>
 
 <body>
-  <app-root></app-root>
+  <!-- Main Application -->
+  <app-root id="appRoot"></app-root>
 
+  <script>
+    // Install prompt for PWA
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+
+      // Show install button (you can implement this in your Angular app)
+      const installEvent = new CustomEvent('showInstallPrompt', { detail: deferredPrompt });
+      window.dispatchEvent(installEvent);
+    });
+
+    // Track PWA installation
+    window.addEventListener('appinstalled', () => {
+      console.log('PWA was installed');
+      deferredPrompt = null;
+    });
+
+    // Error handling
+    window.addEventListener('error', (e) => {
+      console.error('Application error:', e.error);
+    });
+
+    // Unhandled promise rejection handling
+    window.addEventListener('unhandledrejection', (e) => {
+      console.error('Unhandled promise rejection:', e.reason);
+    });
+  </script>
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('SW registered: ', registration);
+          })
+          .catch((registrationError) => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
+  </script>
 </body>
 
 </html>
