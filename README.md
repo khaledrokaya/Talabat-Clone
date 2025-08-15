@@ -1,269 +1,301 @@
-# 🍔 Talabat Food Delivery Platform - COMPLETE
+# 🍕 Talabat Platform - Food Delivery System
 
-A comprehensive food delivery platform built with the MEAN stack (MongoDB, Express.js, Angular, Node.js). This application provides a complete solution for food delivery services with separate interfaces for customers, restaurant owners, delivery personnel, and administrators.
+A comprehensive, full-stack food delivery platform built with modern web technologies. This platform enables seamless food ordering and delivery operations with dedicated interfaces for customers, restaurants, delivery personnel, and administrators.
 
-## ✅ PROJECT STATUS: COMPLETED
+## 🌟 Project Overview
 
-This project is now **fully implemented and production-ready** with all core features completed:
+Talabat Platform is a complete food delivery ecosystem that replicates the functionality of major delivery platforms like Talabat, Uber Eats, and DoorDash. The platform provides real-time order management, cart functionality, authentication, and multi-role access control.
 
-- ✅ **Backend API**: Complete RESTful API with all endpoints
-- ✅ **Frontend Application**: Fully functional Angular application
-- ✅ **Authentication System**: JWT-based with role management
-- ✅ **Admin Dashboard**: Complete admin interface with user and restaurant management
-- ✅ **Restaurant Dashboard**: Full restaurant owner interface
-- ✅ **Customer Interface**: Complete shopping and ordering experience
-- ✅ **Delivery System**: Delivery personnel management
-- ✅ **Database Schemas**: All MongoDB schemas implemented
-- ✅ **Security**: Authentication, authorization, and input validation
-- ✅ **Documentation**: Comprehensive API documentation with Swagger
+## 🏗️ Architecture
 
-## 🚀 Features
+```
+┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Backend API   │
+│   (Angular 18)  │◄──►│  (Node.js +     │
+│                 │    │   Express +     │
+│                 │    │   MongoDB)      │
+└─────────────────┘    └─────────────────┘
+         │                       │
+         │                       │
+    ┌─────────┐              ┌─────────┐
+    │ Client  │              │Database │
+    │ Browser │              │(MongoDB)│
+    └─────────┘              └─────────┘
+```
 
-### Core Functionality
-- **User Authentication**: Complete JWT-based authentication system with role-based access control
-- **Multi-Role Support**: Customer, Restaurant Owner, Delivery Personnel, and Admin roles
-- **Real-time Updates**: Live order tracking and status updates
-- **Responsive Design**: Mobile-first approach with modern UI/UX
-- **Payment Integration**: Secure payment processing
-- **Email Notifications**: Automated email system for order confirmations and updates
+## ✨ Key Features
 
-### Customer Features
-- Browse restaurants and menus
-- Add items to cart with customizations
-- Place orders with delivery tracking
-- Manage profile and addresses
-- Order history and favorites
-- Review and rating system
-- Real-time order status updates
+### 👥 Multi-Role System
+- **Customers**: Browse restaurants, manage cart, place orders, track deliveries
+- **Restaurants**: Manage menus, process orders, update restaurant information
+- **Delivery Personnel**: Accept deliveries, update order status, track earnings
+- **Administrators**: Oversee platform operations, manage users and restaurants
 
-### Restaurant Owner Features
-- Complete restaurant dashboard
-- Menu management with categories
-- Order management and fulfillment
-- Analytics and reporting
-- Profile and settings management
-- Real-time order notifications
+### 🛒 Advanced Cart System
+- **Real-time Cart Management**: Add, update, and remove items instantly
+- **Cross-Device Synchronization**: Cart data persisted via API (no localStorage)
+- **Order Validation**: Automatic price calculation and inventory checking
+- **Multi-Restaurant Support**: Handle orders from different restaurants
 
-### Delivery Personnel Features
-- Delivery dashboard with assigned orders
-- Route optimization suggestions
-- Order pickup and delivery confirmation
-- Earnings tracking
-- Real-time location updates
+### 🔐 Robust Authentication
+- **JWT-based Authentication**: Secure token-based auth system
+- **Role-Based Access Control**: Fine-grained permissions per user type
+- **Email Verification**: Account activation via email
+- **Password Recovery**: Secure password reset functionality
 
-### Admin Features
-- Comprehensive admin dashboard
-- User management (customers, restaurant owners, delivery personnel)
-- Restaurant management (approval, suspension, monitoring)
-- Order oversight and dispute resolution
-- System analytics and reporting
-- Platform configuration
+### 📱 Responsive Design
+- **Mobile-First**: Optimized for all device sizes
+- **Progressive Web App**: Fast loading and offline capabilities
+- **Modern UI/UX**: Clean, intuitive interface design
 
-## 🛠 Tech Stack
-
-### Backend (API)
-- **Runtime**: Node.js with TypeScript
-- **Framework**: Express.js
-- **Database**: MongoDB with Mongoose ODM
-- **Authentication**: JWT (JSON Web Tokens)
-- **Documentation**: Swagger/OpenAPI
-- **Email**: Nodemailer integration
-- **Validation**: Joi/Zod schema validation
-- **Security**: bcrypt, CORS, helmet
+## 🛠️ Technology Stack
 
 ### Frontend
-- **Framework**: Angular 20+ with Standalone Components
-- **Language**: TypeScript
-- **Styling**: SCSS with responsive design
-- **Forms**: Reactive Forms with validation
-- **HTTP**: HttpClient with interceptors
-- **Routing**: Angular Router with guards
-- **State Management**: Services with RxJS
-- **UI Components**: Custom component library
-- **Payment Integration**: Secure payment processing
-- **Rating System**: Customer feedback and restaurant ratings
-- **Order History**: Complete transaction records
+- **Framework**: Angular 18.x with TypeScript
+- **Styling**: SCSS + Bootstrap 5
+- **State Management**: RxJS Observables
+- **Build Tool**: Angular CLI
+- **Testing**: Jasmine + Karma
 
-### 🚚 Delivery System
-- **Smart Assignment**: Optimal delivery personnel matching
-- **Location Tracking**: Real-time delivery tracking
-- **Performance Metrics**: Delivery time and success rate tracking
-- **Availability Management**: Flexible scheduling for delivery staff
-
-## 🛠️ Tech Stack
-
-### Backend (API)
-- **Runtime**: Node.js with TypeScript
-- **Framework**: Express.js
+### Backend
+- **Runtime**: Node.js with Express.js
 - **Database**: MongoDB with Mongoose ODM
 - **Authentication**: JWT (JSON Web Tokens)
-- **Validation**: Express Validator
 - **Documentation**: Swagger/OpenAPI
-- **Security**: Helmet, CORS, Rate Limiting
-- **Email Service**: Nodemailer
-- **Development**: ts-node-dev, ESLint, Prettier
+- **Testing**: Jest
 
-### Frontend (In Development)
-- **Framework**: [To be determined - React/Vue/Angular]
-- **State Management**: [To be determined]
-- **Styling**: [To be determined]
-- **Build Tool**: [To be determined]
+### DevOps & Deployment
+- **Containerization**: Docker support
+- **Cloud Platforms**: Vercel deployment ready
+- **Version Control**: Git with semantic versioning
+- **CI/CD**: Automated testing and deployment
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js (v16 or higher)
-- MongoDB (v5 or higher)
-- npm or yarn package manager
+- Node.js (v18+)
+- MongoDB (v5.0+)
+- npm or yarn
+- Git
 
-### Backend Setup
+### Installation
 
-1. **Clone the repository**:
+1. **Clone the repository**
    ```bash
-   git clone https://github.com/Ahmedfahmy8308/Talabat-Nti-Project.git
-   cd Talabat
+   git clone <repository-url>
+   cd Talabat_Platform
    ```
 
-2. **Navigate to API directory**:
+2. **Backend Setup**
    ```bash
    cd Api
-   ```
-
-3. **Install dependencies**:
-   ```bash
    npm install
-   ```
-
-4. **Environment Configuration**:
-   Create a `.env` file in the `Api` directory:
-   ```env
-   NODE_ENV=development
-   PORT=3000
-   MONGODB_URI=mongodb://localhost:27017/talabat
-   JWT_SECRET=your-super-secret-jwt-key
-   JWT_EXPIRE=7d
-   EMAIL_HOST=smtp.gmail.com
-   EMAIL_PORT=587
-   EMAIL_USER=your-email@gmail.com
-   EMAIL_PASS=your-app-password
-   ```
-
-5. **Start the development server**:
-   ```bash
+   cp .env.example .env
+   # Configure your environment variables
    npm run dev
    ```
 
-The API will be available at `http://localhost:3000`
+3. **Frontend Setup**
+   ```bash
+   cd ../frontend
+   npm install
+   ng serve
+   ```
+
+4. **Access the Application**
+   - Frontend: `http://localhost:4200`
+   - Backend API: `http://localhost:3000`
+   - API Documentation: `http://localhost:3000/api-docs`
+
+## 📋 Environment Variables
+
+### Backend (.env)
+```env
+# Database
+MONGODB_URI=mongodb://localhost:27017/talabat_platform
+MONGODB_TEST_URI=mongodb://localhost:27017/talabat_test
+
+# JWT
+JWT_SECRET=your_super_secure_jwt_secret
+JWT_EXPIRE=7d
+
+# Email (for verification)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+
+# Server
+PORT=3000
+NODE_ENV=development
+
+# Frontend URL (for CORS)
+FRONTEND_URL=http://localhost:4200
+```
+
+### Frontend (environment.ts)
+```typescript
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:3000/api/v1'
+};
+```
+
+## 📁 Project Structure
+
+```
+Talabat_Platform/
+├── 📁 Api/                     # Backend API
+│   ├── 📁 src/
+│   │   ├── 📁 config/          # Database & app configuration
+│   │   ├── 📁 modules/         # Feature modules
+│   │   │   ├── 📁 auth/        # Authentication module
+│   │   │   ├── 📁 cart/        # Shopping cart module
+│   │   │   ├── 📁 customer/    # Customer management
+│   │   │   ├── 📁 delivery/    # Delivery operations
+│   │   │   ├── 📁 meal/        # Meal management
+│   │   │   ├── 📁 order/       # Order processing
+│   │   │   ├── 📁 restaurant/  # Restaurant management
+│   │   │   └── 📁 shared/      # Shared utilities
+│   │   └── 📄 app.ts           # Main application file
+│   ├── 📄 package.json
+│   └── 📄 README.md
+├── 📁 frontend/                # Angular frontend
+│   ├── 📁 src/
+│   │   ├── 📁 app/
+│   │   │   ├── 📁 admin/       # Admin panel
+│   │   │   ├── 📁 auth/        # Authentication pages
+│   │   │   ├── 📁 cart/        # Shopping cart
+│   │   │   ├── 📁 checkout/    # Order checkout
+│   │   │   ├── 📁 delivery-dashboard/
+│   │   │   ├── 📁 home/        # Landing page
+│   │   │   ├── 📁 orders/      # Order management
+│   │   │   ├── 📁 profile/     # User profile
+│   │   │   ├── 📁 restaurant-dashboard/
+│   │   │   ├── 📁 restaurants/ # Restaurant listing
+│   │   │   └── 📁 shared/      # Shared components
+│   │   └── 📁 assets/          # Static assets
+│   ├── 📄 angular.json
+│   ├── 📄 package.json
+│   └── 📄 README.md
+├── 📄 README.md               # This file
+├── 📄 CHANGELOG.md
+├── 📄 CONTRIBUTING.md
+└── 📄 LICENSE
+```
+
+## 🔌 API Documentation
+
+The API provides comprehensive endpoints for all platform operations:
+
+### Core Modules
+- **Authentication**: Login, register, email verification, password reset
+- **Cart Management**: Add/remove items, update quantities, calculate totals
+- **Order Processing**: Create orders, track status, payment integration
+- **Restaurant Management**: CRUD operations, menu management
+- **User Management**: Profile updates, role management
+- **Delivery Operations**: Assignment, tracking, status updates
 
 ### API Documentation
-Once the server is running, you can access the interactive API documentation at:
-- **Swagger UI**: `http://localhost:3000/api-docs`
-
-## 📚 Documentation
-
-- **[API Documentation](./Api/README.md)**: Comprehensive backend API documentation
-- **[API Endpoints](./Api/README.md#api-endpoints)**: Detailed endpoint documentation
-- **[Database Schema](./Api/README.md#database-schema)**: Database structure and relationships
-- **[Contributing Guidelines](./Api/CONTRIBUTING.md)**: How to contribute to the project
+- **Swagger UI**: Available at `/api-docs` when running the server
+- **Postman Collection**: Available in the `docs/` directory
+- **OpenAPI Spec**: Complete API specification included
 
 ## 🧪 Testing
 
-### API Testing
+### Backend Testing
 ```bash
 cd Api
-npm test
+npm test                # Run all tests
+npm run test:watch     # Watch mode
+npm run test:coverage  # Coverage report
 ```
 
-### Code Quality
+### Frontend Testing
+```bash
+cd frontend
+ng test                # Unit tests
+ng e2e                 # End-to-end tests
+ng test --code-coverage # Coverage report
+```
+
+## 🚀 Deployment
+
+### Backend Deployment (Vercel)
 ```bash
 cd Api
-npm run lint        # Check for linting errors
-npm run format      # Format code with Prettier
-npm run check       # Run all quality checks
+vercel --prod
 ```
 
-## 🔧 Available Scripts
+### Frontend Deployment (Vercel)
+```bash
+cd frontend
+ng build --configuration production
+vercel --prod
+```
 
-### Backend (Api directory)
-- `npm start` - Start production server
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm run lint` - Run ESLint
-- `npm run format` - Format code with Prettier
-- `npm test` - Run test suite
-
-## 🏛️ Architecture
-
-The project follows a modular architecture pattern:
-
-### Backend Architecture
-- **Modular Structure**: Feature-based modules for scalability
-- **Layered Architecture**: Controllers → Services → Data Access
-- **Middleware Pipeline**: Authentication, validation, and error handling
-- **Database Abstraction**: MongoDB with Mongoose ODM
-- **API Documentation**: Auto-generated Swagger documentation
-
-### Security Features
-- **JWT Authentication**: Secure token-based authentication
-- **Role-Based Access Control**: Multi-level user permissions
-- **Rate Limiting**: API abuse prevention
-- **Data Validation**: Request/response validation
-- **Security Headers**: Helmet.js security middleware
-
-## 🚧 Development Status
-
-| Component | Status | Description |
-|-----------|--------|-------------|
-| Backend API | ✅ Complete | Full-featured RESTful API |
-| Authentication | ✅ Complete | Multi-role JWT authentication |
-| Database Design | ✅ Complete | MongoDB schemas and relationships |
-| API Documentation | ✅ Complete | Swagger/OpenAPI documentation |
-| Frontend | 🚧 Planned | Modern web application |
-| Mobile App | 📋 Planned | React Native/Flutter app |
-| Admin Dashboard | 📋 Planned | Administrative interface |
+### Docker Deployment
+```bash
+# Build and run with Docker Compose
+docker-compose up --build
+```
 
 ## 🤝 Contributing
 
-We welcome contributions to the Talabat project! Please see our [Contributing Guidelines](./Api/CONTRIBUTING.md) for details on:
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-- Code of conduct
-- Development process
-- Pull request procedure
-- Coding standards
-- Testing requirements
+### Development Workflow
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes and test thoroughly
+4. Commit with conventional commits: `git commit -m 'feat: add amazing feature'`
+5. Push to your branch: `git push origin feature/amazing-feature`
+6. Open a Pull Request
 
-## 📝 License
+## 📈 Roadmap
 
-This project is licensed under the MIT License - see the [LICENSE](./Api/LICENSE) file for details.
+### Upcoming Features
+- [ ] Real-time order tracking with maps
+- [ ] Payment gateway integration (Stripe, PayPal)
+- [ ] Push notifications
+- [ ] Advanced analytics dashboard
+- [ ] Mobile app (React Native)
+- [ ] Restaurant analytics
+- [ ] Loyalty program
+- [ ] Multi-language support
 
-## 👨‍💻 Author
-
-- **Ahmed Fahmy**
-  - GitHub: [@Ahmedfahmy8308](https://github.com/Ahmedfahmy8308)
-
-- **Khaled Mostafa**
-  - GitHub: [@khaledrokaya](https://github.com/khaledrokaya)
-
-- **Mohamed Elhusseini**
-  - GitHub: [@Mhmdhusseini](https://github.com/Mhmdhusseini)
-
-- **Abdulrahman Taha**
-  - GitHub: [@Abdulrahman-2-web](https://github.com/Abdulrahman-2-web)
-
-
-## 🙏 Acknowledgments
-
-- Inspired by Talabat's food delivery platform
-- Built as part of NTI (National Technology Institute) project
-- Thanks to the open-source community for the amazing tools and libraries
+### Current Status
+- [x] ✅ User authentication and authorization
+- [x] ✅ Restaurant and menu management
+- [x] ✅ Shopping cart functionality
+- [x] ✅ Order processing
+- [x] ✅ Admin panel
+- [x] ✅ Delivery dashboard
+- [x] ✅ Responsive design
+- [x] ✅ API documentation
 
 ## 📞 Support
 
-If you have any questions or need support, please:
-1. Check the [API documentation](./Api/README.md)
-2. Search existing [issues](https://github.com/Ahmedfahmy8308/Talabat-Nti-Project/issues)
-3. Create a new issue if needed
+- **Documentation**: Check the README files in each module
+- **Issues**: Use GitHub Issues for bug reports and feature requests
+- **Discussions**: Use GitHub Discussions for questions and ideas
+
+## 👨‍💻 Development Team
+
+- **Full Stack Developer**: [Amjad Kunnah](https://github.com/amjadkunnah)
+- **Backend Developer**: [Mohand Omer](https://github.com/MohandOmer)
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Angular team for the excellent framework
+- Express.js community for the robust backend framework
+- MongoDB for the flexible database solution
+- All contributors and supporters of this project
 
 ---
 
-**⭐ Star this repository if you find it helpful!**
+**Made with ❤️ by the Talabat Platform Team**

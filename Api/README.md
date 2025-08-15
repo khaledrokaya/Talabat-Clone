@@ -21,7 +21,79 @@ A comprehensive food delivery platform API built with Express.js, TypeScript, an
 
 ## ✨ Features
 
-### 🏪 Restaurant Management
+### 🛒 Cart Management
+
+### Cart Schema
+```javascript
+{
+  _id: ObjectId,
+  user: ObjectId (ref: 'User'),
+  items: [{
+    meal: ObjectId (ref: 'Meal'),
+    mealName: String,
+    mealId: String,
+    price: Number,
+    quantity: Number,
+    restaurant: ObjectId (ref: 'Restaurant')
+  }],
+  totalAmount: Number,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Cart Endpoints
+
+#### Get User Cart
+- **GET** `/api/v1/cart`
+- **Auth**: Required
+- **Description**: Retrieve the current user's cart
+- **Response**: Cart object with populated meal and restaurant details
+
+#### Add Item to Cart
+- **POST** `/api/v1/cart/add`
+- **Auth**: Required
+- **Body**:
+  ```json
+  {
+    "mealId": "meal_object_id",
+    "quantity": 2
+  }
+  ```
+- **Response**: Updated cart object
+
+#### Update Cart Item
+- **PUT** `/api/v1/cart/update`
+- **Auth**: Required
+- **Body**:
+  ```json
+  {
+    "mealId": "meal_object_id",
+    "quantity": 3
+  }
+  ```
+- **Response**: Updated cart object
+
+#### Remove Item from Cart
+- **DELETE** `/api/v1/cart/remove/:mealId`
+- **Auth**: Required
+- **Response**: Updated cart object
+
+#### Clear Cart
+- **DELETE** `/api/v1/cart/clear`
+- **Auth**: Required
+- **Response**: Success message
+
+#### Get Cart Total
+- **GET** `/api/v1/cart/total`
+- **Auth**: Required
+- **Response**: 
+  ```json
+  {
+    "totalAmount": 45.99,
+    "itemCount": 3
+  }
+  ```
 - Restaurant registration and profile management
 - Menu and meal management
 - Order tracking and processing
