@@ -105,7 +105,7 @@ Talabat Platform is a complete food delivery ecosystem that replicates the funct
 4. **Access the Application**
    - Frontend: `http://localhost:4200`
    - Backend API: `http://localhost:3000`
-   - API Documentation: `http://localhost:3000/api-docs`
+   - API Documentation: `http://localhost:3000/swagger`
 
 ## 📋 Environment Variables
 
@@ -197,7 +197,7 @@ The API provides comprehensive endpoints for all platform operations:
 - **Delivery Operations**: Assignment, tracking, status updates
 
 ### API Documentation
-- **Swagger UI**: Available at `/api-docs` when running the server
+- **Swagger UI**: Available at `/swagger` when running the server
 - **Postman Collection**: Available in the `docs/` directory
 - **OpenAPI Spec**: Complete API specification included
 
@@ -280,10 +280,21 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 - **Issues**: Use GitHub Issues for bug reports and feature requests
 - **Discussions**: Use GitHub Discussions for questions and ideas
 
-## 👨‍💻 Development Team
+## 👷‍♂️ Built By
 
-- **Full Stack Developer**: [Amjad Kunnah](https://github.com/amjadkunnah)
-- **Backend Developer**: [Mohand Omer](https://github.com/MohandOmer)
+This project was proudly crafted by a dedicated team of developers:
+
+- **Khaled Mostafa**
+         - [portfolio](https://www.khaled-mostafa.me/)
+         - [LinkedIn](https://www.linkedin.com/in/khaled-mostafa-jr/) 
+- **Ahmed Fahmy**
+         - [LinkedIn](https://www.linkedin.com/in/ahmed-fahmy-174191260/)
+- **Abdulrahman Taha**
+         - [LinkedIn](https://www.linkedin.com/in/abdulrahman-taha-01a088345/)
+- **Mohamed Elhusseini**
+         - [LinkedIn](https://www.linkedin.com/in/mohamed-elhusseini-42aa05289/)
+
+We combined our skills and efforts to bring this project to life with a focus on performance, scalability, and user experience.
 
 ## 📄 License
 
