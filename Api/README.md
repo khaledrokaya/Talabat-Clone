@@ -254,8 +254,8 @@ BCRYPT_SALT_ROUNDS=12
 
 The API is fully documented using Swagger/OpenAPI 3.0. Once the server is running, you can access:
 
-- **Swagger UI**: `http://localhost:3000/api-docs`
-- **OpenAPI JSON**: `http://localhost:3000/api-docs.json`
+- **Swagger UI**: `http://localhost:3000/swagger`
+- **OpenAPI JSON**: `http://localhost:3000/api`
 
 ### Authentication
 
@@ -519,18 +519,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 For support and questions:
 - Create an issue on GitHub
 - Contact the development team
-- Check the API documentation at `/api-docs`
-
----
-
-
-## 👷‍♂️ Built By
-
-This project was proudly crafted by a dedicated team of developers:
-
-- [**Khaled Mostafa**](https://www.linkedin.com/in/khaled-mostafa-jr/)
-- [**Ahmed Fahmy**](https://www.linkedin.com/in/ahmed-fahmy-174191260/)
-- [**Abdulrahman Taha**](https://www.linkedin.com/in/abdulrahman-taha-01a088345/)
-- [**Mohamed Elhusseini**](https://www.linkedin.com/in/mohamed-elhusseini-42aa05289/)
-
-We combined our skills and efforts to bring this project to life with a focus on performance, scalability, and user experience.
+- Check the API documentation at `/swagger`
