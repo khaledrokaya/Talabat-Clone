@@ -407,27 +407,6 @@ export class RestaurantList implements OnInit {
     return restaurant._id || restaurant.id;
   }
 
-  // Favorites functionality
-  onFavoriteToggle(restaurant: any): void {
-    const restaurantId = restaurant._id || restaurant.id;
-    if (!restaurantId) {
-      return;
-    }
-
-    this.favoritesService.toggleFavorite(restaurantId).subscribe({
-      next: (response) => {
-        // Optionally show success message to user
-      },
-      error: (error) => {
-        // Handle error - show error message to user
-        if (error.status === 401) {
-          // Redirect to login or show login modal
-        } else if (error.status === 403) {
-        }
-      }
-    });
-  }
-
   // Quick view functionality
   onQuickView(restaurant: any): void {
     // Implement quick view modal or navigate to restaurant details

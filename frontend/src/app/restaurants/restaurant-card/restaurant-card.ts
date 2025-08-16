@@ -71,15 +71,29 @@ export class RestaurantCard implements OnInit, OnDestroy {
   @Output() quickView = new EventEmitter<any>();
 
   isFavorite: boolean = false;
+  isProcessingFavorite: boolean = false;
   private favoritesSubscription?: Subscription;
 
   constructor(private favoritesService: FavoritesService) { }
 
   ngOnInit(): void {
-    // Subscribe to favorites changes
+    // Initialize favorite status from localStorage for instant display
+    this.updateFavoriteStatus();
+
+    // Subscribe to favorites changes for real-time updates
     this.favoritesSubscription = this.favoritesService.favorites$.subscribe(favoriteIds => {
       this.isFavorite = favoriteIds.includes(this.restaurant._id);
     });
+  }
+
+  // Helper method to update favorite status from multiple sources
+  private updateFavoriteStatus(): void {
+    // Check both service state and localStorage for most accurate status
+    const serviceStatus = this.favoritesService.isFavorite(this.restaurant._id);
+    const localStorageStatus = this.favoritesService.isFavoriteInstant(this.restaurant._id);
+
+    // Use service status if available, otherwise fall back to localStorage
+    this.isFavorite = serviceStatus || localStorageStatus;
   }
 
   ngOnDestroy(): void {
@@ -97,8 +111,10 @@ export class RestaurantCard implements OnInit, OnDestroy {
       'Restaurant';
   }
 
-  get restaurantImageUrl(): string | null {
-    return this.restaurant.image || this.restaurant.logoUrl || null;
+  get restaurantImageUrl(): string {
+    return this.restaurant.image ||
+      this.restaurant.logoUrl ||
+      '/assets/images/default-restaurant.jpg';
   }
 
   get cuisineTypes(): string {
@@ -169,20 +185,41 @@ export class RestaurantCard implements OnInit, OnDestroy {
   }
 
   onImageError(event: any): void {
-    event.target.style.display = 'none';
+    event.target.src = '/assets/images/default-restaurant.jpg';
+    event.target.alt = 'Default restaurant image';
   }
 
   onFavoriteClick(event: Event): void {
     event.stopPropagation();
     event.preventDefault();
 
-    // Toggle favorite status via service
-    this.favoritesService.toggleFavorite(this.restaurantId).subscribe({
+    if (this.isProcessingFavorite) {
+      return; // Prevent double-clicking
+    }
+
+    this.isProcessingFavorite = true;
+
+    // Optimistic update for immediate visual feedback
+    const previousState = this.isFavorite;
+    this.isFavorite = !this.isFavorite;
+
+    // Toggle favorite status via service with restaurant name for better toast messages
+    this.favoritesService.toggleFavoriteWithName(this.restaurantId, this.restaurantName).subscribe({
       next: (response) => {
+        this.isProcessingFavorite = false;
         // Emit the event for parent components that need to handle it
         this.favoriteToggle.emit(this.restaurant);
+
+        // If operation failed, revert the optimistic update
+        if (!response.success) {
+          this.isFavorite = !this.isFavorite;
+        }
       },
       error: (error) => {
+        this.isProcessingFavorite = false;
+        // Revert optimistic update on error
+        this.isFavorite = previousState;
+        // Error handling is now done in the favorites service with toasts
       }
     });
   }

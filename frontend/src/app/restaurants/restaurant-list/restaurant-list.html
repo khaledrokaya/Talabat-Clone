@@ -148,7 +148,7 @@
     <div class="restaurants-grid" *ngIf="!loading && !error && restaurants.length > 0">
       <app-restaurant-card *ngFor="let restaurant of restaurants; let i = index; trackBy: trackByRestaurant"
         [restaurant]="restaurant" [showQuickActions]="true" [showDescription]="true" [showMinimumOrder]="true"
-        cardSize="medium" [style.animation-delay.ms]="i * 100" (favoriteToggle)="onFavoriteToggle($event)"
+        cardSize="medium" class="restaurant-card" [style.animation-delay.ms]="i * 100"
         (quickView)="onQuickView($event)">
       </app-restaurant-card>
     </div>

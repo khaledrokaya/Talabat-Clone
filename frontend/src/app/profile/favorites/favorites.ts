@@ -17,6 +17,7 @@ export class Favorites implements OnInit {
   isLoading = true;
   showRemoveModal = false;
   restaurantToRemove: string | null = null;
+  imageLoadingStates: { [key: string]: boolean } = {};
 
   constructor(
     private favoritesService: FavoritesService,
@@ -35,9 +36,21 @@ export class Favorites implements OnInit {
       next: (response: any) => {
         this.favorites = response.data || [];
         this.isLoading = false;
+
+        // Show summary if no favorites
+        if (this.favorites.length === 0) {
+          this.favoritesService.showFavoritesSummary();
+        } else {
+          // Show success message when favorites loaded
+          this.toastService.success(
+            `Loaded ${this.favorites.length} favorite restaurant${this.favorites.length > 1 ? 's' : ''}`,
+            'Favorites Updated',
+            2000
+          );
+        }
       },
       error: (error: any) => {
-        this.toastService.error('Error loading favorite restaurants', 'Loading Error');
+        // Error toast is handled in the favorites service
         this.isLoading = false;
         this.favorites = [];
       }
@@ -62,10 +75,10 @@ export class Favorites implements OnInit {
           );
           this.showRemoveModal = false;
           this.restaurantToRemove = null;
-          this.toastService.success('Restaurant removed from favorites successfully', 'Favorites Updated');
+          // Toast message is handled in the favorites service
         },
         error: (error: any) => {
-          this.toastService.error('Error occurred while removing restaurant from favorites', 'Remove Error');
+          // Error toast is handled in the favorites service
           this.showRemoveModal = false;
           this.restaurantToRemove = null;
         }
@@ -111,6 +124,34 @@ export class Favorites implements OnInit {
   // Track by function for ngFor performance
   trackByRestaurant(index: number, restaurant: any): string {
     return restaurant._id || index.toString();
+  }
+
+  // Get restaurant image with fallback
+  getRestaurantImage(restaurant: any): string {
+    return restaurant.image ||
+      restaurant.logoUrl ||
+      '/assets/images/default-restaurant.jpg';
+  }
+
+  // Get restaurant name
+  getRestaurantName(restaurant: any): string {
+    return restaurant.restaurantDetails?.name ||
+      restaurant.name ||
+      `${restaurant.firstName || ''} ${restaurant.lastName || ''}`.trim() ||
+      'Restaurant';
+  }
+
+  // Handle image loading states
+  onImageLoad(restaurantId: string): void {
+    this.imageLoadingStates[restaurantId] = false;
+  }
+
+  onImageLoadStart(restaurantId: string): void {
+    this.imageLoadingStates[restaurantId] = true;
+  }
+
+  isImageLoading(restaurantId: string): boolean {
+    return this.imageLoadingStates[restaurantId] || false;
   }
 }
 

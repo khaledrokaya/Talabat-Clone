@@ -3,13 +3,7 @@
 
   <!-- Restaurant Image -->
   <div class="restaurant-image">
-    <img *ngIf="restaurantImageUrl" [src]="restaurantImageUrl" [alt]="restaurantName" (error)="onImageError($event)">
-
-    <!-- Image Placeholder -->
-    <div *ngIf="!restaurantImageUrl" class="image-placeholder">
-      <i class="fas fa-utensils"></i>
-      <span>{{ cuisineTypes }}</span>
-    </div>
+    <img [src]="restaurantImageUrl" [alt]="restaurantName" (error)="onImageError($event)">
 
     <!-- Status Badge -->
     <div class="restaurant-status" [class.closed]="!isOpen">
@@ -25,9 +19,11 @@
 
     <!-- Overlay with Quick Actions -->
     <div *ngIf="showQuickActions" class="restaurant-overlay">
-      <button class="quick-action-btn favorite-btn" [class.active]="isFavorite" (click)="onFavoriteClick($event)"
+      <button class="quick-action-btn favorite-btn" [class.active]="isFavorite"
+        [class.processing]="isProcessingFavorite" [disabled]="isProcessingFavorite" (click)="onFavoriteClick($event)"
         title="Add to Favorites">
-        <i class="fas fa-heart" [style.color]="isFavorite ? 'white' : '#FF6B35'"></i>
+        <i *ngIf="!isProcessingFavorite" class="fas fa-heart" [style.color]="isFavorite ? 'white' : '#FF6B35'"></i>
+        <i *ngIf="isProcessingFavorite" class="fas fa-spinner fa-spin"></i>
       </button>
       <button class="quick-action-btn quick-view-btn" (click)="onQuickViewClick($event)" title="Quick View">
         <i class="fas fa-eye"></i>
