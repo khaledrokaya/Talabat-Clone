@@ -217,6 +217,30 @@ export class RestaurantDetails implements OnInit, OnDestroy {
 
     const cartItem: Omit<CartItem, 'id' | 'totalPrice'> = {
       mealId: meal._id,
+      meal: {
+        _id: meal._id,
+        name: meal.name,
+        description: meal.description,
+        price: meal.price,
+        category: meal.category,
+        imageUrl: meal.image,
+        isAvailable: meal.isAvailable !== undefined ? meal.isAvailable : true,
+        preparationTime: meal.preparationTime,
+        rating: meal.ratings?.average,
+        reviewsCount: meal.ratings?.count,
+        restaurantId: this.restaurant?._id || meal.restaurantId || '',
+        ingredients: meal.ingredients,
+        allergens: meal.allergens,
+        nutritionalInfo: meal.nutritionalInfo,
+        discount: meal.discount ? {
+          percentage: meal.discount.percentage,
+          validUntil: meal.discount.validUntil.toString(),
+          isActive: true
+        } : undefined,
+        isVegetarian: meal.isVegetarian,
+        isVegan: meal.isVegan,
+        isGlutenFree: meal.isGlutenFree
+      },
       mealName: meal.name,
       quantity: 1,
       price: this.getMealPrice(meal),

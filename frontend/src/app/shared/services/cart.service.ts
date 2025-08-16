@@ -3,10 +3,12 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, catchError, tap, of, map, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
+import { Meal } from '../models/meal';
 
 export interface CartItem {
   id?: string;
   mealId: string;
+  meal?: Meal; // Add meal object for sending to API
   mealName: string;
   quantity: number;
   price: number;
@@ -71,7 +73,7 @@ export class CartService {
   }
 
   private loadCartFromAPI(): Observable<Cart> {
-    if (!this.authService.isLoggedIn()) {
+    if (this.authService.currentUserValue?.role !== "customer") {
       const emptyCart = { items: [], totalAmount: 0 };
       this.cartSubject.next(emptyCart);
       return of(emptyCart);
@@ -136,8 +138,23 @@ export class CartService {
       throw new Error('Please log in to add items to cart');
     }
 
+    // Prepare meal object for API - ensure we have all required fields
+    const mealForApi = item.meal ? {
+      _id: item.meal._id || item.mealId,
+      name: item.meal.name || item.mealName,
+      price: item.meal.price || item.price,
+      isAvailable: item.meal.isAvailable !== undefined ? item.meal.isAvailable : true,
+      restaurantId: item.meal.restaurantId || item.restaurantId
+    } : {
+      _id: item.mealId,
+      name: item.mealName,
+      price: item.price,
+      isAvailable: true,
+      restaurantId: item.restaurantId
+    };
+
     const addToCartData = {
-      mealId: item.mealId,
+      meal: mealForApi,
       quantity: item.quantity,
       selectedOptions: item.selectedOptions,
       specialInstructions: item.specialInstructions

@@ -3,8 +3,19 @@ export interface SelectedOptionDto {
   price: number;
 }
 
+export interface MealDto {
+  _id: string;
+  name: string;
+  price: number;
+  isAvailable: boolean;
+  restaurantId: string | {
+    _id: string;
+    name: string;
+  };
+}
+
 export interface AddToCartDto {
-  mealId: string;
+  meal: MealDto;
   quantity?: number;
   selectedOptions?: SelectedOptionDto[];
   specialInstructions?: string;

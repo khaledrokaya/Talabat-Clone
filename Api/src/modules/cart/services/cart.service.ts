@@ -1,5 +1,4 @@
 import Cart, { ICart, ICartItem } from '../schemas/cart.schema';
-import Meal from '../../meal/schemas/meal.schema';
 import { User } from '../../shared/schemas/base-user.schema';
 import { AppError } from '../../shared/middlewares/error.middleware';
 import { AddToCartDto, UpdateCartItemDto, RemoveFromCartDto } from '../dto/cart.dto';
@@ -18,12 +17,11 @@ export class CartService {
    * Add item to cart
    */
   async addToCart(customerId: string, addToCartData: AddToCartDto): Promise<ICart> {
-    const { mealId, quantity = 1, selectedOptions, specialInstructions } = addToCartData;
+    const { meal, quantity = 1, selectedOptions, specialInstructions } = addToCartData;
 
-    // Verify meal exists and is available
-    const meal = await Meal.findById(mealId).populate('restaurantId', 'name');
-    if (!meal) {
-      throw new AppError('Meal not found', 404);
+    // Validate meal data
+    if (!meal || !meal._id || !meal.name || meal.price === undefined || meal.isAvailable === undefined) {
+      throw new AppError('Invalid meal data provided', 400);
     }
 
     if (!meal.isAvailable) {
@@ -33,8 +31,12 @@ export class CartService {
     // Get or create cart
     const cart = await Cart.findOrCreateCart(customerId);
 
+    // Extract restaurant info from meal
+    const restaurantId = typeof meal.restaurantId === 'string' ? meal.restaurantId : meal.restaurantId._id;
+    const restaurantName = typeof meal.restaurantId === 'string' ? 'Restaurant' : meal.restaurantId.name;
+    console.log(meal)
     // Check if adding item from different restaurant
-    if (cart.restaurantId && cart.restaurantId.toString() !== meal.restaurantId.toString()) {
+    if (cart.restaurantId && cart.restaurantId.toString() !== restaurantId) {
       // Clear cart if different restaurant
       cart.clearCart();
     }
@@ -59,8 +61,8 @@ export class CartService {
 
     // Set restaurant info if not set
     if (!cart.restaurantId) {
-      cart.restaurantId = meal.restaurantId;
-      cart.restaurantName = (meal.restaurantId as any).name;
+      cart.restaurantId = restaurantId;
+      cart.restaurantName = restaurantName;
     }
 
     // Add item to cart

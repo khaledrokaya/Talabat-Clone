@@ -77,7 +77,7 @@ export class FavoritesService {
     const storedFavorites = this.getFavoritesFromStorage();
     this.favoritesSubject.next(storedFavorites);
 
-    if (this.authService.isLoggedIn()) {
+    if (this.authService.currentUserValue?.role === "customer") {
       // Then sync with backend in background
       this.syncWithBackend();
     }
@@ -144,8 +144,7 @@ export class FavoritesService {
    * Get all favorite restaurants for the authenticated user
    */
   getFavorites(): Observable<FavoritesResponse> {
-    if (!this.authService.isLoggedIn()) {
-      this.toastService.warning('Please log in to view your favorites', 'Authentication Required');
+    if (!this.authService.currentUserValue || this.authService.currentUserValue.role !== 'customer') {
       return of({ success: false, message: 'Not authenticated', data: [] });
     }
 

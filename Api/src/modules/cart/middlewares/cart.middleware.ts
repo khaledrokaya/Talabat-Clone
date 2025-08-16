@@ -20,9 +20,9 @@ export const validateJsonOnly = (req: any, res: any, next: any) => {
 
 export const validateAddToCart = [
   validateJsonOnly,
-  body('mealId')
-    .isMongoId()
-    .withMessage('Valid meal ID is required'),
+  body('meal')
+    .notEmpty()
+    .withMessage('Valid meal is required'),
 
   body('quantity')
     .optional()
